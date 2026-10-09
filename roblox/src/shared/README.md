@@ -7,9 +7,11 @@ edit it by hand.
 
 | Module | What | Required by | Lines |
 | --- | --- | --- | --- |
-| `Config` | every tuning number (players, fuse, freeze, the Celeste forgiveness values, studs per tile) | Server, Client | 21 |
+| `Config` | every tuning number (players, fuse, freeze, the movement and camera values, studs per tile) | Server, Client | 59 |
+| `Movement` | the move rules: run, jump, double jump, wall jump, dash, the forgiveness windows, refresh, speed retention, the sprite pick ([movement.md](../../../docs/systems/movement.md)) | Client | 225 |
+| `SideCam` | the side-on camera's follow, lead and distance | Client | 33 |
 | `Sprites` | GENERATED sprite table: `Apply`, `New`, `Has`, `ResolveOnServer`, `ApplySheetIds` | Server, Client | generated |
 
 Each module returns its own table (`return <Name>`) and gets a `test/luau/<name>.test.luau`. Planned, from the
-design: `Movement` (the step and jump rules both sides run), `Fuse` (remaining + 5, the shrink, elimination),
+design: `Fuse` (remaining + 5, the shrink, elimination),
 `Tag` (overlap and the no-tag-back freeze), `Crates` (the ability table, DESIGN §3 rules 10–13).

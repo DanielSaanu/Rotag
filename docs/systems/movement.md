@@ -1,0 +1,202 @@
+# Movement and feel
+
+**Created:** 2026-10-09 (handoff H1, the first playable). Design: [`../DESIGN.md`](../DESIGN.md) §2 (side-on camera
+over 3D parts, one plane, the movement kit), §3 rules 14–16 (forgiveness, refresh on contact, keep speed), 20–24
+(feel, juice, mobile). Goals: [`../qa/first-playable.md`](../qa/first-playable.md). How the sprite reaches the screen:
+[`sprites-and-animation.md`](sprites-and-animation.md) §4.
+
+**Status:** built and tested outside Studio (`npm test`, `npm run lint:luau`, `rojo build`). **Not yet played.**
+Danzo's play-through decides whether it feels right and which drawing method stays.
+
+## 1. The frame
+
+```
+PreSimulation (before physics), Client.client.lua
+  Body:read()        -> x, y, contacts {ground, ceiling, wallLeft, wallRight}   (raycasts)
+  Controls.read()    -> {moveX, jumpPressed, jumpHeld, dashPressed, touch}
+  Movement.step()    -> new vx, vy (and a snapped y), events {landed, jump, dash}
+  Body:apply()       -> CFrame at (x, y, 0) upright + AssemblyLinearVelocity; physics moves and collides
+RenderStep (Camera + 1)
+  SideCamera.update  -> SideCam.step() (pure) -> camera CFrame
+  Look:react/draw    -> squash/stretch, sprite frame (Movement.spriteFor), facing
+```
+
+Everything that decides something is pure Luau in `shared/` and has a test; the client files only read the world,
+call the rules and apply the answer. The client cannot run outside Studio, so it is kept as thin as that allows.
+
+| Module | Side | What |
+|---|---|---|
+| `shared/Movement.lua` | both | the move rules: run, jump, double jump, wall jump, dash, coyote, buffer, variable jump, half gravity at the apex, refresh, speed retention, the sprite pick |
+| `shared/SideCam.lua` | both | the camera's follow, lead and distance |
+| `shared/Config.lua` | both | every number below |
+| `client/Body.lua` | client | the ONLY file that knows the runner is a Part: raycast probes, anti-gravity, plane lock |
+| `client/Controls.lua` | client | keys, gamepad, the touch joystick (via Roblox's PlayerModule), two touch buttons |
+| `client/Look.lua` | client | the sprite, drawn two ways; flip; juice |
+| `client/SideCamera.lua` | client | applies `SideCam` to `workspace.CurrentCamera` |
+| `server/Runners.lua` | server | builds each player's runner body and spawns it |
+| `server/Arena.lua` | server | builds `Workspace.Map` |
+
+No RemoteEvent was added. The sprite sheet id is already resolved in the generated `Sprites.lua` (`Resolved =
+true`, from `setid`), so the client needs nothing from the server yet. If a future upload is a Decal again, the
+server must hand clients the resolved ids (`Sprites.ApplySheetIds`) through a join remote, declared in
+`default.project.json` and listed in [`README.md`](README.md).
+
+## 2. The character: a one-box body with a dormant Humanoid
+
+**Choice:** the server builds each runner as a Model holding one invisible box `HumanoidRootPart` (2 x 3.5 x 2
+studs, frictionless), a weightless non-colliding `Head`, and a `Humanoid` with `PlatformStand = true`,
+`JumpPower = 0`, `RequiresNeck = false`. It is assigned as `player.Character` and its physics is owned by the
+player. The client sets the box's velocity every frame from `Movement`; a client-side `VectorForce` cancels Roblox
+gravity because `Movement` integrates its own.
+
+**Why not drive the stock character:**
+- The stock Humanoid applies its own forces every physics step (walk speed toward `MoveDirection`, ground friction,
+  the hip-height spring, its jump). Overriding `AssemblyLinearVelocity` fights all of them, and the classic result
+  is a run that sticks on the ground and drifts in the air: the "underwater" feel rule 20 forbids.
+- Celeste's rules need gravity we own (half gravity at the apex, no gravity in a dash, a variable jump that holds
+  the take-off speed). Workspace gravity is global; cancelling it on one box is one `VectorForce`.
+- The stock rig is many parts, with accessories, an Animate script and limbs whose `CanCollide` the Humanoid
+  manages. A side-on sprite game needs one collider whose size is the sprite's figure (8 x 14 px).
+
+**Why keep a Humanoid at all:** Roblox's player plumbing keys on it. The default touch joystick only shows when the
+character has a Humanoid; `CharacterAdded`, the camera scripts, and automatic network ownership of the character
+all expect one. With `PlatformStand` on, it applies no forces, and `JumpPower = 0` hides Roblox's own touch jump
+button (ours replaces it).
+
+**Swapping it:** the body lives in two files. `server/Runners.lua` builds it; `client/Body.lua` reads its position and
+surroundings and applies a velocity. `Movement` never sees an Instance. To try the stock character, rewrite those
+two files; nothing else changes.
+
+**Contacts are raycasts, not `Touched`.** Three rays down (ground, 8 studs of look-ahead so the buffer can see a
+floor coming), three up (ceiling), three each side (walls, out to the wall-jump reach). Each returns a distance
+from the collider's face. The rays exclude the runner's own model, so `Workspace.Map` is never looked up by name.
+
+**The plane lock:** every frame the box is set to `CFrame.new(x, y, 0)` with no rotation and zero angular
+velocity, and its velocity has no Z. A diagonal stick cannot drift it off the plane: only `moveVector.X` is read.
+
+## 3. The rules (shared/Movement.lua)
+
+Celeste's numbers, mapped at **0.5 studs per Celeste pixel** (its 8 px tile = our 4-stud tile). Studs, seconds, y up.
+
+| Rule | Value | Note |
+|---|---|---|
+| Run | 45 studs/s, accel 500/s² | top speed in 0.09 s, stops as fast (rule 20) |
+| Over-speed bleed | 200/s² while holding that way | earned speed lasts (rule 16); let go and it stops at 500/s² |
+| Air control | 0.65 x ground | |
+| Gravity, max fall | 450/s², 80 studs/s | |
+| Jump | 52.5 studs/s, +20 in the stick's direction on a ground jump | |
+| Variable jump hold | 0.2 s: while held, the take-off speed is held | rule 14 |
+| Half gravity at the apex | when \|vy\| < 20 and jump is held | rule 14 |
+| Coyote time | 0.1 s (x 1.25 on touch) | rule 14, rule 23 |
+| Jump buffer | 0.08 s (x 1.25 on touch) | rule 14, rule 23 |
+| Double jump | 1, same speed and hold | |
+| Wall jump | within 3 px (0.75 studs), kicks 65 studs/s away; the stick reads "away" for 0.16 s | |
+| Wall slide | fall capped at 10 studs/s while pushing into a wall | |
+| Dash | horizontal, 120 studs/s for 0.15 s (18 studs), no gravity, ends at 80; 0.2 s cooldown | |
+| Stick | digital past a 0.3 deadzone | a diagonal thumb runs full speed (rule 24) |
+
+**Measured** (the pure rules, 60 fps): a tap hops 3.5 studs (0.9 tiles); a full hold 14.25 studs (3.6 tiles), apex
+at 0.35 s, 0.68 s in the air; a full jump then a full double jump about 28 studs (7 tiles). The test map's heights
+are set against these.
+
+**Jump priority:** ground (or coyote) > wall (either wall within reach, the nearer one) > double.
+
+**Refresh on contact (rule 15):** landing and touching a wall give back the double jump and the dash. A wall jump
+counts as a wall touch. A dash in progress keeps its charge spent.
+
+**Keep speed (rule 16):** a jump ends a dash and does not touch `vx`, so dash-into-jump carries 120 (plus the jump
+boost) into the air, bleeding only at the over-speed rate while held. A double jump does the same. A wall kick
+**banks** the speed brought into it: `max(65, |vx|)` away from the wall (DESIGN §2: "wall-run or wall-kick banks it").
+
+**Two decisions beyond the goals file, both small and both tested:**
+- **Landing-aware buffer.** If a press comes while falling with the double jump in hand, and the floor is close
+  enough that the remaining buffer will reach it, the press waits for the landing instead of spending the double
+  jump a few frames early. Without this, "press just before landing" (play-through step 2) would fire the double
+  jump in the air whenever the player still had it.
+- **Ceiling bonk.** A rise into a roof zeroes the upward speed and ends the jump hold, so the runner drops at once
+  instead of hanging under it for 0.1 s.
+
+**Sprite pick (`Movement.spriteFor`):** `runner_idle` after 0.08 s stopped (the rest pose, → A1), the run frames by
+distance (`floor(runDistance / 5) % 2`, so the legs read speed), `runner_run_0` in the air and while dashing.
+
+**Not built:** corner correction (Config has the 4 px; the goals did not ask for it), an 8-way dash, wall-run,
+grapple, boost pads (out of scope).
+
+## 4. The camera (shared/SideCam.lua, client/SideCamera.lua)
+
+`Scriptable`, looking down -Z at the plane from 136 studs, `FieldOfView` 20 so 48 studs (12 tiles) fill the screen
+top to bottom: near-orthographic, and world +X is screen right. It eases toward the runner (10/s across, 6/s up and
+down, 4 studs above the feet) and **leads** by `vx x 0.35 s`, capped at 16 studs, eased at 3/s (rule 21). The easing
+is frame-rate independent (tested). `CameraType` and `FieldOfView` are re-asserted every frame in case Roblox's
+camera scripts reset them on spawn.
+
+## 5. Controls
+
+- **Run:** Roblox's `PlayerModule` `GetMoveVector().X`: A/D, arrows, WASD, a gamepad stick and the touch joystick all
+  arrive the same way. Fallback if the module is missing: `Humanoid.MoveDirection.X` (warned in Output).
+- **Jump:** Space, gamepad A, the touch JUMP button. **Dash:** Left or Right Shift, gamepad X, the touch DASH button.
+  Bound at High priority with `Sink`, so Space never reaches Roblox's jump and Shift never toggles shift-lock (the
+  server also turns `EnableMouseLockOption` off).
+- **Touch buttons:** a `ScreenGui` shown only when `TouchEnabled`. JUMP is 96 px in the bottom-right corner, DASH 76 px
+  up and to its left; the default joystick is bottom-left, so the lower-middle is clear (rules 22–23). Presses are
+  latched between frames so a quick tap is never lost; a thumb sliding off a button still releases it.
+
+## 6. Drawn two ways (the H1 comparison)
+
+The Workspace boolean attribute **`SurfaceSprites`** picks the method, and `Look.lua` rebuilds the drawing the moment
+it changes, so both can be compared in one Play. The server adds the attribute (false) if the place does not have
+it; to keep a choice between Plays, add it in Edit mode.
+
+| `SurfaceSprites` | How | Notes |
+|---|---|---|
+| `false` (default) | `BillboardGui` (6 x 6 studs) adorned to the collider | always faces the camera; same look as the camera is straight on |
+| `true` | `SurfaceGui` on the `Back` (+Z, camera-facing) face of a 6 x 6 stud see-through part welded 1 stud in front of the collider, 50 px per stud | a real face in the world: perspective and lighting rules of a part |
+
+Both put one `ImageLabel` from `Sprites.New`, 4 x 4 studs, hung from the feet (anchor bottom-centre) so a squash
+keeps the feet planted. The canvas is 1.5 x the sprite so the widest stretch (the dash, 1.5 x) is not clipped.
+
+**Flip.** The handoff asked for a negative `Size.X.Scale`, verified. That could not be verified from a cloud session,
+and the evidence points the other way: a DevForum thread (found by search, the forum itself unreachable from here)
+flips an ImageLabel with a **negative `ImageRectSize.X` and `ImageRectOffset.X` moved to the rect's right edge**
+under `ScaleType.Stretch`, which `Sprites.Apply` uses. §4 of `sprites-and-animation.md` said the opposite. So both are
+built: `FlipBySize = false` (default) mirrors by the rect, `true` by the negative size. Studio decides; the loser is
+deleted with the losing drawing method.
+
+**Juice (rule 21), eased per frame rather than with `TweenService`** so the flip and the stretch never fight over
+`Size`: landing squash `1.35 x 0.7` (scaled by impact), take-off stretch `0.75 x 1.3`, double jump `0.8 x 1.25`,
+dash `1.5 x 0.75` held while the dash lasts. Each eases back to `1 x 1` with a 35 ms time constant (about 100 ms to
+settle). No screen shake yet.
+
+## 7. The map (server/Arena.lua)
+
+Built at boot into **`Workspace.Map`, a Folder created in code**. It is not declared in `default.project.json`
+because nothing finds it by name: the client's rays exclude the runner's own model rather than include the map.
+Plain grey Parts, 8 studs deep, all on the plane z = 0. Floor top at y = 0 from x = -80 to 120 with end walls; a
+low platform (2 tiles up), a mid one (3 tiles above the low one), a high ledge to walk and dash off (3 tiles up),
+and two walls 3 tiles apart (9 and 7 tiles tall) to wall-jump between and climb out over the lower one. The stock
+`Baseplate` and `SpawnLocation` are removed for the Play only (said in Output); the place file is not changed.
+
+## 8. Open questions only Studio can answer
+
+1. **Flip:** walking left, which `FlipBySize` setting shows a mirrored runner? (Default `false` = negative rect.)
+2. **Drawing:** BillboardGui or SurfaceGui, at the phone preset: which is crisper, and does either shimmer while the
+   camera moves? If both read badly, that is the case for the third option (a UI world frame with parts only for
+   physics), which DESIGN §2 currently rules out.
+3. **The body:** does the runner stand, stop at walls and ride the floor without jitter? A Humanoid on a one-box
+   model with `PlatformStand` is the least-proven piece. If the Humanoid dies at spawn, Output shows a second
+   "runner ready" a second later.
+4. **Touch:** does the default joystick show (it needs a Humanoid in the character) and drive the run, and is
+   Roblox's own jump button hidden (it should be, with `JumpPower = 0`)?
+5. **Depth:** map faces are at z = +4 and the sprite at z = 0 to +1, so a stretch that pokes past the collider
+   beside a wall is hidden by the wall's face. Expected to be invisible; say if it is not.
+
+## 9. Tests
+
+`test/luau/movement.test.luau` drives every rule through `Movement.step()` with a small box world standing in for
+the raycasts and physics (learnings Q3): run and stop times, the digital stick, coyote (keyboard and the wider touch
+window), the buffer (on time, too early, landing-aware), variable jump and half gravity, double jump and its limit,
+refresh on landing and on a wall touch, wall jump reach, the force window and the bank, three wall jumps up a
+chimney, dash, cooldown, dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick.
+`test/luau/sidecam.test.luau` pins the view height, settling, the lead and its cap, and frame-rate independence.
+**Each rule was mutation-checked:** removing it makes its test fail (→ S8). The ceiling test did not, at first,
+because the box stand-in stops at the roof by itself (→ Q5).

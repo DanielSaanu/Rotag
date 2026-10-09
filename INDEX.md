@@ -24,6 +24,8 @@ to (`roblox/default.project.json`).
   one file per system. Before any game-code task.
 - [`docs/systems/sprites-and-animation.md`](docs/systems/sprites-and-animation.md): how 2D elements and animation
   reach the screen (the sheet, `Sprites.lua`, frame naming, the side-on camera over parts). Before drawing or animating.
+- [`docs/systems/movement.md`](docs/systems/movement.md): the runner body, the move rules and their numbers, the side-on
+  camera, controls, juice, the test map, the two drawing methods. Before any movement, camera or controls change.
 - [`docs/systems/art-pipeline.md`](docs/systems/art-pipeline.md): the node pipeline (draw, compose, pack, upload).
 - [`docs/ROBLOX_SETUP.md`](docs/ROBLOX_SETUP.md): installing Rojo, connecting Studio, the Open Cloud key, uploading,
   the decal-vs-image gotcha. Setup or toolchain problems.

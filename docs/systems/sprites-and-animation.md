@@ -84,8 +84,11 @@ has a different parent:
 
 - **Characters and moving things**: an ImageLabel inside a `BillboardGui` (or a `SurfaceGui` on the camera-facing
   face) on an invisible Part that the physics moves. `AlwaysOnTop = false`, size in studs so the sprite scales with
-  the world, `Config.STUDS_PER_TILE` studs per 16 px. Flip with `ImageRectSize.X < 0`? No: Roblox does not flip
-  that way; mirror with a second scene (`flipX` on the layer) or a negative `Size.X.Scale` on the label.
+  the world, `Config.STUDS_PER_TILE` studs per 16 px. **Flip: unverified (H1).** A DevForum thread mirrors an
+  ImageLabel with a negative `ImageRectSize.X` and the offset moved to the rect's right edge under
+  `ScaleType.Stretch`; the first playable builds that and a negative `Size.X.Scale` side by side (Workspace
+  attribute `FlipBySize`) and Studio picks one ([movement.md](movement.md) §6). A mirrored second scene (`flipX` on
+  the layer) always works but doubles the frames in the sheet.
 - **Tiles, platforms, walls**: a `SurfaceGui` on the camera-facing face of the collision Part, one ImageLabel per
   tile or a `ScaleType = Tile` label over a repeating sprite. The Part is the collider; the GUI is the look. Grapple
   anchors, boost pads and hazards are the same with their colour-coded sprite (DESIGN §3 rule 29).
@@ -96,8 +99,12 @@ has a different parent:
   pattern, with `Sprites.New` for every icon.
 
 Which of BillboardGui and SurfaceGui reads better at phone size, and whether to draw on parts or keep a UI world
-frame for the sprites and use parts only for physics, is **open** and is the first thing the first playable should
-settle in Studio. It is escalation trigger 1; write the handoff with a side-by-side screenshot.
+frame for the sprites and use parts only for physics, is **open** (handoff H1). **Built 2026-10-09, Studio
+pending:** both part-based ways, switched live by the Workspace attribute `SurfaceSprites` (false = BillboardGui
+on the collider, true = SurfaceGui on a see-through part welded in front of it); how each is built and what to look
+for is [movement.md](movement.md) §6 and §8. Danzo picks from screenshots at the phone preset; the winner becomes
+the rule here and the loser is deleted. The UI-world-frame option was not built (DESIGN §2 locks "3D parts"); it
+comes back only if both part-based ways read badly.
 
 ## 5. The checklist for a new animated thing
 

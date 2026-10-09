@@ -9,3 +9,10 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   adapted to this game; a Rojo scaffold (`Config`, two entry stubs, generated `Sprites.lua`) with a placeholder
   runner (idle + two run frames) to prove `roblox build`. `npm test` and `npm run lint:luau` green. Not yet
   uploaded (sheet id 0) and not yet opened in Studio.
+- 2026-10-09 · `claude/friendly-hawking-74891i` · heavy, H1: the first playable, built but not yet played.
+  `shared/Movement.lua` (run, jump, double jump, wall jump, dash, Celeste forgiveness, refresh on contact, speed
+  kept and banked) and `shared/SideCam.lua`, each with a Luau test, each rule mutation-checked (→ S8, new Q5);
+  `server/Arena.lua` (test map in `Workspace.Map`) and `server/Runners.lua` (one-box runner, dormant Humanoid);
+  `client/Body`, `Controls` (two touch buttons), `Look` (sprite two ways behind `SurfaceSprites`, flip behind
+  `FlipBySize`), `SideCamera`. Tree only grew (8 ModuleScripts, sourcemap diffed). `lint:luau` learnt the Roblox
+  globals `RaycastParams` and `PhysicalProperties`. Detail: `docs/systems/movement.md`.

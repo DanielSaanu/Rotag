@@ -11,6 +11,10 @@
 
 ## To do
 
+- [ ] Danzo: Play the first playable (handoff H1). The checklist is `docs/qa/first-playable.md` (Studio play-through);
+      what to look for is `docs/systems/movement.md` §8. Then pick: BillboardGui or SurfaceGui (`Workspace.SurfaceSprites`),
+      and which flip works (`Workspace.FlipBySize`).
+
 - [ ] Danzo: `rokit install`, `rojo plugin install`, connect Studio, Play the scaffold (expect a runner sprite
       top-left once the sheet is uploaded; blank until then). See `docs/ROBLOX_SETUP.md`.
 - [ ] Danzo: `npx warehouse roblox build --upload`, then commit `Sprites.lua` + `assets.lock.json`.

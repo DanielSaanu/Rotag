@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-09
+**Created:** 2026-10-09 · **Last updated:** 2026-10-09 (Q5)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -133,3 +133,8 @@ that fires it in production, or set the fixture to the exact state that caller i
 **Q4 — A per-cycle counter resets on the cycle's own signal, not on one of the paths that ends it.** Find the state
 that defines the cycle and reset on its change, so every path that ends a cycle resets it; then test the path the
 repro did NOT use. *(inherited, handoff H10.)*
+
+**Q5 — A rule whose fixture already enforces it needs an assertion only the rule can produce.** A test world that
+stops the runner at a roof passed with the ceiling rule deleted: the stand-in did the rule's job. Assert the thing
+only the rule changes (the velocity on the bonk frame, not the position after it), and mutation-check every new rule
+suite: delete each rule in turn and watch its test fail (→ S8). *(2026-10-09, handoff H1, `movement.test.luau`.)*

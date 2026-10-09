@@ -10,4 +10,4 @@ tree: never move, rename or re-nest a file here without keeping the tree identic
 | [`client/`](client/README.md) | `StarterPlayer.StarterPlayerScripts.Client` (`Client` LocalScript + ModuleScripts) | input, feel, camera, HUD |
 
 RemoteEvents aren't files. They're declared in `default.project.json` under `ReplicatedStorage.Remotes` and listed
-with their payloads in [`docs/systems/README.md`](../../docs/systems/README.md). Today the folder is empty.
+with their payloads in [`docs/systems/README.md`](../../docs/systems/README.md). Today the folder is empty (the first playable needs no remote).

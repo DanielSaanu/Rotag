@@ -27,7 +27,7 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H1 — First playable: side-on camera, one runner, sprites drawn two ways — 2026-10-09 14:30 — OPEN
+### H1 — First playable: side-on camera, one runner, sprites drawn two ways — 2026-10-09 14:30 — BUILT 2026-10-09, Studio pending
 - **Trigger:** 1 (how sprites sit on the 3D world has three reasonable options: BillboardGui on an invisible Part,
   SurfaceGui on the collider, or a UI world frame with Parts only for physics), 2 (a new `shared/Movement.lua`).
 - **Doc:** `docs/systems/sprites-and-animation.md` §4; goals `docs/qa/first-playable.md`.
@@ -43,6 +43,15 @@ Resolution (added by the heavy agent under the same entry):
 - **Decision needed:** which of the two drawing methods becomes the rule in `sprites-and-animation.md` §4 (Danzo,
   after the play-through). The heavy agent decides everything else inside the goals file.
 - **Blocked routine work:** every client system (HUD, tag animation) waits on the drawing method.
+
+Resolution (heavy agent):
+- **Built 2026-10-09, Studio pending:** goals 1–7 built on `claude/friendly-hawking-74891i`: pure `shared/Movement` +
+  `shared/SideCam` with mutation-checked tests, a one-box runner with a dormant Humanoid (why: movement.md §2), the
+  test map, controls with two touch buttons, juice, and the sprite drawn both ways behind `Workspace.SurfaceSprites`
+  (flip method behind `FlipBySize`, since the doc's flip claim is contradicted by DevForum evidence). Detail and the
+  five Studio-only questions → [`systems/movement.md`](systems/movement.md) §6 and §8. **Resolves when** Danzo has
+  played it and picked the drawing method (and the flip); the next commit makes the winner the rule in
+  `sprites-and-animation.md` §4 and deletes the loser.
 
 ## Resolved
 

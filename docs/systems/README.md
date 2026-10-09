@@ -28,6 +28,9 @@ code. Add a row here in the same commit as the declaration. Never rename one: bo
 |---|---|---|---|
 | *(none yet)* | | | |
 
+The first playable (H1) added none: the sprite sheet id is already resolved in `Sprites.lua`, and movement is
+client-owned physics on the player's own character ([movement.md](movement.md) §1).
+
 Planned by the design, to be named when built: a join/init event (sends the resolved sprite sheet ids, the map,
 the match state), a movement event (client → server, rate-limited), a tag claim (client → server) and a tag verdict
 (server → all, with the fuse handed over), a match state event (fuse ticks, eliminations, ghosts), a notice event.
@@ -40,11 +43,11 @@ One file each. Read only the one your task touches.
 |---|---|---|
 | Sprites and animation (how 2D reaches the screen) | [sprites-and-animation.md](sprites-and-animation.md) | `Sprites` (generated) |
 | The art pipeline (node) | [art-pipeline.md](art-pipeline.md) | `bin/warehouse.js`, `src/*.js` |
-| Movement and feel | *(not built)* | `shared/Movement`, `client/Client` |
+| Movement and feel (the body, the rules, camera, controls, juice) | [movement.md](movement.md) | `shared/Movement`, `shared/SideCam`, `client/Body`, `client/Controls`, `client/Look`, `client/SideCamera`, `server/Runners` |
 | Tag, the fuse, elimination | *(not built)* | `shared/Fuse`, `server/Match` |
 | Ghosts | *(not built; DESIGN §6.1 is open)* | |
 | Crates and abilities | *(not built; DESIGN §6.2 is open)* | |
-| Maps | *(not built)* | |
-| HUD and mobile controls | *(not built)* | `client/Hud` |
+| Maps | the first-playable test map only: [movement.md](movement.md) §7 | `server/Arena` |
+| HUD and mobile controls | the two touch buttons only: [movement.md](movement.md) §5; no HUD yet | `client/Controls`, later `client/Hud` |
 
 The per-module "who owns what" tables are the folder READMEs under [`roblox/src/`](../../roblox/src/README.md).

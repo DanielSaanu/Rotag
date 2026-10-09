@@ -5,9 +5,12 @@ windows, momentum, the side-on camera, juice and the HUD. It predicts with the s
 
 | File | Instance | What | Lines |
 | --- | --- | --- | --- |
-| `Client.client.lua` | `Client` (LocalScript) | the entry point: one `ScreenGui` with `runner_idle` on it to prove sprites resolve | 19 |
+| `Client.client.lua` | `Client` (LocalScript) | the entry point: the frame loop (input, `Movement.step`, body; then camera, sprite) and character setup | 95 |
+| `Body.lua` | `Body` (ModuleScript) | the ONLY file that knows the runner is a Part: raycast contacts, anti-gravity, the plane lock, velocity out | 87 |
+| `Controls.lua` | `Controls` (ModuleScript) | keys, gamepad, the touch joystick (Roblox's PlayerModule), the JUMP and DASH touch buttons | 146 |
+| `Look.lua` | `Look` (ModuleScript) | the runner sprite, two ways (`Workspace.SurfaceSprites`), flip (`FlipBySize`), frames, squash and stretch | 151 |
+| `SideCamera.lua` | `SideCamera` (ModuleScript) | applies `shared/SideCam` to the camera: Scriptable, side-on, leading | 30 |
 
-Planned: `Input.lua` (keyboard, joystick, at most four buttons, DESIGN §3 rules 22–24), `Feel.lua` (coyote time,
-jump buffer, variable jump, corner correction, refresh on contact), `Camera.lua` (side-on, leads at speed),
-`Hud.lua` (the fuse, +5 s, off-screen arrows). How sprites and frames are drawn:
+Why it is split this way, and the character choice: [`docs/systems/movement.md`](../../../docs/systems/movement.md).
+Planned: `Hud.lua` (the fuse, +5 s, off-screen arrows), corner correction in `shared/Movement`. How sprites and frames are drawn:
 [`docs/systems/sprites-and-animation.md`](../../../docs/systems/sprites-and-animation.md).
