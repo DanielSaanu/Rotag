@@ -1,0 +1,8 @@
+{
+  "include": ["*"],
+  "exclude": ["preview_*", "mockup_*"],
+  "padding": 1,
+  "maxSize": 1024,
+  "luaOut": "roblox/src/shared/Sprites.lua",
+  "pngOut": "exports/roblox"
+}

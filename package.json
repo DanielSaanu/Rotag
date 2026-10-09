@@ -1,0 +1,24 @@
+{
+  "name": "rotag",
+  "version": "0.1.0",
+  "description": "Rotag: a 2D parkour tag game on Roblox, plus the asset pipeline (inherited from The Warehouse) that ships its art.",
+  "type": "module",
+  "bin": {
+    "warehouse": "./bin/warehouse.js"
+  },
+  "scripts": {
+    "start": "node bin/warehouse.js serve",
+    "serve": "node bin/warehouse.js serve",
+    "test": "node --test test/*.test.js && node test/luau/run.js",
+    "test:luau": "node test/luau/run.js",
+    "lint:luau": "node tools/luau-check.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.60",
+    "fflate": "^0.8.2"
+  },
+  "license": "MIT"
+}

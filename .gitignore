@@ -1,0 +1,13 @@
+node_modules/
+.env
+cache/
+library/**/*.zip
+exports/**/*.png
+exports/**/*.json
+!exports/.gitkeep
+*.log
+.DS_Store
+# Rojo binary dropped into the repo folder (see docs/ROBLOX_SETUP.md)
+rojo
+rojo.exe
+tools/luau/

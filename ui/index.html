@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rotag asset warehouse</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 fill=%22%231b1b2f%22/%3E%3Crect x=%223%22 y=%225%22 width=%2210%22 height=%228%22 fill=%22%237bd35a%22/%3E%3Crect x=%225%22 y=%227%22 width=%222%22 height=%222%22 fill=%22%231b1b2f%22/%3E%3Crect x=%229%22 y=%227%22 width=%222%22 height=%222%22 fill=%22%231b1b2f%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/ui/style.css">
+</head>
+<body>
+<header id="topbar">
+  <div class="brand">ROTAG WAREHOUSE</div>
+  <select id="sceneSelect" title="scene"></select>
+  <button id="btnNew" title="new scene">+ new</button>
+  <button id="btnSave" title="save (Ctrl+S)">save</button>
+  <button id="btnDelete" title="delete scene">del</button>
+  <span class="sep"></span>
+  <label class="inline">W <input id="sceneW" type="number" min="1" max="4096"></label>
+  <label class="inline">H <input id="sceneH" type="number" min="1" max="4096"></label>
+  <label class="inline">bg <input id="sceneBg" type="text" placeholder="transparent" size="9"></label>
+  <label class="inline"><input id="scenePix" type="checkbox"> pixelated</label>
+  <label class="inline"><input id="sceneExport" type="checkbox"> export to roblox</label>
+  <span class="sep"></span>
+  <button id="btnPng">export PNG</button>
+  <button id="btnBuild" title="pack all scenes into a sheet + Sprites.lua">roblox build</button>
+  <button id="btnUpload" title="build and upload to Roblox (needs .env)">build + upload</button>
+  <span id="status" class="status"></span>
+</header>
+
+<main id="main">
+  <aside id="left">
+    <div class="tabs">
+      <button data-tab="search" class="active">search</button>
+      <button data-tab="library">library</button>
+      <button data-tab="draw">draw</button>
+    </div>
+    <section id="tab-search" class="tab active">
+      <div class="row">
+        <select id="srcSelect"></select>
+        <input id="q" placeholder="search…" autocomplete="off">
+        <button id="btnSearch">go</button>
+      </div>
+      <div id="srcAbout" class="muted small"></div>
+      <div id="results" class="grid"></div>
+    </section>
+    <section id="tab-library" class="tab">
+      <div class="row"><input id="libQ" placeholder="filter library…"><button id="btnLibRefresh">↻</button></div>
+      <div class="row small muted">drop image files here to add your own</div>
+      <div id="library" class="grid"></div>
+    </section>
+    <section id="tab-draw" class="tab">
+      <div class="small muted">Pixel layer editor. Select a <b>pixels</b> layer (or add one), pick a color, click cells. Right click erases.</div>
+      <div class="row"><button id="btnAddPixels">+ pixels layer</button><label class="inline">size <input id="pxW" type="number" value="16" min="1" max="128" style="width:4em"> × <input id="pxH" type="number" value="16" min="1" max="128" style="width:4em"></label></div>
+      <div id="paletteBar" class="palette"></div>
+      <div class="row"><input id="pxColor" type="color" value="#1b1b2f"><button id="btnAddColor">+ color</button><button id="btnSaveSprite" title="save this layer as sprites/<name>.txt so Claude can reuse it">save as sprite</button></div>
+      <canvas id="pxCanvas" width="256" height="256"></canvas>
+      <div id="lospecPalettes" class="small"></div>
+    </section>
+  </aside>
+
+  <section id="center">
+    <div id="viewport">
+      <canvas id="view"></canvas>
+    </div>
+    <div id="viewbar">
+      <label class="inline"><input id="showGrid" type="checkbox" checked> grid</label>
+      <label class="inline">zoom <span id="zoomLabel">8x</span></label>
+      <span class="muted small">drag to move · wheel to zoom · arrows nudge · Del · Ctrl+D duplicate · [ ] reorder · F flip · V hide</span>
+    </div>
+    <div id="ideasBox">
+      <div class="row">
+        <b>ideas</b>
+        <select id="ideasSelect"></select>
+        <span class="muted small">this is a text file Claude reads. slap thoughts down, save, then ask Claude to do them.</span>
+        <span id="ideasStatus" class="status"></span>
+      </div>
+      <textarea id="ideas" spellcheck="false" placeholder="e.g. make the scavengers look meaner. try a red palette. i want a rain overlay tile."></textarea>
+    </div>
+  </section>
+
+  <aside id="right">
+    <div class="panelTitle">layers <button id="btnAddText" class="mini">+text</button><button id="btnAddShape" class="mini">+shape</button></div>
+    <ul id="layers"></ul>
+    <div class="panelTitle">layer</div>
+    <div id="props" class="props"><div class="muted small">nothing selected</div></div>
+    <div class="panelTitle">scene notes</div>
+    <textarea id="sceneNotes" rows="3" placeholder="notes about this scene (saved in the scene json)"></textarea>
+  </aside>
+</main>
+
+<div id="drop" class="hidden">drop images to add to library</div>
+<script type="module" src="/ui/app.js"></script>
+</body>
+</html>

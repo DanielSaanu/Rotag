@@ -1,0 +1,3 @@
+# Tool pins for this repo. Install Rokit (https://github.com/rojo-rbx/rokit) then run `rokit install` in the repo root.
+[tools]
+rojo = "rojo-rbx/rojo@7.7.0"

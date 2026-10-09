@@ -1,0 +1,14 @@
+{
+  "name": "preview_runner_strip",
+  "width": 56,
+  "height": 20,
+  "background": "#2a2d3e",
+  "pixelated": true,
+  "export": false,
+  "notes": "mockup only (export: false): idle and the two run frames side by side, for eyeballing animation timing",
+  "layers": [
+    { "id": "a", "name": "idle", "type": "scene", "src": "scenes/runner_idle.json", "x": 2, "y": 2 },
+    { "id": "b", "name": "run_0", "type": "scene", "src": "scenes/runner_run_0.json", "x": 20, "y": 2 },
+    { "id": "c", "name": "run_1", "type": "scene", "src": "scenes/runner_run_1.json", "x": 38, "y": 2 }
+  ]
+}

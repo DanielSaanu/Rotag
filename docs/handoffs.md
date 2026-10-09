@@ -1,0 +1,34 @@
+# Handoffs — routine → heavy
+
+**Created:** 2026-10-09 · **Last updated:** 2026-10-09
+
+A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
+escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
+the doc the entry names, and marks the entry RESOLVED.
+
+Keep this file small. Once the detail lives in the real doc, trim the resolved entry to its heading plus one
+resolved line.
+
+## Entry template
+
+```
+### H<n> — <one-line title> — <YYYY-MM-DD HH:MM> — OPEN
+- **Trigger:** <which of the numbered triggers>
+- **Doc:** <path> §<section>
+- **Observed:** <what was seen, plainly — exact error text, failing test, the diff, the Studio Output line>
+- **Evidence:** <commands run, file:line, export PNG, branch, commit>
+- **Routine session's read:** <best guess, clearly marked as a guess>
+- **Decision needed:** <the specific question or action>
+- **Blocked routine work:** <what is on hold, if anything>
+
+Resolution (added by the heavy agent under the same entry):
+- **Resolved <date>:** <one line> → recorded in <path> §<section>
+```
+
+## Open
+
+*(none)*
+
+## Resolved
+
+*(none yet)*

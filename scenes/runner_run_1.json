@@ -1,0 +1,16 @@
+{
+  "name": "runner_run_1",
+  "width": 16,
+  "height": 16,
+  "background": "transparent",
+  "pixelated": true,
+  "notes": "placeholder runner, drawn to prove the pipeline. Replace with the real art.",
+  "layers": [
+    {
+      "id": "t",
+      "name": "runner_run_1",
+      "type": "image",
+      "src": "sprites/runner_run_1.txt"
+    }
+  ]
+}
