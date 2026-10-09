@@ -1,5 +1,8 @@
 -- The server entry point. Owns the match: who is "it", the fuse, eliminations, ghosts (none built yet).
 -- Today it resolves the sprite sheet, builds the test map and spawns each player's runner body.
+local Players = game:GetService("Players")
+-- First, before anything can yield: no stock character for anyone (server/Runners.lua builds the runner body).
+Players.CharacterAutoLoads = false
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))

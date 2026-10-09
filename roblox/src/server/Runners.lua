@@ -66,7 +66,7 @@ function Runners.spawn(player: Player, spawnAt: Vector3)
 	if old and old ~= model then old:Destroy() end
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
 	-- The player's own client simulates its runner (the same as a stock character). pcall: it errors if the part
-	-- is anchored or not in Workspace, and a cosmetic failure must not stop the spawn (learnings T3).
+	-- is anchored or not in Workspace; say so in Output and still finish the spawn.
 	local ok, err = pcall(function() root:SetNetworkOwner(player) end)
 	if not ok then warn("[Rotag] SetNetworkOwner failed: " .. tostring(err)) end
 	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid

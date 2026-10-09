@@ -33,6 +33,7 @@ function Body.new(character: Model, root: BasePart)
 	force.ApplyAtCenterOfMass = true
 	force.Parent = root
 	self.antiGravity = force
+	self.attachment = attachment
 	return self
 end
 
@@ -72,15 +73,15 @@ end
 function Body:apply(x: number, y: number, vx: number, vy: number)
 	local root = self.root
 	self.antiGravity.Force = Vector3.new(0, root.AssemblyMass * workspace.Gravity, 0)
+	if not root.CanCollide then root.CanCollide = true end -- in case the Humanoid ever turns it off: walls need it
 	root.CFrame = CFrame.new(x, y, 0)
 	root.AssemblyLinearVelocity = Vector3.new(vx, vy, 0)
 	root.AssemblyAngularVelocity = Vector3.zero
 end
 
 function Body:destroy()
-	if self.antiGravity then self.antiGravity:Destroy() end
-	local attachment = self.root:FindFirstChild("RotagAntiGravity")
-	if attachment then attachment:Destroy() end
+	self.antiGravity:Destroy()
+	self.attachment:Destroy()
 end
 
 return Body
