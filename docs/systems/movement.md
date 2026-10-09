@@ -141,26 +141,20 @@ camera scripts reset them on spawn.
   up and to its left; the default joystick is bottom-left, so the lower-middle is clear (rules 22–23). Presses are
   latched between frames so a quick tap is never lost; a thumb sliding off a button still releases it.
 
-## 6. Drawn two ways (the H1 comparison)
+## 6. How the runner is drawn (decided, H1)
 
-The Workspace boolean attribute **`SurfaceSprites`** picks the method, and `Look.lua` rebuilds the drawing the moment
-it changes, so both can be compared in one Play. The server adds the attribute (false) if the place does not have
-it; to keep a choice between Plays, add it in Edit mode.
+A **`SurfaceGui`** on the `Back` (+Z, camera-facing) face of a 6 x 6 stud see-through part welded 1 stud in front of
+the collider, 50 px per stud, `LightInfluence = 0`. It is a real face in the world, so it shifts against the map with
+the camera the way the map's own faces do. Danzo compared it in Studio (2026-10-09) against a `BillboardGui` adorned
+to the collider, which always faces the camera and sat flat on the scene, and picked the SurfaceGui: "the one where
+the background moves a little bit is much nicer". The BillboardGui path and the `SurfaceSprites` attribute are gone.
 
-| `SurfaceSprites` | How | Notes |
-|---|---|---|
-| `false` (default) | `BillboardGui` (6 x 6 studs) adorned to the collider | always faces the camera; same look as the camera is straight on |
-| `true` | `SurfaceGui` on the `Back` (+Z, camera-facing) face of a 6 x 6 stud see-through part welded 1 stud in front of the collider, 50 px per stud | a real face in the world: perspective and lighting rules of a part |
+One `ImageLabel` from `Sprites.New`, 4 x 4 studs, hung from the feet (anchor bottom-centre) so a squash keeps the
+feet planted. The canvas is 1.5 x the sprite so the widest stretch (the dash, 1.5 x) is not clipped.
 
-Both put one `ImageLabel` from `Sprites.New`, 4 x 4 studs, hung from the feet (anchor bottom-centre) so a squash
-keeps the feet planted. The canvas is 1.5 x the sprite so the widest stretch (the dash, 1.5 x) is not clipped.
-
-**Flip.** The handoff asked for a negative `Size.X.Scale`, verified. That could not be verified from a cloud session,
-and the evidence points the other way: a DevForum thread (found by search, the forum itself unreachable from here)
-flips an ImageLabel with a **negative `ImageRectSize.X` and `ImageRectOffset.X` moved to the rect's right edge**
-under `ScaleType.Stretch`, which `Sprites.Apply` uses. §4 of `sprites-and-animation.md` said the opposite. So both are
-built: `FlipBySize = false` (default) mirrors by the rect, `true` by the negative size. Studio decides; the loser is
-deleted with the losing drawing method.
+**Flip: a negative `ImageRectSize.X` with `ImageRectOffset.X` moved to the rect's right edge**, under the
+`ScaleType.Stretch` that `Sprites.Apply` sets. Confirmed in Studio 2026-10-09 (the runner faced left on its own with
+the default). The negative `Size.X.Scale` alternative and its `FlipBySize` switch are deleted.
 
 **Juice (rule 21), eased per frame rather than with `TweenService`** so the flip and the stretch never fight over
 `Size`: landing squash `1.35 x 0.7` (scaled by impact), take-off stretch `0.75 x 1.3`, double jump `0.8 x 1.25`,
@@ -178,10 +172,8 @@ and two walls 3 tiles apart (9 and 7 tiles tall) to wall-jump between and climb 
 
 ## 8. Open questions only Studio can answer
 
-1. **Flip:** walking left, which `FlipBySize` setting shows a mirrored runner? (Default `false` = negative rect.)
-2. **Drawing:** BillboardGui or SurfaceGui, at the phone preset: which is crisper, and does either shimmer while the
-   camera moves? If both read badly, that is the case for the third option (a UI world frame with parts only for
-   physics), which DESIGN §2 currently rules out.
+1. ~~Flip~~ answered 2026-10-09: the negative rect mirrors.
+2. ~~Drawing~~ answered 2026-10-09: SurfaceGui (§6). Still to check at the phone preset: crispness and shimmer.
 3. **The body:** does the runner stand, stop at walls and ride the floor without jitter? A Humanoid on a one-box
    model with `PlatformStand` is the least-proven piece. If the Humanoid dies at spawn, Output shows a second
    "runner ready" a second later.

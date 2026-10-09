@@ -15,10 +15,5 @@ local sheetIds = Sprites.ResolveOnServer()
 print(("[Rotag] server up: %d players per match, fuse %ds, %d sprite sheet(s)"):format(
 	Config.PLAYERS_PER_MATCH, Config.FUSE_START, #sheetIds))
 
--- The sprite toggles Danzo flips in Properties (docs/systems/movement.md, "Drawn two ways"). Shown in Properties
--- during Play even when the place does not have them yet; set them in Edit mode to keep a choice between Plays.
-if workspace:GetAttribute("SurfaceSprites") == nil then workspace:SetAttribute("SurfaceSprites", false) end
-if workspace:GetAttribute("FlipBySize") == nil then workspace:SetAttribute("FlipBySize", false) end
-
 Arena.build()
 Runners.start(Arena.SPAWN)

@@ -16,3 +16,6 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   `client/Body`, `Controls` (two touch buttons), `Look` (sprite two ways behind `SurfaceSprites`, flip behind
   `FlipBySize`), `SideCamera`. Tree only grew (8 ModuleScripts, sourcemap diffed). `lint:luau` learnt the Roblox
   globals `RaycastParams` and `PhysicalProperties`. Detail: `docs/systems/movement.md`.
+- 2026-10-09 · `claude/friendly-hawking-74891i`: H1 played and resolved. Danzo picked the SurfaceGui runner over the
+  BillboardGui (the world-face parallax reads nicer) and the negative-rect flip worked; `Look.lua` keeps only that path
+  (151 → 126 lines), the `SurfaceSprites` and `FlipBySize` attributes are gone from the server and the docs. Next: tag.

@@ -1,10 +1,8 @@
--- Draws the runner on its part, two ways, switched live by the Workspace attribute SurfaceSprites
--- (docs/systems/sprites-and-animation.md §4; the comparison is handoff H1):
---   false: a BillboardGui adorned to the collider (always faces the camera)
---   true:  a SurfaceGui on the camera-facing (+Z, "Back") face of a thin see-through part welded to the collider
--- Both hold one ImageLabel set by Sprites.Apply. Flip, frame and juice are the same code for both.
--- Flip: FlipBySize = false mirrors with a negative ImageRectSize; true with a negative Size.X.Scale. Which one
--- Roblox honours is the first Studio check (movement.md, "Open questions").
+-- Draws the runner: a SurfaceGui on the camera-facing (+Z, "Back") face of a thin see-through part welded to the
+-- collider, holding one ImageLabel set by Sprites.Apply (docs/systems/sprites-and-animation.md §4).
+-- Danzo picked this over a BillboardGui in Studio on 2026-10-09 (handoff H1): a real face in the world shifts
+-- against the map with the camera, which read as much nicer. Flip is a negative ImageRectSize with the offset moved
+-- to the rect's right edge; confirmed in Studio the same day.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
@@ -35,12 +33,8 @@ function Look.new(character: Model, root: BasePart)
 	self.character = character
 	self.root = root
 	self.sx, self.sy = 1, 1
-	self.sprite, self.facing, self.flipBySize = nil, 1, nil
+	self.sprite, self.facing = nil, 1
 	self:_build()
-	self.conns = {
-		workspace:GetAttributeChangedSignal("SurfaceSprites"):Connect(function() self:_build() end),
-		workspace:GetAttributeChangedSignal("FlipBySize"):Connect(function() self.sprite = nil end),
-	}
 	return self
 end
 
@@ -51,50 +45,37 @@ end
 
 function Look:_build()
 	self:_clear()
-	local surface = workspace:GetAttribute("SurfaceSprites") == true
-	local gui
-	if surface then
-		local plane = Instance.new("Part")
-		plane.Name = "RotagSpritePlane"
-		plane.Size = Vector3.new(CANVAS, CANVAS, 0.05)
-		plane.Transparency = 1
-		plane.CanCollide = false
-		plane.CanQuery = false
-		plane.CanTouch = false
-		plane.Massless = true
-		plane.CastShadow = false
-		plane.CFrame = self.root.CFrame * CFrame.new(0, 0, Config.RUNNER_DEPTH / 2 + 0.05)
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = self.root
-		weld.Part1 = plane
-		weld.Parent = plane
-		gui = Instance.new("SurfaceGui")
-		gui.Face = Enum.NormalId.Back -- +Z, the face the camera looks at
-		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-		gui.PixelsPerStud = SURFACE_PPS
-		gui.LightInfluence = 0
-		gui.AlwaysOnTop = false
-		gui.Adornee = plane
-		gui.Parent = plane
-		plane.Parent = self.character
-		self.holder = plane
-	else
-		gui = Instance.new("BillboardGui")
-		gui.Size = UDim2.new(CANVAS, 0, CANVAS, 0) -- Scale is studs on a BillboardGui
-		gui.LightInfluence = 0
-		gui.AlwaysOnTop = false
-		gui.Adornee = self.root
-		gui.Parent = self.root
-		self.holder = gui
-	end
+	local plane = Instance.new("Part")
+	plane.Name = "RotagSpritePlane"
+	plane.Size = Vector3.new(CANVAS, CANVAS, 0.05)
+	plane.Transparency = 1
+	plane.CanCollide = false
+	plane.CanQuery = false
+	plane.CanTouch = false
+	plane.Massless = true
+	plane.CastShadow = false
+	plane.CFrame = self.root.CFrame * CFrame.new(0, 0, Config.RUNNER_DEPTH / 2 + 0.05)
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = self.root
+	weld.Part1 = plane
+	weld.Parent = plane
+	local gui = Instance.new("SurfaceGui")
 	gui.Name = "RotagRunnerSprite"
+	gui.Face = Enum.NormalId.Back -- +Z, the face the camera looks at
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = SURFACE_PPS
+	gui.LightInfluence = 0
+	gui.AlwaysOnTop = false
+	gui.Adornee = plane
+	gui.Parent = plane
+	plane.Parent = self.character
+	self.holder = plane
 	local image = Sprites.New("runner_idle", gui)
 	image.AnchorPoint = Vector2.new(0.5, 1)
 	image.Position = UDim2.fromScale(0.5, FEET)
 	self.image = image
 	self.sprite = nil -- force the next draw to apply frame, flip and size
-	print(("[Rotag] runner drawn with %s (Workspace.SurfaceSprites = %s)"):format(
-		if surface then "a SurfaceGui on a part" else "a BillboardGui", tostring(surface)))
+	print("[Rotag] runner drawn with a SurfaceGui on a part")
 end
 
 -- What Movement reported this frame (or since the last draw): start the matching squash or stretch.
@@ -127,10 +108,9 @@ end
 function Look:draw(spriteName: string, facing: number, dashing: boolean, dt: number)
 	local image = self.image
 	if not image then return end
-	local flipBySize = workspace:GetAttribute("FlipBySize") == true
-	if spriteName ~= self.sprite or facing ~= self.facing or flipBySize ~= self.flipBySize then
-		self.sprite, self.facing, self.flipBySize = spriteName, facing, flipBySize
-		setSprite(image, spriteName, facing < 0 and not flipBySize)
+	if spriteName ~= self.sprite or facing ~= self.facing then
+		self.sprite, self.facing = spriteName, facing
+		setSprite(image, spriteName, facing < 0)
 	end
 	if dashing then
 		self.sx, self.sy = JUICE.dash[1], JUICE.dash[2]
@@ -139,12 +119,10 @@ function Look:draw(spriteName: string, facing: number, dashing: boolean, dt: num
 		self.sx = 1 + (self.sx - 1) * k
 		self.sy = 1 + (self.sy - 1) * k
 	end
-	local xSign = if flipBySize and facing < 0 then -1 else 1
-	image.Size = UDim2.fromScale(BASE * self.sx * xSign, BASE * self.sy)
+	image.Size = UDim2.fromScale(BASE * self.sx, BASE * self.sy)
 end
 
 function Look:destroy()
-	for _, c in self.conns do c:Disconnect() end
 	self:_clear()
 end
 

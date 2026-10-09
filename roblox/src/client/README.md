@@ -8,7 +8,7 @@ windows, momentum, the side-on camera, juice and the HUD. It predicts with the s
 | `Client.client.lua` | `Client` (LocalScript) | the entry point: the frame loop (input, `Movement.step`, body; then camera, sprite) and character setup | 95 |
 | `Body.lua` | `Body` (ModuleScript) | the ONLY file that knows the runner is a Part: raycast contacts, anti-gravity, the plane lock, velocity out | 87 |
 | `Controls.lua` | `Controls` (ModuleScript) | keys, gamepad, the touch joystick (Roblox's PlayerModule), the JUMP and DASH touch buttons | 146 |
-| `Look.lua` | `Look` (ModuleScript) | the runner sprite, two ways (`Workspace.SurfaceSprites`), flip (`FlipBySize`), frames, squash and stretch | 151 |
+| `Look.lua` | `Look` (ModuleScript) | the runner sprite on a SurfaceGui, flip by the rect, frames, squash and stretch | 126 |
 | `SideCamera.lua` | `SideCamera` (ModuleScript) | applies `shared/SideCam` to the camera: Scriptable, side-on, leading | 30 |
 
 Why it is split this way, and the character choice: [`docs/systems/movement.md`](../../../docs/systems/movement.md).

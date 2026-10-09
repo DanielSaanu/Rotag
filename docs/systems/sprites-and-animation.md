@@ -82,13 +82,13 @@ what `Viewport.lua` in The Warehouse does in 430 lines.
 replication come from Roblox parts; the sprites are drawn ON them. The same `Sprites.lua` serves, the ImageLabel just
 has a different parent:
 
-- **Characters and moving things**: an ImageLabel inside a `BillboardGui` (or a `SurfaceGui` on the camera-facing
-  face) on an invisible Part that the physics moves. `AlwaysOnTop = false`, size in studs so the sprite scales with
-  the world, `Config.STUDS_PER_TILE` studs per 16 px. **Flip: unverified (H1).** A DevForum thread mirrors an
-  ImageLabel with a negative `ImageRectSize.X` and the offset moved to the rect's right edge under
-  `ScaleType.Stretch`; the first playable builds that and a negative `Size.X.Scale` side by side (Workspace
-  attribute `FlipBySize`) and Studio picks one ([movement.md](movement.md) §6). A mirrored second scene (`flipX` on
-  the layer) always works but doubles the frames in the sheet.
+- **Characters and moving things** (decided, H1, 2026-10-09): an ImageLabel inside a `SurfaceGui` on the
+  camera-facing face of a thin see-through Part welded to the collider, `AlwaysOnTop = false`, `LightInfluence = 0`,
+  sized in studs so the sprite scales with the world, `Config.STUDS_PER_TILE` studs per 16 px. A `BillboardGui` was
+  built beside it and lost: it always faces the camera, so it sits flat on the scene, while the SurfaceGui is a face
+  in the world and shifts against the map as the camera moves, which Danzo preferred by a wide margin. **Flip:** a
+  negative `ImageRectSize.X` with the offset moved to the rect's right edge, under `ScaleType.Stretch`; confirmed in
+  Studio. (A mirrored second scene also works but doubles the frames in the sheet.) Detail: [movement.md](movement.md) §6.
 - **Tiles, platforms, walls**: a `SurfaceGui` on the camera-facing face of the collision Part, one ImageLabel per
   tile or a `ScaleType = Tile` label over a repeating sprite. The Part is the collider; the GUI is the look. Grapple
   anchors, boost pads and hazards are the same with their colour-coded sprite (DESIGN §3 rule 29).
@@ -98,13 +98,9 @@ has a different parent:
 - **HUD** (the fuse, the +5 s, off-screen arrows, four mobile buttons): a plain `ScreenGui`, Lowlands' `Hud.lua`
   pattern, with `Sprites.New` for every icon.
 
-Which of BillboardGui and SurfaceGui reads better at phone size, and whether to draw on parts or keep a UI world
-frame for the sprites and use parts only for physics, is **open** (handoff H1). **Built 2026-10-09, Studio
-pending:** both part-based ways, switched live by the Workspace attribute `SurfaceSprites` (false = BillboardGui
-on the collider, true = SurfaceGui on a see-through part welded in front of it); how each is built and what to look
-for is [movement.md](movement.md) §6 and §8. Danzo picks from screenshots at the phone preset; the winner becomes
-the rule here and the loser is deleted. The UI-world-frame option was not built (DESIGN §2 locks "3D parts"); it
-comes back only if both part-based ways read badly.
+The open question from the first draft of this doc (BillboardGui vs SurfaceGui vs a UI world frame with parts only for
+physics) was settled by handoff H1: SurfaceGui, above. The UI-world-frame option was never built (DESIGN §2 locks "3D
+parts") and is no longer on the table.
 
 ## 5. The checklist for a new animated thing
 
