@@ -11,6 +11,7 @@ const C = { ink: '#1b1b2f', body: '#5b5f73', far: '#474a5b', face: '#9aa0b8', wh
 const LIMB = 12, TORSO = 26, EDGE = 10; // fill widths and the outline added around them
 
 // Joints per pose: [x, y]. Limbs are shoulder -> elbow -> hand and hip -> knee -> foot. "near" is the camera side.
+// A running arm swung back has its elbow high and behind, hand low ("<" seen from the side), never the reverse.
 const POSES = {
   idle: {
     head: [66, 28], neck: [64, 50], hip: [62, 80],
@@ -20,13 +21,13 @@ const POSES = {
   },
   run_0: {
     head: [74, 26], neck: [68, 48], hip: [60, 78],
-    nearArm: [[69, 51], [50, 62], [46, 46]], farArm: [[66, 51], [82, 64], [94, 52]],
+    nearArm: [[69, 51], [48, 42], [54, 60]], farArm: [[66, 51], [82, 64], [94, 52]],
     nearLeg: [[63, 78], [82, 93], [94, 112]], farLeg: [[58, 78], [40, 94], [28, 106]],
     scarf: 'M58 44 C 44 36, 40 54, 24 44 S 8 38, 6 46', knot: [60, 44],
   },
   run_1: {
     head: [74, 26], neck: [68, 48], hip: [60, 78],
-    nearArm: [[69, 51], [84, 64], [96, 52]], farArm: [[66, 51], [48, 62], [44, 46]],
+    nearArm: [[69, 51], [84, 64], [96, 52]], farArm: [[66, 51], [46, 42], [50, 60]],
     nearLeg: [[63, 78], [44, 95], [30, 107]], farLeg: [[58, 78], [78, 93], [90, 112]],
     scarf: 'M58 44 C 46 54, 38 36, 24 48 S 8 54, 6 44', knot: [60, 44],
   },

@@ -4,8 +4,8 @@
 <path d="M58 44 C 46 54, 38 36, 24 48 S 8 54, 6 44" stroke="#7df9ff" stroke-width="18" opacity="0.28"/>
 <path d="M58 44 C 46 54, 38 36, 24 48 S 8 54, 6 44" stroke="#1b1b2f" stroke-width="13"/>
 <path d="M58 44 C 46 54, 38 36, 24 48 S 8 54, 6 44" stroke="#7df9ff" stroke-width="7"/>
-<polyline points="66,51 48,62 44,46" stroke="#1b1b2f" stroke-width="22"/><polyline points="66,51 48,62 44,46" stroke="#474a5b" stroke-width="12"/>
-<circle cx="44" cy="46" r="7" fill="#1b1b2f"/>
+<polyline points="66,51 46,42 50,60" stroke="#1b1b2f" stroke-width="22"/><polyline points="66,51 46,42 50,60" stroke="#474a5b" stroke-width="12"/>
+<circle cx="50" cy="60" r="7" fill="#1b1b2f"/>
 <polyline points="58,78 78,93 90,112" stroke="#1b1b2f" stroke-width="22"/><polyline points="58,78 78,93 90,112" stroke="#474a5b" stroke-width="12"/>
 <line x1="87" y1="112" x2="99" y2="112" stroke="#1b1b2f" stroke-width="14"/><line x1="89" y1="111" x2="97" y2="111" stroke="#474a5b" stroke-width="4"/>
 <polyline points="68,48 60,78" stroke="#1b1b2f" stroke-width="36"/><polyline points="68,48 60,78" stroke="#5b5f73" stroke-width="26"/>
