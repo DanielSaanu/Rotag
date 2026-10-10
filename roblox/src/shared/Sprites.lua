@@ -2,15 +2,23 @@
 local Sprites = {}
 
 Sprites.Sheets = {
-	[1] = { Id = "rbxassetid://98566906497928", Width = 512, Height = 512, Resolved = true },
+	[1] = { Id = "rbxassetid://78839933770143", Width = 512, Height = 1024, Resolved = true },
 }
 
 Sprites.Sprites = {
-	["runner_idle"] = { Sheet = 1, X = 1, Y = 1, W = 128, H = 128 },
-	["runner_run_0"] = { Sheet = 1, X = 130, Y = 1, W = 128, H = 128 },
-	["runner_run_1"] = { Sheet = 1, X = 259, Y = 1, W = 128, H = 128 },
-	["runner_run_2"] = { Sheet = 1, X = 1, Y = 130, W = 128, H = 128 },
-	["runner_run_3"] = { Sheet = 1, X = 130, Y = 130, W = 128, H = 128 },
+	["runner_dash"] = { Sheet = 1, X = 1, Y = 1, W = 128, H = 128 },
+	["runner_fall"] = { Sheet = 1, X = 130, Y = 1, W = 128, H = 128 },
+	["runner_idle"] = { Sheet = 1, X = 259, Y = 1, W = 128, H = 128 },
+	["runner_jump_apex"] = { Sheet = 1, X = 1, Y = 130, W = 128, H = 128 },
+	["runner_jump_rise"] = { Sheet = 1, X = 130, Y = 130, W = 128, H = 128 },
+	["runner_run_0"] = { Sheet = 1, X = 259, Y = 130, W = 128, H = 128 },
+	["runner_run_1"] = { Sheet = 1, X = 1, Y = 259, W = 128, H = 128 },
+	["runner_run_2"] = { Sheet = 1, X = 130, Y = 259, W = 128, H = 128 },
+	["runner_run_3"] = { Sheet = 1, X = 259, Y = 259, W = 128, H = 128 },
+	["runner_run_4"] = { Sheet = 1, X = 1, Y = 388, W = 128, H = 128 },
+	["runner_run_5"] = { Sheet = 1, X = 130, Y = 388, W = 128, H = 128 },
+	["runner_run_6"] = { Sheet = 1, X = 259, Y = 388, W = 128, H = 128 },
+	["runner_run_7"] = { Sheet = 1, X = 1, Y = 517, W = 128, H = 128 },
 }
 
 --- Point an ImageLabel/ImageButton at a named sprite. Keeps pixels crisp.
