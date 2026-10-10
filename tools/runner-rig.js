@@ -17,19 +17,19 @@ const POSES = {
     head: [66, 28], neck: [64, 50], hip: [62, 80],
     nearArm: [[67, 53], [73, 70], [76, 88]], farArm: [[60, 53], [53, 70], [50, 88]],
     nearLeg: [[65, 80], [69, 98], [71, 113]], farLeg: [[59, 80], [55, 98], [53, 113]],
-    scarf: 'M56 46 C 44 50, 46 66, 36 78', knot: [58, 46],
+    scarf: 'M58 44 C 44 50, 46 66, 36 78', knot: [67, 48],
   },
   run_0: {
     head: [74, 26], neck: [68, 48], hip: [60, 78],
-    nearArm: [[69, 51], [48, 42], [54, 60]], farArm: [[66, 51], [82, 64], [94, 52]],
+    nearArm: [[69, 51], [47, 47], [54, 62]], farArm: [[66, 51], [82, 64], [94, 52]],
     nearLeg: [[63, 78], [82, 93], [94, 112]], farLeg: [[58, 78], [40, 94], [28, 106]],
-    scarf: 'M58 44 C 44 36, 40 54, 24 44 S 8 38, 6 46', knot: [60, 44],
+    scarf: 'M62 40 C 48 28, 42 50, 26 40 S 8 34, 6 42', knot: [72, 47],
   },
   run_1: {
     head: [74, 26], neck: [68, 48], hip: [60, 78],
-    nearArm: [[69, 51], [84, 64], [96, 52]], farArm: [[66, 51], [46, 42], [50, 60]],
+    nearArm: [[69, 51], [84, 64], [96, 52]], farArm: [[66, 51], [45, 47], [50, 62]],
     nearLeg: [[63, 78], [44, 95], [30, 107]], farLeg: [[58, 78], [78, 93], [90, 112]],
-    scarf: 'M58 44 C 46 54, 38 36, 24 48 S 8 54, 6 44', knot: [60, 44],
+    scarf: 'M62 40 C 50 44, 40 28, 26 42 S 8 48, 6 38', knot: [72, 47],
   },
 };
 
@@ -58,13 +58,12 @@ function svg(p) {
     // far side limbs, darker
     limb(p.farArm, C.far), hand(p.farArm[2]),
     limb(p.farLeg, C.far), foot(p.farLeg[2], C.far),
-    // torso: one capsule from neck to hip
+    // torso: one capsule from neck to hip, then the scarf knot on the collar under the chin
     limb([p.neck, p.hip], C.body, TORSO),
+    `<circle cx="${p.knot[0]}" cy="${p.knot[1]}" r="6" fill="${C.neon}" stroke="${C.ink}" stroke-width="3"/>`,
     // near side limbs
     limb(p.nearLeg, C.body), foot(p.nearLeg[2], C.body),
     limb(p.nearArm, C.body), hand(p.nearArm[2]),
-    // the scarf knot sits on the collar
-    `<circle cx="${p.knot[0]}" cy="${p.knot[1]}" r="6" fill="${C.neon}" stroke="${C.ink}" stroke-width="3"/>`,
     // head: a light face in a dark hood, inked
     `<circle cx="${hx}" cy="${hy}" r="${r}" fill="${C.face}" stroke="${C.ink}" stroke-width="5"/>`,
     `<path d="M${hx + 2} ${hy - r} A ${r} ${r} 0 0 0 ${hx + 2} ${hy + r} Z" fill="${C.body}"/>`,

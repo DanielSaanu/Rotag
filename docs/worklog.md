@@ -23,4 +23,5 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   sits in the 3D stage. Three 128 px vector poses from `tools/runner-rig.js` (idle, run_0, run_1), scenes
   `pixelated: false`, `Look.lua` samples bilinear. Sheet rebuilt (CHANGED, awaiting Danzo's `--upload`). Play boots
   clean. DESIGN §6.3 partly answered, learnings A2.
-  Danzo: the back-swung arm bent the wrong way (elbow low, hand high); fixed in the rig: elbow high and behind, hand low.
+  Danzo: the back-swung arm bent the wrong way (elbow low, hand high); fixed in the rig: elbow high and behind, hand low. Then the scarf knot showed over the back
+  shoulder: knot moved under the chin and drawn before the near limbs, scarf routed above the elbow.
