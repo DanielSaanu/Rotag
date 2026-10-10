@@ -116,13 +116,53 @@ boost) into the air, bleeding only at the over-speed rate while held. A double j
 - **Ceiling bonk.** A rise into a roof zeroes the upward speed and ends the jump hold, so the runner drops at once
   instead of hanging under it for 0.1 s.
 
-**Sprite pick (`Movement.spriteFor`):** `runner_idle` after 0.08 s stopped (the rest pose, → A1), the run frames by
-distance, `runner_run_0` in the air and while dashing. The run is four frames (H2, 2026-10-10): `runner_run_0`
-stride (near leg forward), `_1` passing pose, `_2` stride (far leg forward), `_3` passing pose, picked as
-`floor(runDistance * RUN_FRAMES / RUN_CYCLE) % RUN_FRAMES` with `RUN_FRAMES = 4` and `RUN_CYCLE = 20` studs (two
-steps). At 45 studs/s that is a new frame every 5 studs (9 a second, as before) but a full cycle 2.25 times a second,
-a step 4.5 times a second: half the old leg rate, about a real sprinter's cadence. Why it changed, and why the knob is
-the cycle and not a per-frame stride: [sprites-and-animation.md](sprites-and-animation.md) §3.
+**Sprite pick (`Movement.spriteFor`, decided H3, 2026-10-10).** First match wins:
+
+| State | Sprite |
+|---|---|
+| dashing (`dashTime > 0`), ground or air | `runner_dash` |
+| airborne and wall-sliding (`s.sliding`), or `vy < -APEX_POSE_BELOW` | `runner_fall` |
+| airborne, `vy > APEX_POSE_BELOW` | `runner_jump_rise` |
+| airborne, `|vy| <= APEX_POSE_BELOW` | `runner_jump_apex` |
+| grounded, stopped 0.08 s | `runner_idle` (the rest pose, → A1) |
+| grounded, otherwise | `runner_run_<floor((runDistance - runFrom) * RUN_FRAMES / RUN_CYCLE) % RUN_FRAMES>` |
+
+- **Run: `RUN_FRAMES = 8`, `RUN_CYCLE` stays 20 studs.** Contact, down, pass, up, twice. The cadence is unchanged by
+  the frame count (→ A3): a full cycle 2.25 times a second at top speed, a step 4.5 times, but a new frame every
+  2.5 studs, 18 a second, so the legs are smoother at the same speed.
+- **A run from rest opens on frame 0 (a contact pose).** Before H3 this held only for the very first run: `runDistance`
+  never resets, so a second run from rest opened wherever the last one stopped (the new test saw `runner_run_6`).
+  `runFrom` now marks the odometer once the runner has been still for `IDLE_GRACE`, and the frame is taken from
+  `runDistance - runFrom`; `runDistance` itself still never runs backwards (its test is unchanged). Landing mid-run
+  and a quick turn (under the grace) carry on from the frame they were on, which is A1's "join in progress".
+- **y is up** (`Config`: "y is up"; `JUMP_SPEED` is positive, gravity pulls `vy` toward `-MAX_FALL`), so rise is
+  `vy > 0` and fall `vy < 0`.
+- **Apex band: `Config.APEX_POSE_BELOW`, defined as `= Config.HALF_GRAVITY_BELOW` (20).** The half-gravity window is
+  where the jump actually hangs, so the hang pose shows exactly while the hang is felt. It is its own constant
+  because it is an art knob and half gravity is a feel knob (→ A3's "one knob per concern"): today they are linked by
+  the definition; replace it with a number to tune the pose without touching the jump. Symmetric (`|vy|`), so the
+  apex shows on the way up and the way down. **Measured** at 60 fps (no wall, no stick): a full held jump is rise
+  17 frames (0.28 s), apex 10 (0.17 s), fall 13 (0.22 s); a tap hop 5 / 5 / 5; walking off a ledge 2 frames (33 ms)
+  of apex and then fall, because leaving a ledge starts at `vy = 0`, which is the top of a ballistic arc. Never a
+  rise. If those 33 ms read as a hiccup in play, the fix is a minimum rise before apex is allowed, which needs one
+  more state field; not built, nobody has seen it yet.
+- **A wall slide is a fall.** The slide caps the fall at `WALL_SLIDE_MAX` = 10, which is INSIDE the apex band, so a
+  speed-only pick would show the hang pose for the whole slide. `step()` now records `s.sliding` (the slide cap is
+  in force this frame: airborne, pushing into a touched wall, `vy <= 0`), and the pick checks it before the bands
+  (→ A4). It reuses `runner_fall` until there is a wall-slide pose; when one exists, it is one line here. The fall
+  pose faces the way the runner faces, which during a slide is INTO the wall (the stick); a dedicated slide pose would
+  want to face away. `sliding` is animation state only, like `runDistance` and `stillTime`: no move rule reads it.
+- **The dash pose wins over the air poses**, because an air dash zeroes `vy` and would otherwise read as the apex. A
+  jump out of a dash ends the dash, so the next frame is already `runner_jump_rise`. `Look:draw` still applies its
+  dash stretch (1.5 x 0.75) on top of the dash sprite; whether the drawn pose wants the stretch too is Danzo's call in
+  play (Look.lua, not shared/).
+- **Tests** (`test/luau/movement.test.luau`, mutation-checked → S8): eight frames in order and one cycle per
+  `RUN_CYCLE`; on every airborne frame of a held jump, a tap hop and a walk-off, the pose matches the `vy` band and
+  the arcs read rise-apex-fall, rise-apex-fall and apex-fall; a run from rest opens on frame 0; a wall slide shows fall; a ground dash and an air dash
+  show the dash pose, a run frame after it ends, and a jump out of the dash rises. Removing the slide check, the dash
+  line, swapping rise and fall, or setting the apex band to 0 each fails a named assertion.
+
+Why the run is cut by cycle and not per frame: [sprites-and-animation.md](sprites-and-animation.md) §3 (H2).
 
 **Not built:** corner correction (Config has the 4 px; the goals did not ask for it), an 8-way dash, wall-run,
 grapple, boost pads (out of scope).
@@ -199,7 +239,9 @@ the raycasts and physics (learnings Q3): run and stop times, the digital stick, 
 window), the buffer (on time, too early, landing-aware), variable jump and half gravity, double jump and its limit,
 refresh on landing and on a wall touch, wall jump reach, the force window and the bank, three wall jumps up a
 chimney, dash, cooldown, dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick (the
-four run frames in order, and one cycle per `RUN_CYCLE` studs whatever the frame count).
+eight run frames in order, one cycle per `RUN_CYCLE` studs whatever the frame count, the air poses by `vy`, the wall
+slide, the dash: §3). The file is at 398 of the 400-line ceiling (→ T1): the next sprite or move test needs a split
+first.
 `test/luau/sidecam.test.luau` pins the view height, settling, the lead and its cap, and frame-rate independence.
 **Each rule was mutation-checked:** removing it makes its test fail (→ S8). The ceiling test did not, at first,
 because the box stand-in stops at the roof by itself (→ Q5).

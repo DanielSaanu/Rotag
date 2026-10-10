@@ -34,3 +34,11 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   `tools/runner-rig.js` (run_1, run_3; old run_1 is now run_2), five sprites in the sheet (CHANGED, awaiting upload).
   The picker change in shared/ went through H2 (heavy agent): RUN_FRAMES + RUN_CYCLE replace RUN_STRIDE. Uploaded (decal 94711766510242 → image
   98566906497928 via `roblox setid`); seen in Play. Feel is Danzo's call: RUN_CYCLE 20, up to 24–28 if still busy.
+- 2026-10-10 · `claude/friendly-hawking-74891i`: Danzo: "emulate SpeedRunners, the runner doesn't give speed".
+  Researched run-cycle practice (contact/down/pass/up, forward lean and head-down sell speed, 1-3 air poses, no jump
+  wind-up). `tools/runner-rig.js` rebuilt: procedural 8-frame run with IK and a 24-degree lean, plus jump_rise,
+  jump_apex, fall and dash. 13 sprites in the sheet (CHANGED, awaiting upload). The picker for the new poses is H3.
+  Design artifact "Runner Animation Style" holds the reference sheet and the rules applied.
+- 2026-10-10 · `claude/friendly-hawking-74891i` · H3 (heavy): `spriteFor` picks dash, rise/apex/fall by vy
+  (`APEX_POSE_BELOW` = 20), wall slide = fall (`s.sliding`, → A4), 8 run frames; a run from rest now opens on frame 0
+  (`s.runFrom`). Tests mutation-checked. Next: routine rebuilds the sheet, Danzo uploads and plays.

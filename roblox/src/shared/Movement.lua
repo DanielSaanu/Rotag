@@ -18,8 +18,8 @@ export type State = {
 	x: number, y: number, vx: number, vy: number, facing: number, grounded: boolean,
 	coyote: number, jumpBuffer: number, jumpHold: number, holdSpeed: number,
 	airJumps: number, dashes: number, dashTime: number, dashDir: number, dashCooldown: number,
-	wallForce: number, wallForceDir: number, runDistance: number, stillTime: number,
-	events: Events,
+	wallForce: number, wallForceDir: number, runDistance: number, runFrom: number, stillTime: number,
+	sliding: boolean, events: Events,
 }
 
 local function approach(v: number, target: number, maxDelta: number): number
@@ -47,7 +47,7 @@ function Movement.new(x: number, y: number): State
 		x = x, y = y, vx = 0, vy = 0, facing = 1, grounded = false,
 		coyote = 0, jumpBuffer = 0, jumpHold = 0, holdSpeed = 0,
 		airJumps = Config.AIR_JUMPS, dashes = 1, dashTime = 0, dashDir = 1, dashCooldown = 0,
-		wallForce = 0, wallForceDir = 0, runDistance = 0, stillTime = 0,
+		wallForce = 0, wallForceDir = 0, runDistance = 0, runFrom = 0, stillTime = 0, sliding = false,
 		events = {},
 	}
 end
@@ -156,6 +156,7 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 
 	-- 5. Velocity. A wall jump this frame forces the stick away from the wall from this frame on.
 	if s.wallForce > 0 then moveX = s.wallForceDir end
+	s.sliding = false -- for the sprite pick only: the wall-slide fall cap is in force this frame
 	if s.dashTime > 0 then
 		s.dashTime -= dt
 		s.vx = s.dashDir * Config.DASH_SPEED
@@ -173,7 +174,8 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 			local g = Config.GRAVITY
 			if input.jumpHeld and math.abs(s.vy) < Config.HALF_GRAVITY_BELOW then g *= 0.5 end
 			local pushing = (touchL and moveX < 0) or (touchR and moveX > 0)
-			local maxFall = if pushing and s.vy <= 0 then Config.WALL_SLIDE_MAX else Config.MAX_FALL
+			s.sliding = pushing and s.vy <= 0
+			local maxFall = if s.sliding then Config.WALL_SLIDE_MAX else Config.MAX_FALL
 			s.vy = approach(s.vy, -maxFall, g * dt)
 			if s.jumpHold > 0 then
 				if input.jumpHeld then s.vy = math.max(s.vy, s.holdSpeed) else s.jumpHold = 0 end
@@ -203,7 +205,8 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		s.stillTime = 0
 		if s.grounded then s.runDistance += math.abs(s.vx) * dt end
 	else
-		s.stillTime += dt
+		s.stillTime += dt -- at rest the cycle restarts, so a run from rest opens on frame 0 (A1)
+		if s.stillTime >= Config.IDLE_GRACE then s.runFrom = s.runDistance end
 	end
 	return ev
 end
@@ -214,13 +217,19 @@ function Movement.integrate(s: State, dt: number)
 	s.y += s.vy * dt
 end
 
--- Which sprite to show (docs/systems/sprites-and-animation.md §3): idle at rest after a short grace, the
--- RUN_FRAMES run frames by distance travelled, frame 0 of the run in the air and while dashing.
+-- Which sprite to show (docs/systems/movement.md §3, H3): the dash pose while dashing; in the air rise, apex or
+-- fall by vertical speed (a wall slide is a fall: its capped speed sits inside the apex band); on the ground idle
+-- at rest after a short grace, else the RUN_FRAMES run frames by distance travelled.
 function Movement.spriteFor(s: State): string
-	if s.dashTime > 0 or not s.grounded then return "runner_run_0" end
+	if s.dashTime > 0 then return "runner_dash" end
+	if not s.grounded then
+		if s.sliding or s.vy < -Config.APEX_POSE_BELOW then return "runner_fall" end
+		if s.vy > Config.APEX_POSE_BELOW then return "runner_jump_rise" end
+		return "runner_jump_apex"
+	end
 	if s.stillTime >= Config.IDLE_GRACE then return "runner_idle" end
 	local n = Config.RUN_FRAMES -- frame = which nth of the cycle; RUN_CYCLE alone sets the cadence
-	return "runner_run_" .. tostring(math.floor(s.runDistance * n / Config.RUN_CYCLE) % n)
+	return "runner_run_" .. tostring(math.floor((s.runDistance - s.runFrom) * n / Config.RUN_CYCLE) % n)
 end
 
 return Movement

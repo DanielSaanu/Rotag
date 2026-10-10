@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-10 (A3)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-10 (A4)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -44,6 +44,12 @@ set per frame ("studs per frame", "seconds per frame") couples smoothness to spe
 slows the motion, cutting frames speeds it up. Set the cycle length, cut it into N frames, and test both: the frames
 come in order, and one cycle takes the cycle length whatever N is. A two-pose cycle flipped fast reads as flicker,
 not motion; it needs its in-betweens. *(2026-10-10, handoff H2, `Movement.spriteFor`.)*
+
+**A4 — A pose picked by a speed band also catches every state whose speed is CLAMPED inside that band.** Before
+setting a threshold, list each rule that caps or zeroes that speed (a wall-slide cap, a dash that zeroes vy, a ledge
+walk-off that starts at 0) and decide which pose each one should show; a cap that lands inside the band needs its own
+flag, set where the cap is applied and checked before the bands. Test each clamp by name. *(2026-10-10, handoff H3:
+the wall slide's 10 studs/s sat inside the 20 apex band and would have shown the hang pose for the whole slide.)*
 
 ## S — Shared Luau
 
