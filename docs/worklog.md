@@ -32,4 +32,5 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   `Movement.spriteFor`; test pins frame order and cycle length, mutation-checked (Q5). Not yet played. Learnings A3.
 - 2026-10-10 · `claude/friendly-hawking-74891i`: Danzo: the legs are too fast, needs in-betweens. Two passing poses drawn in
   `tools/runner-rig.js` (run_1, run_3; old run_1 is now run_2), five sprites in the sheet (CHANGED, awaiting upload).
-  The picker change in shared/ went through H2 (heavy agent): RUN_FRAMES + RUN_CYCLE replace RUN_STRIDE.
+  The picker change in shared/ went through H2 (heavy agent): RUN_FRAMES + RUN_CYCLE replace RUN_STRIDE. Uploaded (decal 94711766510242 → image
+  98566906497928 via `roblox setid`); seen in Play. Feel is Danzo's call: RUN_CYCLE 20, up to 24–28 if still busy.
