@@ -72,7 +72,7 @@ bin/warehouse.js      CLI entry
 src/                  renderer, scene format, sources, packer, roblox, server
 ui/                   browser UI (no build step)
 scenes/               composed sprites (the sprite name = file name)
-sprites/              hand-drawn pixel-text sprites
+sprites/              hand-drawn pixel-text sprites (.txt) and vector sprites (.svg)
 ideas/                the shared scratchpad (INBOX.md)
 library/              fetched assets + index.json with licenses
 exports/              rendered PNGs and the Roblox sheet (ignored by git)

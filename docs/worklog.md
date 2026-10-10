@@ -19,3 +19,7 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
 - 2026-10-09 · `claude/friendly-hawking-74891i`: H1 played and resolved. Danzo picked the SurfaceGui runner over the
   BillboardGui (the world-face parallax reads nicer) and the negative-rect flip worked; `Look.lua` keeps only that path
   (151 → 126 lines), the `SurfaceSprites` and `FlipBySize` attributes are gone from the server and the docs. Next: tag.
+- 2026-10-10 · `claude/friendly-hawking-74891i`: high-resolution runner. Danzo asked for a smooth, non-pixel figure that
+  sits in the 3D stage. Three 128 px vector poses from `tools/runner-rig.js` (idle, run_0, run_1), scenes
+  `pixelated: false`, `Look.lua` samples bilinear. Sheet rebuilt (CHANGED, awaiting Danzo's `--upload`). Play boots
+  clean. DESIGN §6.3 partly answered, learnings A2.

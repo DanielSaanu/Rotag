@@ -41,6 +41,12 @@ Consequences worth knowing before you draw:
   ```
   Claude can draw it, read it (`warehouse ascii <scene>`), and diff it. Palettes stay small (5 to 8 colours) so a
   recolor layer can re-skin a whole character (Lowlands' bandit is the player body with four colours swapped).
+- **Vector sprites** for things that must read as smooth drawings, not pixel art (the runner, Danzo 2026-10-10): an
+  SVG in `sprites/<name>.svg` used as an image layer of a scene with `"pixelated": false` and the SVG's own size
+  (the runner is 128 x 128, eight times the tile, feet on y = 120). `src/render.js` loads SVG as it loads PNG, in
+  node and in the UI. The runner's poses are joints in `tools/runner-rig.js`, which writes the SVGs: add a pose
+  there, run it, add the scene. The label must then sample bilinear (`ResampleMode = Default`, set in
+  `client/Look.lua` after `Sprites.Apply`, which sets `Pixelated` for tile art).
 - A scene (`scenes/<name>.json`, format in `src/scene.js`) composes layers: images (a `.txt` sprite, a PNG from
   `library/`, with `crop` to slice a sheet), pixel grids, text in real fonts, shapes, or other scenes. Per-layer
   effects: flip, rotate, scale, opacity, tint, hue/sat/brightness, recolor map, outline, shadow.

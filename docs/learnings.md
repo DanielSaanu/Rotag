@@ -34,6 +34,11 @@ never from "when did this one appear", so two fires on screen flicker together a
 never rewinds the water a frame. Entities drop back to frame 0 a short time after their last move. *(inherited,
 `client/Viewport.lua`, `Client.client.lua`.)*
 
+**A2 — Match the sprite's resolution and sampling to the world it stands in.** A 16 px figure scaled 12 x with the
+Pixelated sampler over smooth 3D parts reads as a mismatch, not a style. For a smooth world draw smooth art (vector,
+`pixelated: false`, 128 px per tile) and sample it bilinear; keep Pixelated for art that is meant to be pixel art.
+Keep the feet on the same canvas row as before so the collider needs no change. *(2026-10-10, `claude/friendly-hawking-74891i`.)*
+
 ## S — Shared Luau
 
 **S1 — A capped list can be a memory, but never a ledger.** Anything with an eviction rule (an LRU, a ring, a

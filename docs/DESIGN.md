@@ -177,6 +177,9 @@ No 2D, side-on parkour tag game has made it big on Roblox. The few 2D projects o
    - Decoy Doodle: fake copy runs the other way
    - Graphite Hook+: longer grapple for 10 s
 3. **Art direction.** Pure pencil/graphite, Tron-style neon, or **glowing graphite**: pencil sketches with glowing trails.
+   *Partly answered 2026-10-10 (Danzo):* characters are smooth, high-resolution 2D figures (vector art, 128 px per
+   tile), not pixel art, so they read as drawn figures living in a 3D stage. The theme (graphite vs neon) is still open;
+   the current runner is inked graphite with one neon accent (visor, scarf), which fits any of the three.
 4. **Match structure.** Best of 3 or 5, and how scoring works.
 5. **Monetisation.** Cosmetics only: trails, skins, tag effects, emotes, fuse/bomb skins. Plus possibly a VIP or private servers. Kid-friendly and fair.
 6. **Name.**

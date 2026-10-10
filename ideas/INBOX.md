@@ -18,7 +18,10 @@
 - [ ] Danzo: `rokit install`, `rojo plugin install`, connect Studio, Play the scaffold (expect a runner sprite
       top-left once the sheet is uploaded; blank until then). See `docs/ROBLOX_SETUP.md`.
 - [ ] Danzo: `npx warehouse roblox build --upload`, then commit `Sprites.lua` + `assets.lock.json`.
-- [ ] Decide art direction (DESIGN §6.3) before any real sprite is drawn. The placeholder runner is graphite + one glow.
+- [ ] Danzo: Play with the new high-resolution runner once uploaded. Does it sit in the stage the way you wanted? Say
+      what to change (proportions, the hood, the scarf, the colours): the poses are joints in `tools/runner-rig.js`.
+- [ ] Decide the art theme (DESIGN §6.3: graphite, neon or glowing graphite). Resolution is settled (2026-10-10): smooth
+      vector figures, not pixel art. The runner is inked graphite with a neon visor and scarf.
 
 ## Ideas
 

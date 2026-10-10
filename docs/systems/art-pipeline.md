@@ -11,7 +11,8 @@ Roblox-side half (where the ImageLabel lives, how frames animate) is [`sprites-a
   renderer (the same code in the browser and in node, via `src/node-env.js`).
 - `src/build.js` is `roblox build`; `src/sheet.js` packs and writes the Lua; `src/roblox.js` uploads through Open
   Cloud. `src/library.js` and `src/sources/` borrow CC0 and CC-BY assets. `src/server.js` + `ui/` are the UI.
-- `sprites/*.txt`, `scenes/*.json`, `library/index.json` hold the art itself and licences. `roblox/sheet.json` says
+- `sprites/*.txt` (pixel text) and `sprites/*.svg` (vector, see `tools/runner-rig.js`), `scenes/*.json`,
+  `library/index.json` hold the art itself and licences. `roblox/sheet.json` says
   which scenes go in the sheet (`preview_*` and `mockup_*` are excluded).
 
 **Gotchas**

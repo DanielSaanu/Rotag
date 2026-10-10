@@ -11,12 +11,15 @@ local Sprites = require(Shared:WaitForChild("Sprites"))
 local Look = {}
 Look.__index = Look
 
-local SPRITE = Config.STUDS_PER_TILE -- the runner sprite is one 16 px tile: 4 studs square
+local SPRITE = Config.STUDS_PER_TILE -- the runner sprite is one tile wide and tall: 4 studs square (128 px of art)
 local CANVAS = SPRITE * 1.5 -- room around the sprite so the biggest stretch (1.5 x) stays inside the gui
 local BASE = SPRITE / CANVAS -- the label's size as a share of the canvas
 -- The label hangs from the feet: its bottom edge is the sprite's bottom edge, SPRITE / 2 below the collider centre.
 local FEET = 0.5 + (SPRITE / 2) / CANVAS
-local SURFACE_PPS = 50 -- SurfaceGui pixels per stud: well above screen density so the Pixelated sampler decides
+local SURFACE_PPS = 50 -- SurfaceGui pixels per stud: above screen density so the label, not the gui, sets the detail
+-- The runner is smooth vector art (128 px per tile, Danzo 2026-10-10: "not pixel art"), so it is sampled bilinear,
+-- not with the Pixelated mode Sprites.Apply sets for tile art.
+local RESAMPLE = Enum.ResamplerMode.Default
 
 -- Juice targets as {x scale, y scale}; each eases back to {1, 1} (DESIGN §3 rule 21). Feet stay planted.
 local JUICE = {
@@ -94,6 +97,7 @@ end
 
 local function setSprite(image: ImageLabel, name: string, mirrored: boolean)
 	Sprites.Apply(image, name)
+	image.ResampleMode = RESAMPLE
 	if mirrored then
 		local s = Sprites.Sprites[name]
 		if s then

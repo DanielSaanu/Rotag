@@ -152,6 +152,11 @@ the background moves a little bit is much nicer". The BillboardGui path and the 
 One `ImageLabel` from `Sprites.New`, 4 x 4 studs, hung from the feet (anchor bottom-centre) so a squash keeps the
 feet planted. The canvas is 1.5 x the sprite so the widest stretch (the dash, 1.5 x) is not clipped.
 
+**Resolution (2026-10-10):** the runner art is 128 x 128 vector (SVG via `tools/runner-rig.js`, feet on y = 120 so the
+collider and the feet line up exactly as with the 16 px placeholder), and `Look.lua` sets `ResampleMode = Default`
+after every `Sprites.Apply` so it is sampled bilinear. Danzo asked for a smooth, higher-resolution figure that sits in
+the 3D stage rather than pixel art ([sprites-and-animation.md](sprites-and-animation.md) §2).
+
 **Flip: a negative `ImageRectSize.X` with `ImageRectOffset.X` moved to the rect's right edge**, under the
 `ScaleType.Stretch` that `Sprites.Apply` sets. Confirmed in Studio 2026-10-09 (the runner faced left on its own with
 the default). The negative `Size.X.Scale` alternative and its `FlipBySize` switch are deleted.
