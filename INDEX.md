@@ -49,6 +49,7 @@ to (`roblox/default.project.json`).
 - `scenes/`: scene JSON (format in `src/scene.js`). The file name is the Roblox sprite name.
 - `library/`: borrowed assets and `index.json` licences. Keep CC-BY credits when shipping.
 - `test/`: node tests (`core` = renderer and packer, `structure` = line ceiling and shared/ purity) and `test/luau/*.test.luau`.
+  A Luau test may start with `--!include <file>` to inline a helper file beside it (`movement_world.luau`).
 - `tools/luau-check.js`: Luau lint. `tools/luau/` holds the gitignored binaries. `tools/runner-rig.js`: the runner's poses as
   joints; writes `sprites/runner_*.svg`. Edit it, not the SVGs.
 - `.claude/agents/heavy.md`, `.claude/skills/qa-loop/`: the heavy escalation agent and the QA loop skill.

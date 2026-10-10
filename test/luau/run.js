@@ -33,6 +33,10 @@ export function bundle(testSource) {
     src = src.replace(/^--!\w+\s*$/m, ''); // directives only count at file top
     parts.push(`__modules[${JSON.stringify(name)}] = function()`, src, 'end', '');
   }
+  // A test may start with `--!include <file>` lines: that file (beside the tests) is inlined in its place, so
+  // helpers shared by several tests live once and stay locals of each test.
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  testSource = testSource.replace(/^--!include (\S+)[ \t]*$/gm, (_, name) => fs.readFileSync(path.join(here, name), 'utf8').replace(/\r\n/g, '\n'));
   parts.push('-- test body', testSource);
   return parts.join('\n');
 }

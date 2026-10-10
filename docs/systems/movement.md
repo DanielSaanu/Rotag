@@ -240,13 +240,14 @@ and two walls 3 tiles apart (9 and 7 tiles tall) to wall-jump between and climb 
 ## 9. Tests
 
 `test/luau/movement.test.luau` drives every rule through `Movement.step()` with a small box world standing in for
-the raycasts and physics (learnings Q3): run and stop times, the digital stick, coyote (keyboard and the wider touch
+the raycasts and physics (learnings Q3). The world and its helpers live once in `test/luau/movement_world.luau`,
+pulled in by a `--!include movement_world.luau` first line that `test/luau/run.js` inlines; the sprite pick has its
+own file, `movement_sprites.test.luau`, on the same helpers (split 2026-10-10). Covered: run and stop times, the digital stick, coyote (keyboard and the wider touch
 window), the buffer (on time, too early, landing-aware), variable jump and half gravity, double jump and its limit,
 refresh on landing and on a wall touch, wall jump reach, the force window and the bank, three wall jumps up a
 chimney, dash, cooldown, dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick (the
 eight run frames in order, one cycle per `RUN_CYCLE` studs whatever the frame count, the air poses by `vy`, the wall
-slide, the dash: §3). The file is at 398 of the 400-line ceiling (→ T1): the next sprite or move test needs a split
-first.
+slide, the dash: §3).
 `test/luau/sidecam.test.luau` pins the view height, settling, the lead and its cap, and frame-rate independence.
 **Each rule was mutation-checked:** removing it makes its test fail (→ S8). The ceiling test did not, at first,
 because the box stand-in stops at the roof by itself (→ Q5).
