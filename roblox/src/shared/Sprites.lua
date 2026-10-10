@@ -2,7 +2,7 @@
 local Sprites = {}
 
 Sprites.Sheets = {
-	[1] = { Id = "rbxassetid://95377152540627", Width = 256, Height = 512 },
+	[1] = { Id = "rbxassetid://135988781031637", Width = 256, Height = 512, Resolved = true },
 }
 
 Sprites.Sprites = {
