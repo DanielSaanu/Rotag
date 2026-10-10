@@ -1,16 +1,115 @@
 {
   "name": "preview_runner_strip",
-  "width": 700,
-  "height": 150,
+  "width": 1114,
+  "height": 300,
   "background": "#2a2d3e",
   "pixelated": false,
   "export": false,
-  "notes": "mockup only (export: false): idle and the four run frames side by side, for eyeballing animation timing",
+  "notes": "mockup only (export: false): top row the 8 run frames; bottom row idle, jump rise, apex, fall, dash",
   "layers": [
-    { "id": "a", "name": "idle", "type": "scene", "src": "scenes/runner_idle.json", "x": 10, "y": 10 },
-    { "id": "b", "name": "run_0", "type": "scene", "src": "scenes/runner_run_0.json", "x": 148, "y": 10 },
-    { "id": "c", "name": "run_1", "type": "scene", "src": "scenes/runner_run_1.json", "x": 286, "y": 10 },
-    { "id": "d", "name": "run_2", "type": "scene", "src": "scenes/runner_run_2.json", "x": 424, "y": 10 },
-    { "id": "e", "name": "run_3", "type": "scene", "src": "scenes/runner_run_3.json", "x": 562, "y": 10 }
+    {
+      "id": "run_0",
+      "name": "run_0",
+      "type": "scene",
+      "src": "scenes/runner_run_0.json",
+      "x": 10,
+      "y": 10
+    },
+    {
+      "id": "run_1",
+      "name": "run_1",
+      "type": "scene",
+      "src": "scenes/runner_run_1.json",
+      "x": 148,
+      "y": 10
+    },
+    {
+      "id": "run_2",
+      "name": "run_2",
+      "type": "scene",
+      "src": "scenes/runner_run_2.json",
+      "x": 286,
+      "y": 10
+    },
+    {
+      "id": "run_3",
+      "name": "run_3",
+      "type": "scene",
+      "src": "scenes/runner_run_3.json",
+      "x": 424,
+      "y": 10
+    },
+    {
+      "id": "run_4",
+      "name": "run_4",
+      "type": "scene",
+      "src": "scenes/runner_run_4.json",
+      "x": 562,
+      "y": 10
+    },
+    {
+      "id": "run_5",
+      "name": "run_5",
+      "type": "scene",
+      "src": "scenes/runner_run_5.json",
+      "x": 700,
+      "y": 10
+    },
+    {
+      "id": "run_6",
+      "name": "run_6",
+      "type": "scene",
+      "src": "scenes/runner_run_6.json",
+      "x": 838,
+      "y": 10
+    },
+    {
+      "id": "run_7",
+      "name": "run_7",
+      "type": "scene",
+      "src": "scenes/runner_run_7.json",
+      "x": 976,
+      "y": 10
+    },
+    {
+      "id": "idle",
+      "name": "idle",
+      "type": "scene",
+      "src": "scenes/runner_idle.json",
+      "x": 10,
+      "y": 160
+    },
+    {
+      "id": "jump_rise",
+      "name": "jump_rise",
+      "type": "scene",
+      "src": "scenes/runner_jump_rise.json",
+      "x": 148,
+      "y": 160
+    },
+    {
+      "id": "jump_apex",
+      "name": "jump_apex",
+      "type": "scene",
+      "src": "scenes/runner_jump_apex.json",
+      "x": 286,
+      "y": 160
+    },
+    {
+      "id": "fall",
+      "name": "fall",
+      "type": "scene",
+      "src": "scenes/runner_fall.json",
+      "x": 424,
+      "y": 160
+    },
+    {
+      "id": "dash",
+      "name": "dash",
+      "type": "scene",
+      "src": "scenes/runner_dash.json",
+      "x": 562,
+      "y": 160
+    }
   ]
 }

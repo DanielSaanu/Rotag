@@ -44,8 +44,11 @@ Consequences worth knowing before you draw:
 - **Vector sprites** for things that must read as smooth drawings, not pixel art (the runner, Danzo 2026-10-10): an
   SVG in `sprites/<name>.svg` used as an image layer of a scene with `"pixelated": false` and the SVG's own size
   (the runner is 128 x 128, eight times the tile, feet on y = 120). `src/render.js` loads SVG as it loads PNG, in
-  node and in the UI. The runner's poses are joints in `tools/runner-rig.js`, which writes the SVGs: add a pose
-  there, run it, add the scene. The label must then sample bilinear (`ResampleMode = Default`, set in
+  node and in the UI. `tools/runner-rig.js` writes the SVGs. The run cycle is procedural (2026-10-10, Danzo: "emulate
+  SpeedRunners"): one function of the cycle phase puts hip, feet and hands on arcs and solves knees and elbows with
+  two-bone IK, so contact, down, passing and push-off fall out of it at any frame count, with a 24-degree forward lean,
+  a 3 px bounce and both feet off the ground around push-off. Fixed poses (idle, jump_rise, jump_apex, fall, dash) are
+  hand-placed joints in the same file. To add a pose: add joints there, run it, add the scene. The label must then sample bilinear (`ResampleMode = Default`, set in
   `client/Look.lua` after `Sprites.Apply`, which sets `Pixelated` for tile art).
 - A scene (`scenes/<name>.json`, format in `src/scene.js`) composes layers: images (a `.txt` sprite, a PNG from
   `library/`, with `crop` to slice a sheet), pixel grids, text in real fonts, shapes, or other scenes. Per-layer
