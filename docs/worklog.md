@@ -44,3 +44,6 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   (`s.runFrom`). Tests mutation-checked. Next: routine rebuilds the sheet, Danzo uploads and plays.
 - 2026-10-10 · `claude/friendly-hawking-74891i`: 13-sprite sheet uploaded by Danzo (decal 105903060352937 → image
   78839933770143 via `roblox setid`); label loads it in Play, air pose seen mid-jump. Feel is Danzo's call next.
+- 2026-10-10 · `claude/friendly-hawking-74891i`: Danzo: "give him some lean while he runs". Speed-driven lean in
+  `Look.lua` (14° at run speed, 22° in a dash, feet pivot), client-only, no upload. Seen in Play at full speed: rot -14
+  while moving at -45. Open question: an injected D key ran him towards -X (screen-left); confirm with Danzo's keyboard.

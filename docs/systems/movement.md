@@ -211,6 +211,11 @@ the default). The negative `Size.X.Scale` alternative and its `FlipBySize` switc
 dash `1.5 x 0.75` held while the dash lasts. Each eases back to `1 x 1` with a 35 ms time constant (about 100 ms to
 settle). No screen shake yet.
 
+**Lean (2026-10-10, Danzo: "give him some lean while he runs"):** on top of the lean drawn into the run frames, the
+label's `Rotation` follows the signed horizontal speed: 14° at `RUN_SPEED`, rising to 22° at `DASH_SPEED`, eased with
+a 60 ms time constant so it never snaps. `Rotation` turns about the label's centre, so `Position` is shifted each
+frame to keep the feet on the floor. Client-only, in `Look.lua`; `Client.client.lua` passes `state.vx` to `draw`.
+
 ## 7. The map (server/Arena.lua)
 
 Built at boot into **`Workspace.Map`, a Folder created in code**. It is not declared in `default.project.json`

@@ -83,7 +83,7 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	SideCamera.update(pos.X, pos.Y, c.state.vx, dt)
 	c.look:react(c.pending)
 	c.pending = {}
-	c.look:draw(Movement.spriteFor(c.state), c.state.facing, c.state.dashTime > 0, dt)
+	c.look:draw(Movement.spriteFor(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
 end)
 
 Controls.start(player)

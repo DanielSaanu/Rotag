@@ -30,12 +30,18 @@ local JUICE = {
 	dash = { 1.5, 0.75 },
 }
 local JUICE_SETTLE = 0.035 -- seconds per e-fold: back to within 5% in ~100 ms
+-- Lean (Danzo, 2026-10-10: "give him some lean while he runs"): the whole sprite tips into its horizontal speed,
+-- on top of the lean drawn into the run frames. Full lean at top run speed, more in a dash. Pivot is the feet.
+local LEAN_MAX = 14 -- degrees at Config.RUN_SPEED
+local LEAN_DASH = 22 -- degrees at Config.DASH_SPEED and beyond
+local LEAN_SETTLE = 0.06 -- seconds per e-fold: the lean follows speed with a little lag, never snaps
 
 function Look.new(character: Model, root: BasePart)
 	local self = setmetatable({}, Look)
 	self.character = character
 	self.root = root
 	self.sx, self.sy = 1, 1
+	self.lean = 0
 	self.sprite, self.facing = nil, 1
 	self:_build()
 	return self
@@ -108,8 +114,9 @@ local function setSprite(image: ImageLabel, name: string, mirrored: boolean)
 	end
 end
 
--- Every render frame: frame, facing and juice. dashing holds the dash stretch while the dash lasts.
-function Look:draw(spriteName: string, facing: number, dashing: boolean, dt: number)
+-- Every render frame: frame, facing, lean and juice. dashing holds the dash stretch while the dash lasts.
+-- vx is the horizontal speed in studs/s (signed); the sprite leans into it.
+function Look:draw(spriteName: string, facing: number, dashing: boolean, vx: number, dt: number)
 	local image = self.image
 	if not image then return end
 	if spriteName ~= self.sprite or facing ~= self.facing then
@@ -124,6 +131,24 @@ function Look:draw(spriteName: string, facing: number, dashing: boolean, dt: num
 		self.sy = 1 + (self.sy - 1) * k
 	end
 	image.Size = UDim2.fromScale(BASE * self.sx, BASE * self.sy)
+	-- Lean: degrees from signed speed, piecewise so a dash tips further than a run. Positive Rotation is clockwise,
+	-- which is forward when moving right; moving left the sign flips with vx, so it is forward there too.
+	local speed = math.abs(vx)
+	local target
+	if speed <= Config.RUN_SPEED then
+		target = LEAN_MAX * speed / Config.RUN_SPEED
+	else
+		local t = math.min(1, (speed - Config.RUN_SPEED) / (Config.DASH_SPEED - Config.RUN_SPEED))
+		target = LEAN_MAX + (LEAN_DASH - LEAN_MAX) * t
+	end
+	if vx < 0 then target = -target end
+	local kl = math.exp(-dt / LEAN_SETTLE)
+	self.lean = target + (self.lean - target) * kl
+	image.Rotation = self.lean
+	-- Rotation turns about the label's centre; move the label so the feet stay planted on the floor.
+	local rad = math.rad(self.lean)
+	local half = BASE * self.sy / 2
+	image.Position = UDim2.fromScale(0.5 + half * math.sin(rad), FEET + half * (1 - math.cos(rad)))
 end
 
 function Look:destroy()
