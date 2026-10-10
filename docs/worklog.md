@@ -25,3 +25,5 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   clean. DESIGN §6.3 partly answered, learnings A2.
   Danzo: the back-swung arm bent the wrong way (elbow low, hand high); fixed in the rig: elbow high and behind, hand low. Then the scarf knot showed over the back
   shoulder: knot moved under the chin and drawn before the near limbs, scarf routed above the elbow.
+  Danzo uploaded (decal 95377152540627); the client showed nothing because it had the decal id and no remote carries
+  the resolved id yet, so the image id (135988781031637) is hard-coded via `roblox setid`, as on 2026-10-09. Seen in Play.
