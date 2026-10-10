@@ -15,9 +15,10 @@
 
 - [ ] **Next build: tag.** Server-owned "it", the 45 s fuse, client overlap + server confirm (DESIGN §3 rule 6), the
       +5 s pass, the HUD fuse. Networking and fairness: every piece is escalation trigger 3, so it starts as a handoff.
-- [ ] **Join remote for the sheet id** (trigger 3). Every upload currently needs the decal→image id copied by hand
-      (`roblox setid`). One RemoteEvent on join carrying `Sprites.ResolveOnServer()`'s ids removes that step.
-- [ ] **Split `test/luau/movement.test.luau`** (398 of the 400-line ceiling) before the next movement test.
+- [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
+- [x] Movement tests split (2026-10-10): `movement_world.luau` helpers, `movement.test.luau`, `movement_sprites.test.luau`.
+- [ ] Danzo: restart `rojo serve roblox/default.project.json` and reconnect in Studio once, so the new RemoteEvent comes
+      from the project file (it was added to the open place by hand for the test).
 - [ ] Runner polish pass (parked): the poses read "a bit strange" to Danzo. Candidates: longer stride, less knee bend
       in the passing frames, a clearer forward hand. Joints live in `tools/runner-rig.js`; each pass costs an upload.
 - [ ] Decide the art theme (DESIGN §6.3: graphite, neon or glowing graphite). Resolution is settled (2026-10-10): smooth
