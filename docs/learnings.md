@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-10 (A4)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-10 (N3, T6)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -94,6 +94,12 @@ put the step rule in `shared/Movement.lua` and ran it on both sides: the client 
 the client sets `Predicted*` attributes next to the server's authoritative ones so a Studio pass can compare them.
 DESIGN §3 rule 6 asks for exactly this on tags: client overlap, server confirm, catch-up animation. *(inherited.)*
 
+**N3 — A server → client fact never blocks the client, and its remote never listens on the server.** Draw with the
+built-in default, apply the value when it lands and redraw anything already built; warn once if it never comes. The
+client checks the payload's shape and format, not its sender. The server wires `OnServerEvent` to a no-op, and finds
+the remote with `FindFirstChild` and a warning, never a bare `WaitForChild` that hangs the whole boot when the
+remote is missing. *(2026-10-10, handoff H4, `Remotes.SheetIds`.)*
+
 ## T — Tooling
 
 **T1 — The line ceiling in `test/structure.test.js` is a design input, not a lint you notice at the end.** The 400
@@ -114,6 +120,16 @@ explanations in the folder README, not in a file near its ceiling. *(inherited, 
 
 **T5 — A Studio test harness that moves the player is part of the experiment.** Before blaming the code, move the
 harness away and see whether the fault goes with it. *(inherited, handoff H8.)*
+
+**T6 — A running `rojo serve` syncs `.lua` edits, but NOT an instance newly declared in `default.project.json`.**
+Seen in Studio: the edited scripts arrived, the new `Remotes.SheetIds` RemoteEvent did not. After any project-file
+change, stop `rojo serve`, start it again and reconnect in Studio before Play, then check the instance is there
+(`search_game_tree`) before testing. *(2026-10-10, handoff H4, Rojo 7.7.0.)*
+
+**T7 — The Bash tool's heredoc strips one level of backslashes on this PC.** A node script written through a quoted
+heredoc lost every backslash: a regex class became a bare letter and an escaped newline became a real one, which broke
+`test/luau/run.js` for one run. Write scripts and any text with backslashes with the Write tool (or Edit), run them
+from the scratchpad; keep heredocs for text with no backslashes. *(2026-10-10, `claude/friendly-hawking-74891i`.)*
 
 ## G — Git and generated files
 

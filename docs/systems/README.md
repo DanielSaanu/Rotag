@@ -26,13 +26,27 @@ code. Add a row here in the same commit as the declaration. Never rename one: bo
 
 | Name | Direction | Payload | Used by |
 |---|---|---|---|
-| *(none yet)* | | | |
+| `SheetIds` | server → one client, once on join | `{ [number]: string }`: one `"rbxassetid://<digits>"` per sheet, in `Sprites.Sheets` order (the return of `Sprites.ResolveOnServer()`) | `server/Server.server.lua` fires; `client/Client.client.lua` applies with `Sprites.ApplySheetIds` |
 
-The first playable (H1) added none: the sprite sheet id is already resolved in `Sprites.lua`, and movement is
-client-owned physics on the player's own character ([movement.md](movement.md) §1).
+**`SheetIds` (H4, 2026-10-10).** Uploads are Decals; the server resolves the Image id at boot and this carries it to
+each client, so `setid` by hand is no longer needed for the runner to show. The rules it sets for every
+server → client event:
+- **The server fires it, never listens.** `OnServerEvent` is wired to a no-op so a client's fire is dropped unread.
+  It fires on `PlayerAdded`, and once for players already there, BEFORE `Runners.start`, so it normally lands ahead
+  of the first body. If the remote is missing (an old `rojo serve`), the server warns and plays on; it never hangs.
+- **The client never blocks on it.** The runner draws at once with the ids built into `Sprites.lua`; when the event
+  lands the client applies it and calls `Look:refresh()`, so the next draw re-applies the sprite. No event after
+  10 s: one warning, play on. Why not block `Look.new`: a lost event would leave no runner at all, and with
+  `Resolved = true` sheets (the usual case after `setid`) the built-in id is already right.
+- **The client trusts only the shape.** Every key must be a sheet index it has, every value an
+  `rbxassetid://<digits>` string; anything else is ignored with a warning. Ids are not secret or fairness-relevant
+  (a wrong one only blanks your own sprite), so the shape check is enough.
+- **Its own name, not a join/init blob.** The sheet ids are fixed for the server's life; map and match state change
+  per round and will get their own events.
 
-Planned by the design, to be named when built: a join/init event (sends the resolved sprite sheet ids, the map,
-the match state), a movement event (client → server, rate-limited), a tag claim (client → server) and a tag verdict
+Movement is client-owned physics on the player's own character ([movement.md](movement.md) §1): no remote.
+
+Planned by the design, to be named when built: a movement event (client → server, rate-limited), a tag claim (client → server) and a tag verdict
 (server → all, with the fuse handed over), a match state event (fuse ticks, eliminations, ghosts), a notice event.
 
 ## Systems

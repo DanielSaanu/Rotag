@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Movement = require(Shared:WaitForChild("Movement"))
+local Sprites = require(Shared:WaitForChild("Sprites"))
 local Body = require(script.Parent:WaitForChild("Body"))
 local Controls = require(script.Parent:WaitForChild("Controls"))
 local Look = require(script.Parent:WaitForChild("Look"))
@@ -84,6 +85,47 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	c.look:react(c.pending)
 	c.pending = {}
 	c.look:draw(Movement.spriteFor(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
+end)
+
+-- The sheet ids the server resolved (Remotes.SheetIds, docs/systems/README.md). Nothing waits for them: the runner
+-- draws with the ids built into Sprites.lua and re-applies when these land. Only the server can fire this event to
+-- us, but trust nothing beyond the shape: each key a sheet we have, each value an "rbxassetid://<digits>" string.
+local SHEET_IDS_WAIT = 10 -- seconds: the server's decal lookup at boot can take a few in Studio
+local function sheetIdCount(ids: any): number
+	if type(ids) ~= "table" then return 0 end
+	local n = 0
+	for i, id in pairs(ids) do
+		if type(i) ~= "number" or not Sprites.Sheets[i] then return 0 end
+		if type(id) ~= "string" or not string.match(id, "^rbxassetid://%d+$") then return 0 end
+		n += 1
+	end
+	return n
+end
+task.spawn(function()
+	local remotes = ReplicatedStorage:WaitForChild("Remotes", SHEET_IDS_WAIT)
+	local remote = remotes and remotes:WaitForChild("SheetIds", SHEET_IDS_WAIT)
+	if not (remote and remote:IsA("RemoteEvent")) then
+		warn("[Rotag] no Remotes.SheetIds; drawing with the sheet ids built into Sprites.lua")
+		return
+	end
+	local arrived = false
+	remote.OnClientEvent:Connect(function(ids: any)
+		local n = sheetIdCount(ids)
+		if n == 0 then
+			warn("[Rotag] ignored a SheetIds payload of the wrong shape")
+			return
+		end
+		Sprites.ApplySheetIds(ids)
+		arrived = true
+		if current then current.look:refresh() end
+		print(("[Rotag] client: %d sheet id(s) from the server, sheet 1 = %s"):format(n, tostring(ids[1])))
+	end)
+	task.delay(SHEET_IDS_WAIT, function()
+		if not arrived then
+			warn(("[Rotag] no sheet ids from the server after %ds; drawing with the ids built into Sprites.lua"):format(
+				SHEET_IDS_WAIT))
+		end
+	end)
 end)
 
 Controls.start(player)

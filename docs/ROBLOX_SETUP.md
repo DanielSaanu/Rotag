@@ -111,7 +111,8 @@ git push
 
 1. `npx warehouse roblox build` (no upload). It writes `exports/roblox/sheet_0.png`.
 2. Upload that PNG at https://create.roblox.com/dashboard/creations > **Development Items** > **Decals** > **Upload Asset**.
-3. Copy the id from the new decal's URL and run `npx warehouse roblox setid 0 <id>`.
+3. Copy the id from the new decal's URL and run `npx warehouse roblox setid 0 <id>`. (Since `Remotes.SheetIds`, the
+   server resolves a decal id for clients at boot, so recording the image id by hand is optional: see Troubleshooting.)
 
 ## 6. Using sprites in Lua
 
@@ -152,8 +153,11 @@ blank sprites — it shows the *wrong* sprites, because every sprite's rectangle
   creates a *Decal*; the picture inside it is a separate *Image* asset with a different id, and `ImageLabel.Image`
   needs the image id. Roblox's web endpoints refuse to reveal it without a logged-in session, so **the game server
   resolves it at startup** (`Sprites.ResolveOnServer` loads the decal with InsertService and reads the texture id;
-  the Output window prints `[Sprites] sheet 1: decal ... -> image ...`) and should send clients the resolved ids.
-  If that line is missing or warns, fall back by hand with step 7. `npx warehouse roblox resolve <decal id>` shows
+  the Output window prints `[Sprites] sheet 1: decal ... -> image ...`) and sends clients the resolved ids through
+  `Remotes.SheetIds` (the client prints `[Rotag] client: 1 sheet id(s) from the server, sheet 1 = rbxassetid://...`).
+  If the server line is missing or warns, or the client warns `no sheet ids from the server`, fall back by hand with
+  step 7. If the server warns `Remotes.SheetIds is missing`, the `rojo serve` running in the background was started
+  before the remote was declared: stop it, start it again, reconnect in Studio, re-Play. `npx warehouse roblox resolve <decal id>` shows
   what the web endpoints answer, for the curious.
 - **Images show as blank for a minute after upload**: Roblox moderates images. Wait, then re-Play.
 - **`Roblox upload failed 401/403`**: wrong key, key expired, IP restriction, or the Assets API system is missing

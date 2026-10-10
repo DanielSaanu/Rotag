@@ -47,3 +47,10 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
 - 2026-10-10 · `claude/friendly-hawking-74891i`: Danzo: "give him some lean while he runs". Speed-driven lean in
   `Look.lua` (14° at run speed, 22° in a dash, feet pivot), client-only, no upload. Seen in Play at full speed: rot -14
   while moving at -45. Open question: an injected D key ran him towards -X (screen-left); confirm with Danzo's keyboard.
+- 2026-10-10 · `claude/friendly-hawking-74891i`: H4 (heavy): first remote, `Remotes.SheetIds` (server → client on
+  join, the resolved sheet ids); client draws at once and re-applies on arrival. Not yet seen in Play: `rojo serve`
+  must be restarted to sync it (→ T6). Rules → N3. Detail: `docs/systems/README.md` Remotes.
+- 2026-10-10 · `claude/friendly-hawking-74891i`: H4 seen working in Play. The RemoteEvent was added to the Edit tree by
+  hand (the running `rojo serve` predates it, → T6); normal path: client prints 1 sheet id from the server. Remote path:
+  `Sprites.lua` set to the decal id with no Resolved, the label still loaded image 78839933770143, runner visible.
+  Reverted. `roblox setid` after an upload is now optional. Also: movement tests split (world, rules, sprites).

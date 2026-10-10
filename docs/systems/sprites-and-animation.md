@@ -19,8 +19,10 @@ Roblox cannot load an image from a file. So every sprite the game shows is **one
 3. `--upload` (Danzo only) pushes the PNG through Open Cloud and records the id in `roblox/assets.lock.json`, keyed by
    the sheet's hash, so an unchanged sheet is never re-uploaded. The upload is a **Decal**; the **Image** id inside
    it is what `ImageLabel.Image` wants, and `Sprites.ResolveOnServer()` fetches it at boot
-   (`docs/ROBLOX_SETUP.md`, Troubleshooting). The server must hand the resolved ids to clients
-   (`Sprites.ApplySheetIds`) before they build any UI.
+   (`docs/ROBLOX_SETUP.md`, Troubleshooting). The server hands the resolved ids to each client on join through
+   `Remotes.SheetIds` (H4, [README.md](README.md) Remotes); the client applies them with `Sprites.ApplySheetIds`.
+   It does not wait for them: the runner draws with the built-in ids and re-applies (`Look:refresh()`) when they
+   land, so anything new that holds a sprite must re-apply the same way if it can be built before the ids arrive.
 
 Consequences worth knowing before you draw:
 - **Any art change re-packs everything.** One new sprite can move every rectangle, so the old uploaded image shows

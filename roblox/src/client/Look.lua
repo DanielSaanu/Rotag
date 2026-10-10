@@ -151,6 +151,11 @@ function Look:draw(spriteName: string, facing: number, dashing: boolean, vx: num
 	image.Position = UDim2.fromScale(0.5 + half * math.sin(rad), FEET + half * (1 - math.cos(rad)))
 end
 
+-- The sheet ids changed after this look was built (Remotes.SheetIds landed late): re-apply on the next draw.
+function Look:refresh()
+	self.sprite = nil
+end
+
 function Look:destroy()
 	self:_clear()
 end
