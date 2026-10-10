@@ -308,18 +308,35 @@ do -- the run cycle advances by distance, the rest pose after a short grace (A1)
 	local s = standing(FLOOR, 0)
 	frames(FLOOR, s, 10)
 	assert(Movement.spriteFor(s) == "runner_idle", "idle at rest")
-	local seen = {}
-	for _ = 1, 30 do
+	-- The sheet has four run frames (stride, pass, stride, pass: H2). Change this with the art, never to pass.
+	assert(Config.RUN_FRAMES == 4, "four run frames in the sheet")
+	local order, cycleStarts = {}, {}
+	for _ = 1, 100 do -- 75 studs at top speed: over three cycles
 		tick(FLOOR, s, input({ moveX = 1 }))
-		seen[Movement.spriteFor(s)] = true
+		local name = Movement.spriteFor(s)
+		if name ~= order[#order] then
+			table.insert(order, name)
+			if name == "runner_run_0" then table.insert(cycleStarts, s.runDistance) end
+		end
 	end
-	assert(seen.runner_run_0 and seen.runner_run_1, "both run frames while running")
-	local before = math.floor(s.runDistance / Config.RUN_STRIDE)
+	for i, name in order do
+		local want = "runner_run_" .. tostring((i - 1) % Config.RUN_FRAMES)
+		assert(name == want, "frame " .. i .. " of the cycle is " .. want .. ", got " .. name)
+	end
+	assert(#order >= 2 * Config.RUN_FRAMES, "at least two full cycles seen, got " .. #order .. " frames")
+	-- Cadence is set by the cycle length alone: more frames make it smoother, never faster or slower.
+	local perTick = Config.RUN_SPEED * DT
+	for i = 2, #cycleStarts do
+		local len = cycleStarts[i] - cycleStarts[i - 1]
+		assert(math.abs(len - Config.RUN_CYCLE) <= perTick + 1e-6, "one cycle covers RUN_CYCLE studs, got " .. len)
+	end
+	assert(#cycleStarts >= 3, "three cycle starts measured")
+	local before = s.runDistance
 	tick(FLOOR, s)
 	assert(Movement.spriteFor(s) ~= "runner_idle", "no snap to idle inside the grace")
 	frames(FLOOR, s, 12)
 	assert(Movement.spriteFor(s) == "runner_idle", "rest pose after the grace")
-	assert(math.floor(s.runDistance / Config.RUN_STRIDE) >= before, "distance never runs backwards")
+	assert(s.runDistance >= before, "distance never runs backwards")
 	tick(FLOOR, s, input({ jump = true }))
 	assert(Movement.spriteFor(s) == "runner_run_0", "airborne pose")
 end

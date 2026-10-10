@@ -117,7 +117,12 @@ boost) into the air, bleeding only at the over-speed rate while held. A double j
   instead of hanging under it for 0.1 s.
 
 **Sprite pick (`Movement.spriteFor`):** `runner_idle` after 0.08 s stopped (the rest pose, → A1), the run frames by
-distance (`floor(runDistance / 5) % 2`, so the legs read speed), `runner_run_0` in the air and while dashing.
+distance, `runner_run_0` in the air and while dashing. The run is four frames (H2, 2026-10-10): `runner_run_0`
+stride (near leg forward), `_1` passing pose, `_2` stride (far leg forward), `_3` passing pose, picked as
+`floor(runDistance * RUN_FRAMES / RUN_CYCLE) % RUN_FRAMES` with `RUN_FRAMES = 4` and `RUN_CYCLE = 20` studs (two
+steps). At 45 studs/s that is a new frame every 5 studs (9 a second, as before) but a full cycle 2.25 times a second,
+a step 4.5 times a second: half the old leg rate, about a real sprinter's cadence. Why it changed, and why the knob is
+the cycle and not a per-frame stride: [sprites-and-animation.md](sprites-and-animation.md) §3.
 
 **Not built:** corner correction (Config has the 4 px; the goals did not ask for it), an 8-way dash, wall-run,
 grapple, boost pads (out of scope).
@@ -193,7 +198,8 @@ and two walls 3 tiles apart (9 and 7 tiles tall) to wall-jump between and climb 
 the raycasts and physics (learnings Q3): run and stop times, the digital stick, coyote (keyboard and the wider touch
 window), the buffer (on time, too early, landing-aware), variable jump and half gravity, double jump and its limit,
 refresh on landing and on a wall touch, wall jump reach, the force window and the bank, three wall jumps up a
-chimney, dash, cooldown, dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick.
+chimney, dash, cooldown, dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick (the
+four run frames in order, and one cycle per `RUN_CYCLE` studs whatever the frame count).
 `test/luau/sidecam.test.luau` pins the view height, settling, the lead and its cap, and frame-rate independence.
 **Each rule was mutation-checked:** removing it makes its test fail (→ S8). The ceiling test did not, at first,
 because the box stand-in stops at the roof by itself (→ Q5).

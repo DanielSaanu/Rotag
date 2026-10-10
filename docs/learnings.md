@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-09 (Q5)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-10 (A3)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -38,6 +38,12 @@ never rewinds the water a frame. Entities drop back to frame 0 a short time afte
 Pixelated sampler over smooth 3D parts reads as a mismatch, not a style. For a smooth world draw smooth art (vector,
 `pixelated: false`, 128 px per tile) and sample it bilinear; keep Pixelated for art that is meant to be pixel art.
 Keep the feet on the same canvas row as before so the collider needs no change. *(2026-10-10, `claude/friendly-hawking-74891i`.)*
+
+**A3 — Give a looping animation one knob for its speed per CYCLE and a separate one for its frame count.** A rate
+set per frame ("studs per frame", "seconds per frame") couples smoothness to speed: adding in-betweens silently
+slows the motion, cutting frames speeds it up. Set the cycle length, cut it into N frames, and test both: the frames
+come in order, and one cycle takes the cycle length whatever N is. A two-pose cycle flipped fast reads as flicker,
+not motion; it needs its in-betweens. *(2026-10-10, handoff H2, `Movement.spriteFor`.)*
 
 ## S — Shared Luau
 

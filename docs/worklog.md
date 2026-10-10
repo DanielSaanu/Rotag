@@ -27,3 +27,9 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   shoulder: knot moved under the chin and drawn before the near limbs, scarf routed above the elbow.
   Danzo uploaded (decal 95377152540627); the client showed nothing because it had the decal id and no remote carries
   the resolved id yet, so the image id (135988781031637) is hard-coded via `roblox setid`, as on 2026-10-09. Seen in Play.
+- 2026-10-10 · `claude/friendly-hawking-74891i` · heavy, H2: the run cycle is four frames (stride, pass, stride, pass).
+  `Config.RUN_FRAMES = 4` + `Config.RUN_CYCLE = 20` studs per cycle replace the per-frame `RUN_STRIDE` in
+  `Movement.spriteFor`; test pins frame order and cycle length, mutation-checked (Q5). Not yet played. Learnings A3.
+- 2026-10-10 · `claude/friendly-hawking-74891i`: Danzo: the legs are too fast, needs in-betweens. Two passing poses drawn in
+  `tools/runner-rig.js` (run_1, run_3; old run_1 is now run_2), five sprites in the sheet (CHANGED, awaiting upload).
+  The picker change in shared/ went through H2 (heavy agent): RUN_FRAMES + RUN_CYCLE replace RUN_STRIDE.

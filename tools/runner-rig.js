@@ -19,6 +19,8 @@ const POSES = {
     nearLeg: [[65, 80], [69, 98], [71, 113]], farLeg: [[59, 80], [55, 98], [53, 113]],
     scarf: 'M58 44 C 44 50, 46 66, 36 78', knot: [67, 48],
   },
+  // The run cycle is four frames: stride (near leg forward), pass, stride (far leg forward), pass.
+  // Frame 0 is also the air and dash pose. The passing poses sit 3 px higher: the body bounces at mid-stride.
   run_0: {
     head: [74, 26], neck: [68, 48], hip: [60, 78],
     nearArm: [[69, 51], [47, 47], [54, 62]], farArm: [[66, 51], [82, 64], [94, 52]],
@@ -26,10 +28,22 @@ const POSES = {
     scarf: 'M62 40 C 48 28, 42 50, 26 40 S 8 34, 6 42', knot: [72, 47],
   },
   run_1: {
+    head: [73, 23], neck: [67, 45], hip: [60, 75],
+    nearArm: [[69, 48], [58, 62], [66, 72]], farArm: [[66, 48], [76, 62], [70, 72]],
+    nearLeg: [[63, 75], [62, 95], [58, 113]], farLeg: [[58, 75], [78, 85], [66, 97]],
+    scarf: 'M62 37 C 50 30, 42 44, 28 38 S 10 42, 6 36', knot: [72, 44],
+  },
+  run_2: {
     head: [74, 26], neck: [68, 48], hip: [60, 78],
     nearArm: [[69, 51], [84, 64], [96, 52]], farArm: [[66, 51], [45, 47], [50, 62]],
     nearLeg: [[63, 78], [44, 95], [30, 107]], farLeg: [[58, 78], [78, 93], [90, 112]],
     scarf: 'M62 40 C 50 44, 40 28, 26 42 S 8 48, 6 38', knot: [72, 47],
+  },
+  run_3: {
+    head: [73, 23], neck: [67, 45], hip: [60, 75],
+    nearArm: [[69, 48], [78, 62], [72, 72]], farArm: [[66, 48], [56, 62], [64, 72]],
+    nearLeg: [[63, 75], [80, 85], [68, 97]], farLeg: [[58, 75], [58, 95], [54, 113]],
+    scarf: 'M62 37 C 52 46, 40 32, 28 40 S 10 34, 6 40', knot: [72, 44],
   },
 };
 

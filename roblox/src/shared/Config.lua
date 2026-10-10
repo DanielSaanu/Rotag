@@ -44,7 +44,8 @@ Config.RUNNER_HEIGHT = 3.5        -- 14 px: the sprite's rows 1-14, so feet and 
 Config.RUNNER_DEPTH = 2
 Config.GROUND_SNAP = 0.2          -- within this of the ground while not rising = standing on it
 Config.TOUCH_DIST = 0.1           -- within this of a wall or ceiling = touching it
-Config.RUN_STRIDE = 5             -- studs per run-frame flip: the legs read speed (sprites-and-animation.md §3)
+Config.RUN_FRAMES = 4             -- runner_run_0..3: stride, pass, stride, pass. More frames = smoother, same cadence
+Config.RUN_CYCLE = 20             -- studs per full run cycle (two steps); sets the cadence (sprites-and-animation.md §3)
 Config.IDLE_GRACE = 0.08          -- seconds stopped before the rest pose
 
 Config.CAMERA_VIEW_HEIGHT = 48    -- studs of world visible top to bottom (12 tiles)

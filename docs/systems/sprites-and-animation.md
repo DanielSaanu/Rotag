@@ -71,6 +71,26 @@ one**:
 - **Step-driven things advance a frame per step**: Lowlands flips `frame = 1 - frame` each tile step, so the walk
   cycle is tied to distance, not time. A runner's run cycle should do the same against distance travelled, so speed
   reads in the legs.
+- **A run cycle needs its in-betweens, and its speed is set per cycle, not per frame** (decided, H2, 2026-10-10).
+  The first runner had two contact poses flipped every 5 studs: at 45 studs/s that was 9 flips a second between two
+  far-apart poses, which Danzo read as "too fast", flicker rather than legs. It is now four frames, stride, pass,
+  stride, pass (`runner_run_0..3`; frame 0 doubles as the air and dash pose), picked as
+  `floor(runDistance * Config.RUN_FRAMES / Config.RUN_CYCLE) % Config.RUN_FRAMES`.
+  - *Constant, not a table of names.* The frames already follow `<thing>_<state>_<n>`, so a count is all the picker
+    needs; a name table would only be worth it for uneven holds (a contact held two slots), and nothing asks for
+    that. If it ever does, a table of names replaces the count without touching the cycle length.
+  - *Cycle length, not a per-frame stride.* With "studs per frame" as the knob, adding frames silently slows the legs
+    (four frames at 5 studs halves the step rate) and dropping frames speeds them up, so two separate things,
+    smoothness and cadence, move together. `RUN_CYCLE` is studs per full cycle (two steps) and is the only cadence
+    knob; `RUN_FRAMES` only says how finely that cycle is cut. The Luau test pins both: the frames come in order, and
+    one cycle covers `RUN_CYCLE` studs.
+  - *20 studs.* Frames still change every 5 studs (9 a second at top speed, no more flicker cost than before), but a
+    full cycle comes 2.25 times a second and a step 4.5 times a second: half the old leg rate, and about a real
+    sprinter's cadence (4 to 5 steps a second). A 10-stud step is ~3 body heights, far longer than life, but
+    45 studs/s is ~13 body heights a second, so either the cadence or the step has to exaggerate, and a long step
+    with a believable cadence reads as speed instead of a blur. **Tuning:** if the legs still look too busy, raise
+    `RUN_CYCLE` (24 to 28); if they look like they skate, lower it (16). That is Danzo's call on a phone and a
+    keyboard, not a test's.
 - One-shot effects (a smear on dash, dust on landing, the tag hit-stop flash) are a short frame list played once by
   the client, then destroyed. Keep each one a scene so the UI can preview it.
 - **Juice is cheap on an ImageLabel**: squash and stretch is `Size` tweened for 50–100 ms, a smear is one extra

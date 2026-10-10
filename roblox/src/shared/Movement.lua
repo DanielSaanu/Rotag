@@ -214,12 +214,13 @@ function Movement.integrate(s: State, dt: number)
 	s.y += s.vy * dt
 end
 
--- Which sprite to show (docs/systems/sprites-and-animation.md §3): idle at rest after a short grace, the run
--- frames by distance travelled, frame 0 of the run in the air and while dashing.
+-- Which sprite to show (docs/systems/sprites-and-animation.md §3): idle at rest after a short grace, the
+-- RUN_FRAMES run frames by distance travelled, frame 0 of the run in the air and while dashing.
 function Movement.spriteFor(s: State): string
 	if s.dashTime > 0 or not s.grounded then return "runner_run_0" end
 	if s.stillTime >= Config.IDLE_GRACE then return "runner_idle" end
-	return "runner_run_" .. tostring(math.floor(s.runDistance / Config.RUN_STRIDE) % 2)
+	local n = Config.RUN_FRAMES -- frame = which nth of the cycle; RUN_CYCLE alone sets the cadence
+	return "runner_run_" .. tostring(math.floor(s.runDistance * n / Config.RUN_CYCLE) % n)
 end
 
 return Movement

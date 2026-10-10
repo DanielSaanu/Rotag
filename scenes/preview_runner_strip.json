@@ -1,14 +1,16 @@
 {
   "name": "preview_runner_strip",
-  "width": 420,
+  "width": 700,
   "height": 150,
   "background": "#2a2d3e",
   "pixelated": false,
   "export": false,
-  "notes": "mockup only (export: false): idle and the two run frames side by side, for eyeballing animation timing",
+  "notes": "mockup only (export: false): idle and the four run frames side by side, for eyeballing animation timing",
   "layers": [
     { "id": "a", "name": "idle", "type": "scene", "src": "scenes/runner_idle.json", "x": 10, "y": 10 },
     { "id": "b", "name": "run_0", "type": "scene", "src": "scenes/runner_run_0.json", "x": 148, "y": 10 },
-    { "id": "c", "name": "run_1", "type": "scene", "src": "scenes/runner_run_1.json", "x": 286, "y": 10 }
+    { "id": "c", "name": "run_1", "type": "scene", "src": "scenes/runner_run_1.json", "x": 286, "y": 10 },
+    { "id": "d", "name": "run_2", "type": "scene", "src": "scenes/runner_run_2.json", "x": 424, "y": 10 },
+    { "id": "e", "name": "run_3", "type": "scene", "src": "scenes/runner_run_3.json", "x": 562, "y": 10 }
   ]
 }

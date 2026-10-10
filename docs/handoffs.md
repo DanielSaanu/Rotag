@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-09
+**Created:** 2026-10-09 · **Last updated:** 2026-10-10
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -27,9 +27,15 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-*(none)*
+_None._
 
 ## Resolved
+
+### H2 — Run cycle: four frames (two strides, two passing poses) instead of two — 2026-10-10 14:40 — RESOLVED
+- **Resolved 2026-10-10:** `Config.RUN_FRAMES = 4` (a count, not a name table) and `Config.RUN_CYCLE = 20` studs per full
+  cycle replacing the per-frame `RUN_STRIDE`, so frame count and cadence are separate knobs; frames still change every
+  5 studs, the legs cycle at half the old rate. Test pins frame order and cycle length (mutation-checked). Feel is
+  Danzo's to judge; tune `RUN_CYCLE`. → `docs/systems/sprites-and-animation.md` §3, `docs/systems/movement.md` §3, learnings A3.
 
 ### H1 — First playable: side-on camera, one runner, sprites drawn two ways — 2026-10-09 — RESOLVED
 - **Resolved 2026-10-09:** built by the heavy agent, played by Danzo the same day ("that worked and I actually quite
