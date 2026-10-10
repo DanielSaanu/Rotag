@@ -2,13 +2,15 @@
 local Sprites = {}
 
 Sprites.Sheets = {
-	[1] = { Id = "rbxassetid://135988781031637", Width = 256, Height = 512, Resolved = true },
+	[1] = { Id = "rbxassetid://98566906497928", Width = 512, Height = 512, Resolved = true },
 }
 
 Sprites.Sprites = {
 	["runner_idle"] = { Sheet = 1, X = 1, Y = 1, W = 128, H = 128 },
-	["runner_run_0"] = { Sheet = 1, X = 1, Y = 130, W = 128, H = 128 },
-	["runner_run_1"] = { Sheet = 1, X = 1, Y = 259, W = 128, H = 128 },
+	["runner_run_0"] = { Sheet = 1, X = 130, Y = 1, W = 128, H = 128 },
+	["runner_run_1"] = { Sheet = 1, X = 259, Y = 1, W = 128, H = 128 },
+	["runner_run_2"] = { Sheet = 1, X = 1, Y = 130, W = 128, H = 128 },
+	["runner_run_3"] = { Sheet = 1, X = 130, Y = 130, W = 128, H = 128 },
 }
 
 --- Point an ImageLabel/ImageButton at a named sprite. Keeps pixels crisp.
