@@ -2,12 +2,14 @@
 -- player plumbing still works (the default touch joystick, CharacterAdded, network ownership).
 -- Why not the stock character: docs/systems/movement.md, "The character". The client drives the box
 -- (client/Body.lua); the server only builds it, owns its spawn and hands its physics to the player.
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local Runners = {}
+Runners.TAG = "RotagRunner" -- CollectionService tag on every runner body, a player's or the Studio dummy's
 
 -- No friction against walls and floors (a stored speed must not rub away, and a wall slide must not stick);
 -- the high weights make OUR zeros win when two parts' friction is combined.
@@ -54,6 +56,9 @@ local function build(player: Player, spawnAt: Vector3): Model
 	humanoid.Parent = model
 
 	model.PrimaryPart = root
+	-- How the tag finds runners (docs/systems/tag.md §4): a tag on the model, and its runner id (the UserId).
+	model:SetAttribute("RunnerId", player.UserId)
+	CollectionService:AddTag(model, Runners.TAG)
 	return model
 end
 

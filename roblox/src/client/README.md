@@ -10,7 +10,9 @@ windows, momentum, the side-on camera, juice and the HUD. It predicts with the s
 | `Controls.lua` | `Controls` (ModuleScript) | keys, gamepad, the touch joystick (Roblox's PlayerModule), the JUMP and DASH touch buttons | 146 |
 | `Look.lua` | `Look` (ModuleScript) | the runner sprite on a SurfaceGui, flip by the rect, frames, squash and stretch | 129 |
 | `SideCamera.lua` | `SideCamera` (ModuleScript) | applies `shared/SideCam` to the camera: Scriptable, side-on, leading | 30 |
+| `Tagging.lua` | `Tagging` (ModuleScript) | the server's last `MatchState`; sends `TagClaim` on an overlap; frozen, hit-stop and chaser boost for the frame loop ([tag.md](../../../docs/systems/tag.md)) | 103 |
+| `Hud.lua` | `Hud` (ModuleScript) | the fuse readout, the "+5" pop, the IT marker, one status line | 115 |
 
 Why it is split this way, and the character choice: [`docs/systems/movement.md`](../../../docs/systems/movement.md).
-Planned: `Hud.lua` (the fuse, +5 s, off-screen arrows), corner correction in `shared/Movement`. How sprites and frames are drawn:
+Planned: off-screen arrows in `Hud.lua`, drawing other runners' sprites, corner correction in `shared/Movement`. How sprites and frames are drawn:
 [`docs/systems/sprites-and-animation.md`](../../../docs/systems/sprites-and-animation.md).

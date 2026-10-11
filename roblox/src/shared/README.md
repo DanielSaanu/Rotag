@@ -10,8 +10,8 @@ edit it by hand.
 | `Config` | every tuning number (players, fuse, freeze, the movement and camera values, studs per tile) | Server, Client | 59 |
 | `Movement` | the move rules: run, jump, double jump, wall jump, dash, the forgiveness windows, refresh, speed retention, the sprite pick ([movement.md](../../../docs/systems/movement.md)) | Client | 225 |
 | `SideCam` | the side-on camera's follow, lead and distance | Client | 33 |
+| `Tag` | the tag and the fuse: round state, fuse clock, who may claim, lag-fair confirm, pass, elimination, rotation, chaser ramp ([tag.md](../../../docs/systems/tag.md)) | Server, Client | 167 |
 | `Sprites` | GENERATED sprite table: `Apply`, `New`, `Has`, `ResolveOnServer`, `ApplySheetIds` | Server, Client | generated |
 
 Each module returns its own table (`return <Name>`) and gets a `test/luau/<name>.test.luau`. Planned, from the
-design: `Fuse` (remaining + 5, the shrink, elimination),
-`Tag` (overlap and the no-tag-back freeze), `Crates` (the ability table, DESIGN §3 rules 10–13).
+design: `Crates` (the ability table, DESIGN §3 rules 10–13).

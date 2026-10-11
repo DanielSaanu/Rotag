@@ -1,5 +1,5 @@
--- The server entry point. Owns the match: who is "it", the fuse, eliminations, ghosts (none built yet).
--- Today it resolves the sprite sheet, builds the test map and spawns each player's runner body.
+-- The server entry point. Resolves the sprite sheet, builds the test map, starts the match (server/Match.lua: "it",
+-- the fuse, tag claims) and spawns each player's runner body. Ghosts are not built yet (DESIGN §6.1).
 local Players = game:GetService("Players")
 -- First, before anything can yield: no stock character for anyone (server/Runners.lua builds the runner body).
 Players.CharacterAutoLoads = false
@@ -9,6 +9,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local Sprites = require(Shared:WaitForChild("Sprites"))
 local Arena = require(script.Parent:WaitForChild("Arena"))
 local Runners = require(script.Parent:WaitForChild("Runners"))
+local Match = require(script.Parent:WaitForChild("Match"))
 -- Declared in default.project.json, so it is in the place before any script runs; never created here. A rojo serve
 -- started before the declaration does not sync it (restart rojo serve): then warn and play on, never hang.
 local remotes = ReplicatedStorage:FindFirstChild("Remotes")
@@ -36,4 +37,5 @@ else
 end
 
 Arena.build()
+Match.start(Runners.TAG) -- the round, "it", the fuse, tag claims (docs/systems/tag.md); before the first body
 Runners.start(Arena.SPAWN)

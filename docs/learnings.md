@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-10 (N3, T6)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (N4, N5, T8; T7 widened)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -100,6 +100,18 @@ client checks the payload's shape and format, not its sender. The server wires `
 the remote with `FindFirstChild` and a warning, never a bare `WaitForChild` that hangs the whole boot when the
 remote is missing. *(2026-10-10, handoff H4, `Remotes.SheetIds`.)*
 
+**N4 — A client → server remote carries only the name of the request, and the server decides from its own state.**
+The sender is the `Player` Roblox passes, never a payload field; the payload is the smallest thing that names the
+request (`TagClaim` is one number) and anything of the wrong type is dropped unread. Rate-limit per player on the
+server and drop silently; the client limits itself just above that, so an honest client never hits it. Who may ask,
+when, and whether it is true are all read from server state; a refusal gets no reply. *(2026-10-11, handoff H5.)*
+
+**N5 — A lag-fair check rewinds over the server's OWN recent history, caps the look-back, and is no stronger than the
+trust in the positions.** Record every body on the same server frames, pair samples only from the same frame, look back
+by the claimant's ping plus interpolation but never past a fixed cap (else lagging buys reach). And write down where
+the positions come from: bodies with client network ownership report their own positions, so the real fix for a
+teleporting cheat is a server movement check, not a tighter tag check. *(2026-10-11, handoff H5, `Tag.confirm`.)*
+
 ## T — Tooling
 
 **T1 — The line ceiling in `test/structure.test.js` is a design input, not a lint you notice at the end.** The 400
@@ -128,8 +140,13 @@ change, stop `rojo serve`, start it again and reconnect in Studio before Play, t
 
 **T7 — The Bash tool's heredoc strips one level of backslashes on this PC.** A node script written through a quoted
 heredoc lost every backslash: a regex class became a bare letter and an escaped newline became a real one, which broke
-`test/luau/run.js` for one run. Write scripts and any text with backslashes with the Write tool (or Edit), run them
-from the scratchpad; keep heredocs for text with no backslashes. *(2026-10-10, `claude/friendly-hawking-74891i`.)*
+`test/luau/run.js` for one run. A long quoted heredoc holding apostrophes and backticks also failed to parse
+(2026-10-11, H5). Write any script longer than a few lines with the Write tool, run it from the scratchpad; keep
+heredocs for short text with no backslashes. *(2026-10-10, `claude/friendly-hawking-74891i`.)*
+
+**T8 — Studio's local test players have NEGATIVE UserIds (-1, -2, ...).** Any made-up id (a dummy runner, a bot, a
+placeholder) must sit outside that range and outside real ids: the Studio dummy is -1000. Never key "is this a real
+player" on `UserId > 0`. *(2026-10-11, handoff H5.)*
 
 ## G — Git and generated files
 

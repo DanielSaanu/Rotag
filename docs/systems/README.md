@@ -27,6 +27,9 @@ code. Add a row here in the same commit as the declaration. Never rename one: bo
 | Name | Direction | Payload | Used by |
 |---|---|---|---|
 | `SheetIds` | server → one client, once on join | `{ [number]: string }`: one `"rbxassetid://<digits>"` per sheet, in `Sprites.Sheets` order (the return of `Sprites.ResolveOnServer()`) | `server/Server.server.lua` fires; `client/Client.client.lua` applies with `Sprites.ApplySheetIds` |
+| `TagClaim` | client → server, at most every 0.15 s while the sender is it | `number`: the target's runner id (a UserId, or -1000 for the Studio dummy). Nothing else is read | `client/Tagging.lua` fires; `server/Match.lua` checks rate, who may claim, and its OWN position history ([tag.md](tag.md) §2) |
+| `TagVerdict` | server → all, on each confirmed tag | `{ from: number, to: number, fuse: number }`: fuse = the new holder's seconds (remaining + 5) | `server/Match.lua` fires; `client/Tagging.lua` (hit-stop) and `client/Hud.lua` ("+5") |
+| `MatchState` | server → all on every change and at least once a second; → one client on join | `{ round, it: number?, fuse, frozenFor, chaseFor, alive: { number }, over: boolean, winner: number? }`: durations in seconds, no timestamps | `server/Match.lua` fires; `client/Tagging.lua` holds it, `client/Hud.lua` draws it |
 
 **`SheetIds` (H4, 2026-10-10).** Uploads are Decals; the server resolves the Image id at boot and this carries it to
 each client, so `setid` by hand is no longer needed for the runner to show. The rules it sets for every
@@ -44,10 +47,20 @@ server → client event:
 - **Its own name, not a join/init blob.** The sheet ids are fixed for the server's life; map and match state change
   per round and will get their own events.
 
-Movement is client-owned physics on the player's own character ([movement.md](movement.md) §1): no remote.
+**`TagClaim`, `TagVerdict`, `MatchState` (H5, 2026-10-11).** The two server → client events follow every `SheetIds`
+rule above. The first client → server event sets these for every remote a client fires (→ N4):
+- **The payload is the smallest thing that names the request** (here one number). The sender is the `Player` Roblox
+  passes, never a field in the payload. Anything that is not the expected type is dropped unread.
+- **Rate-limited on the server per player**, dropped silently; the client limits itself above that, so an honest
+  client never hits it.
+- **Every decision is made from the server's own state** (who is it, frozen, alive; positions it recorded itself).
+  A refused claim gets no reply; a Studio-only log line says why.
+- Full reasoning, the rewind and its cap, and the limit of trusting client-owned bodies: [tag.md](tag.md) §2.
 
-Planned by the design, to be named when built: a movement event (client → server, rate-limited), a tag claim (client → server) and a tag verdict
-(server → all, with the fuse handed over), a match state event (fuse ticks, eliminations, ghosts), a notice event.
+Movement is client-owned physics on the player's own character ([movement.md](movement.md) §1): no remote yet.
+
+Planned by the design, to be named when built: a movement event (client → server, rate-limited, with a server speed
+check; it is also what makes the tag's positions trustworthy, [tag.md](tag.md) §2), a notice event.
 
 ## Systems
 
@@ -58,10 +71,10 @@ One file each. Read only the one your task touches.
 | Sprites and animation (how 2D reaches the screen) | [sprites-and-animation.md](sprites-and-animation.md) | `Sprites` (generated) |
 | The art pipeline (node) | [art-pipeline.md](art-pipeline.md) | `bin/warehouse.js`, `src/*.js` |
 | Movement and feel (the body, the rules, camera, controls, juice) | [movement.md](movement.md) | `shared/Movement`, `shared/SideCam`, `client/Body`, `client/Controls`, `client/Look`, `client/SideCamera`, `server/Runners` |
-| Tag, the fuse, elimination | *(not built)* | `shared/Fuse`, `server/Match` |
+| Tag, the fuse, elimination | [tag.md](tag.md) | `shared/Tag`, `server/Match`, `server/Dummy`, `client/Tagging`, `client/Hud` |
 | Ghosts | *(not built; DESIGN §6.1 is open)* | |
 | Crates and abilities | *(not built; DESIGN §6.2 is open)* | |
 | Maps | the first-playable test map only: [movement.md](movement.md) §7 | `server/Arena` |
-| HUD and mobile controls | the two touch buttons only: [movement.md](movement.md) §5; no HUD yet | `client/Controls`, later `client/Hud` |
+| HUD and mobile controls | the two touch buttons: [movement.md](movement.md) §5; the fuse HUD: [tag.md](tag.md) §6 | `client/Controls`, `client/Hud` |
 
 The per-module "who owns what" tables are the folder READMEs under [`roblox/src/`](../../roblox/src/README.md).

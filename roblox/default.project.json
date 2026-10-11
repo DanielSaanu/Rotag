@@ -11,6 +11,15 @@
         "$className": "Folder",
         "SheetIds": {
           "$className": "RemoteEvent"
+        },
+        "TagClaim": {
+          "$className": "RemoteEvent"
+        },
+        "TagVerdict": {
+          "$className": "RemoteEvent"
+        },
+        "MatchState": {
+          "$className": "RemoteEvent"
         }
       }
     },

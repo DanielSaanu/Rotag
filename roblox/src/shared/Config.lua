@@ -7,6 +7,20 @@ Config.PLAYERS_PER_MATCH = 4
 Config.FUSE_START = 45            -- seconds on the first "it"
 Config.FUSE_PASS_BONUS = 5        -- seconds added on every tag (remaining + 5)
 Config.TAG_FREEZE = 1.5           -- seconds the new holder is frozen: no tag-backs (rule 1)
+-- The tag (docs/systems/tag.md). Feel numbers are Danzo's to tune in Play; the tests pin the rules, not the feel.
+Config.FUSE_SHRINK = 10           -- each elimination: the next fresh fuse is this much shorter (45, 35, 25) (§2)
+Config.FUSE_MIN = 15              -- a fresh fuse never starts below this
+Config.START_FREEZE = 3           -- the first "it" waits this long at round start while the others scatter
+Config.TAG_REACH = 0.5            -- studs past touching boxes that still count as a tag (the hand)
+Config.TAG_GRACE = 1.5            -- extra studs the SERVER allows on top of TAG_REACH (lag, interpolation)
+Config.TAG_REWIND_MAX = 0.3       -- seconds the server looks back for the overlap, at most (rule 6)
+Config.TAG_CLAIM_GAP = 0.1        -- a client's claims closer together than this are dropped unread
+Config.RAMP_DELAY = 5             -- rule 4: seconds into a chase before "it" starts to speed up
+Config.RAMP_TIME = 15             -- seconds from no boost to the full boost
+Config.RAMP_MAX = 0.15            -- the full boost: +15% run speed; resets on every tag
+Config.HIT_STOP = 0.08            -- rule 21: seconds both runners hold still when a tag lands (client only)
+Config.STUDIO_DUMMY = true        -- in Studio only, a server-driven dummy runner joins the round (tag.md §4)
+Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 
 Config.COYOTE_TIME = 0.1          -- rule 14
 Config.JUMP_BUFFER = 0.08

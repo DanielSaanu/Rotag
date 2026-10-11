@@ -12,6 +12,8 @@ local Body = require(script.Parent:WaitForChild("Body"))
 local Controls = require(script.Parent:WaitForChild("Controls"))
 local Look = require(script.Parent:WaitForChild("Look"))
 local SideCamera = require(script.Parent:WaitForChild("SideCamera"))
+local Tagging = require(script.Parent:WaitForChild("Tagging"))
+local Hud = require(script.Parent:WaitForChild("Hud"))
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -67,17 +69,31 @@ RunService.PreSimulation:Connect(function(dt: number)
 		s.x, s.y, s.vx, s.vy = c.spawnX, c.spawnY, 0, 0
 		contacts = {}
 	end
-	local ev = Movement.step(s, Controls.read(c.humanoid), contacts, dt)
+	-- The tag (docs/systems/tag.md): a tag's hit-stop holds everything still and resumes with the same speed (rule
+	-- 21); the frozen new holder gets no input and no run speed, but still falls (rule 1); "it" runs faster (rule 4).
+	if Tagging.hitStopped() then
+		c.body:apply(s.x, s.y, 0, 0)
+		return
+	end
+	local input = Controls.read(c.humanoid)
+	if Tagging.frozen() then
+		input = { moveX = 0, jumpPressed = false, jumpHeld = false, dashPressed = false, touch = input.touch }
+		s.vx, s.dashTime = 0, 0 -- a dash in progress ends too
+	end
+	input.speedMult = Tagging.speedMult()
+	local ev = Movement.step(s, input, contacts, dt)
 	-- Physics can run more than once between two draws: keep every event until the sprite has reacted to it.
 	local p = c.pending
 	if ev.landed then p.landed = math.max(p.landed or 0, ev.landed) end
 	p.jump = ev.jump or p.jump
 	p.dash = ev.dash or p.dash
 	c.body:apply(s.x, s.y, s.vx, s.vy)
+	Tagging.claim(s.x, s.y)
 end)
 
 -- Before drawing: camera, then the sprite.
 RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, function(dt: number)
+	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	local c = current
 	if not c or not c.root.Parent then return end
 	local pos = c.root.Position
@@ -129,6 +145,8 @@ task.spawn(function()
 end)
 
 Controls.start(player)
+Hud.start(player)
+Tagging.start(player, function() end, function(v) Hud.pass(v, player.UserId) end)
 player.CharacterAdded:Connect(setup)
 player.CharacterRemoving:Connect(function(character)
 	if current and current.character == character then teardown() end

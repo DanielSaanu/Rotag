@@ -8,7 +8,8 @@ local Config = require(script.Parent.Config)
 local Movement = {}
 
 -- moveX is the raw stick or keys (-1..1); the presses are edges (true on the frame the button went down).
-export type Input = { moveX: number, jumpPressed: boolean, jumpHeld: boolean, dashPressed: boolean, touch: boolean? }
+export type Input = { moveX: number, jumpPressed: boolean, jumpHeld: boolean, dashPressed: boolean, touch: boolean?,
+	speedMult: number? }
 -- Distances in studs from the runner's collider to the nearest surface on each side, nil if nothing is in reach.
 -- ground is feet-to-floor (negative when sunk into it), ceiling head-to-roof, walls side-to-wall.
 export type Contacts = { ground: number?, ceiling: number?, wallLeft: number?, wallRight: number? }
@@ -164,8 +165,9 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		if s.dashTime <= 0 then s.vx = s.dashDir * Config.DASH_END_SPEED end
 	else
 		local mult = if s.grounded then 1 else Config.AIR_MULT
-		local target = moveX * Config.RUN_SPEED
-		if math.abs(s.vx) > Config.RUN_SPEED and sign(s.vx) == moveX then
+		local top = Config.RUN_SPEED * (input.speedMult or 1) -- the chaser ramp (Tag.chaserBoost, rule 4)
+		local target = moveX * top
+		if math.abs(s.vx) > top and sign(s.vx) == moveX then
 			s.vx = approach(s.vx, target, Config.RUN_REDUCE * mult * dt) -- earned speed bleeds off slowly
 		else
 			s.vx = approach(s.vx, target, Config.RUN_ACCEL * mult * dt)

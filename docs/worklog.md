@@ -54,3 +54,11 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   hand (the running `rojo serve` predates it, → T6); normal path: client prints 1 sheet id from the server. Remote path:
   `Sprites.lua` set to the decal id with no Resolved, the label still loaded image 78839933770143, runner visible.
   Reverted. `roblox setid` after an upload is now optional. Also: movement tests split (world, rules, sprites).
+- 2026-10-11 · `claude/friendly-hawking-74891i`: H5 opened (trigger 3): the tag — server-owned "it", 45 s fuse,
+  +5 s pass, lag-fair confirm (DESIGN §3 rule 6), HUD fuse. Heavy agent spawned with the entry; detail will land in
+  `docs/systems/tag.md`.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: H5 (heavy): the tag. `shared/Tag` + 10 test blocks (10 mutations
+  caught), `server/Match` + `server/Dummy`, `client/Tagging` + `client/Hud`, `Movement` input `speedMult` (rule 4),
+  remotes `TagClaim`/`TagVerdict`/`MatchState`. Play (old `rojo serve`, remotes missing, warned): round, elimination,
+  rotation and the dummy's tag (`TAG -1000 -> player, fuse 48.8s`) seen; client side not yet. → `docs/systems/tag.md`,
+  N4, N5, T8.
