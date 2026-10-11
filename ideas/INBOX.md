@@ -16,6 +16,10 @@
 - [x] **Tag built (H5, 2026-10-11):** `shared/Tag`, `server/Match`, remotes `TagClaim`/`TagVerdict`/`MatchState`, HUD,
       an orange Studio-only dummy to chase. Server side seen in Play; client side needs a `rojo serve` restart first.
       Detail: `docs/systems/tag.md`. Danzo to Play and judge the 1.5 s freeze, the 3 s start wait and the chaser ramp.
+- [ ] **Tag Play feedback (H6, 2026-10-11, heavy agent on it):** Danzo could tag the box once only; frozen at round start and
+      had to re-press a key to move; Shift dash can be spammed for a big speed gain. Fixes land in `docs/systems/tag.md`.
+- [ ] **QA loop for the tag:** goals in `docs/qa/tag.md`. Runs after H6, so the reviewer is not told what Danzo found.
+      Studio is the reviewer's while it runs: Danzo should not Play during the loop.
 - [ ] **Next build: second player.** Each screen draws only its own runner; the other player is invisible. Then the
       movement remote with a server speed check (the stated limit of the tag check, `docs/systems/tag.md` §2).
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
