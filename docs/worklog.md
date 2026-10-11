@@ -76,3 +76,6 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   (`Runners.spawn`; a server CFrame write lost to the owner while running, seen in Studio); `MatchState.spectating`
   and "next round soon" for late joiners. Play: four rounds, bodies at -60/60 on server and client, held while running.
   → `docs/systems/tag.md` §4, N8.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: QA loop on the tag: round 1 7/10, round 2 8/10 (target). Routine fixes:
+  dummy patrol off spawn, PlayerModule note, pop from `gained` with `%g`. H7 and H8 came out of the rounds. Summary and
+  Danzo's checklist in `docs/qa/tag-summary.md`; round files archived. Open for Danzo: dash chains, the fuse cap.

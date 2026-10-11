@@ -16,12 +16,15 @@
 - [x] **Tag built (H5, 2026-10-11):** `shared/Tag`, `server/Match`, remotes `TagClaim`/`TagVerdict`/`MatchState`, HUD,
       an orange Studio-only dummy to chase. Server side seen in Play; client side needs a `rojo serve` restart first.
       Detail: `docs/systems/tag.md`. Danzo to Play and judge the 1.5 s freeze, the 3 s start wait and the chaser ramp.
-- [ ] **Tag Play feedback (H6, 2026-10-11, heavy agent on it):** Danzo could tag the box once only; frozen at round start and
-      had to re-press a key to move; Shift dash can be spammed for a big speed gain. Fixes land in `docs/systems/tag.md`.
-- [ ] **Fuse pass bonus +5 → +2 (Danzo, 2026-10-11, "for now"):** `Config.FUSE_PASS_BONUS`; routed through the H6 agent
-      since it holds `Config.lua`. DESIGN §2 carries the trial note. Judge in Play; the HUD pop follows the knob.
-- [ ] **QA loop for the tag:** goals in `docs/qa/tag.md`. Runs after H6, so the reviewer is not told what Danzo found.
-      Studio is the reviewer's while it runs: Danzo should not Play during the loop.
+- [x] **Tag Play feedback (H6, 2026-10-11):** the once-only tag was a real server bug (claims judged before the body
+      arrived), fixed; start wait 1 s with a GO count; dash cooldown 0.8 s. Re-press: likely Studio focus, not code.
+- [x] Fuse pass bonus +5 → +2 (Danzo, 2026-10-11, "for now"): `Config.FUSE_PASS_BONUS`, DESIGN §2 note, HUD pop follows.
+- [ ] **Danzo decides: the fuse cap.** The H6 agent added "a pass never lifts the fuse above the life's fresh fuse" and
+      labelled it his; he never asked. Keep or revert (`Tag.pass`, DESIGN §2 note).
+- [ ] **Danzo decides: dash chains.** Mashing Shift on the floor is ~45% faster than running at any cooldown. (1) ground
+      dash ends at run speed (recommended), (2) recharge only after landing from the air, (3) accept with a ceiling.
+- [x] **QA loop for the tag (2026-10-11): 7 → 8/10,** target met in round 2. Summary and Danzo's Play checklist:
+      `docs/qa/tag-summary.md`. H7 (honest pop, leave gap) and H8 (spread round starts, spectating) came out of it.
 - [ ] **Next build: second player.** Each screen draws only its own runner; the other player is invisible. Then the
       movement remote with a server speed check (the stated limit of the tag check, `docs/systems/tag.md` §2).
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
