@@ -9,7 +9,9 @@
   is parked below. Design sheet: https://claude.ai/artifact/JrDw2hzBgJ5o4J9abXcNgb
 - **Not done, in order (DESIGN §6):** ghost rules, the crate ability list, art theme, match structure, monetisation,
   the name, bots.
-- **Next build step, Danzo's call:** a second player (the tag landed 2026-10-11, H5).
+- **Tag played by Danzo (2026-10-11):** "pretty good": dash good, freeze works. Phone preset still untested.
+- **Next build step (started 2026-10-11, H11):** player 2: other runners drawn, pass-through collision, off-screen arrows,
+  round-ready. Then H12: the movement remote with a server speed check.
 
 ## To do
 
@@ -27,7 +29,9 @@
       other reading, decide by where it ENDS, would keep 80 off a ledge. Say if the ledge case feels wrong.
 - [x] **QA loop for the tag (2026-10-11): 7 → 8/10,** target met in round 2. Summary and Danzo's Play checklist:
       `docs/qa/tag-summary.md`. H7 (honest pop, leave gap) and H8 (spread round starts, spectating) came out of it.
-- [ ] **Next build: second player.** Each screen draws only its own runner; the other player is invisible. Then the
+- [ ] **Danzo confirms: collision between players = pass-through for everyone** (recommended 2026-10-11; chase games do it,
+      one plane cannot be walked around, the tag needs overlap). Head-bounce (rule 15) parked as an optional later mechanic.
+- [ ] **Player 2 (H11, 2026-10-11, heavy agent on it).** Each screen draws only its own runner; the other player is invisible. Then the
       movement remote with a server speed check (the stated limit of the tag check, `docs/systems/tag.md` §2).
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
 - [x] Movement tests split (2026-10-10): `movement_world.luau` helpers, `movement.test.luau`, `movement_sprites.test.luau`.
