@@ -80,3 +80,6 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   dummy patrol off spawn, PlayerModule note, pop from `gained` with `%g`. H7 and H8 came out of the rounds. Summary and
   Danzo's checklist in `docs/qa/tag-summary.md`; round files archived. Open for Danzo: dash chains, the fuse cap.
 - 2026-10-11 · `claude/friendly-hawking-74891i`: H9 (heavy): a floor dash recharges only after air (`Movement` `airSinceDash`), mash speed pinned against run speed in `movement.test.luau` (45.0 vs old 60.5), seen in Play; movement.md §3/§9, learnings S11.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: Danzo's calls after the QA loop: fuse cap kept (DESIGN §2 note corrected: proposed
+  by the H6 agent), dash chains option 2 (H9, heavy). DESIGN §3 rule 15 carries the H9 exception. `movement.md` sits at 302
+  lines: split it on the next edit (→ G3).
