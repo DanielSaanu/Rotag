@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (H6: N5 corrected, N6, A5, T9)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (H7: N7)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -128,6 +128,12 @@ of both bodies: the server must (a) keep the claim open a short wait for the cla
 each claimant sample with the target's samples up to a capped allowance OLDER (never newer). A runner trailing a
 target at a touch never touches it in any single server frame. Log the closest approach on every drop, so the next
 mismatch is a number, not a guess. *(2026-10-11, handoff H6, `Tag.touchedBetween`, `Tag.claimWindow`.)*
+
+**N7 — A number the player is shown travels in the event; the client never rebuilds it from `Config`. And every
+path that can end a phase sets that phase's follow-on timers.** The pass pop printed `+FUSE_PASS_BONUS` while the cap
+had cut the real gain to +0.9; and a round ended by a leave restarted at once because only the `tick` path set
+`nextRoundAt`. Have the pure rule RETURN what happened (`Tag.pass` -> `fuse, gained`) and send that; after every call
+that may set `over`, check it and schedule the gap, not just after the usual one. *(2026-10-11, handoff H7.)*
 
 ## T — Tooling
 

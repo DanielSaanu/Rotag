@@ -28,7 +28,7 @@ code. Add a row here in the same commit as the declaration. Never rename one: bo
 |---|---|---|---|
 | `SheetIds` | server → one client, once on join | `{ [number]: string }`: one `"rbxassetid://<digits>"` per sheet, in `Sprites.Sheets` order (the return of `Sprites.ResolveOnServer()`) | `server/Server.server.lua` fires; `client/Client.client.lua` applies with `Sprites.ApplySheetIds` |
 | `TagClaim` | client → server, at most every 0.15 s while the sender is it | `number`: the target's runner id (a UserId, or -1000 for the Studio dummy). Nothing else is read | `client/Tagging.lua` fires; `server/Match.lua` checks rate, who may claim, and its OWN position history ([tag.md](tag.md) §2) |
-| `TagVerdict` | server → all, on each confirmed tag | `{ from: number, to: number, fuse: number }`: fuse = the new holder's seconds (remaining + 5) | `server/Match.lua` fires; `client/Tagging.lua` (hit-stop) and `client/Hud.lua` ("+5") |
+| `TagVerdict` | server → all, on each confirmed tag | `{ from: number, to: number, fuse: number, gained: number }`: fuse = the new holder's seconds, min(remaining + `FUSE_PASS_BONUS`, the life's fresh fuse); gained = what the pass really added (H7) | `server/Match.lua` fires; `client/Tagging.lua` (hit-stop) and `client/Hud.lua` (the "+N" pop, from `gained`) |
 | `MatchState` | server → all on every change and at least once a second; → one client on join | `{ round, it: number?, fuse, frozenFor, chaseFor, alive: { number }, over: boolean, winner: number? }`: durations in seconds, no timestamps | `server/Match.lua` fires; `client/Tagging.lua` holds it, `client/Hud.lua` draws it |
 
 **`SheetIds` (H4, 2026-10-10).** Uploads are Decals; the server resolves the Image id at boot and this carries it to

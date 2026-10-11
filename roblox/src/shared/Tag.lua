@@ -129,14 +129,17 @@ end
 
 -- A confirmed tag: remaining + FUSE_PASS_BONUS goes to `to`, who is frozen for TAG_FREEZE. Call canClaim first.
 -- Capped at the fuse this life started with (Danzo 2026-10-11): passes alone never lengthen a round past it.
-function Tag.pass(r: Round, to: number, now: number): number
-	local fuse = math.min(Tag.fuseLeft(r, now) + Config.FUSE_PASS_BONUS, Tag.freshFuse(r.eliminations))
+-- Returns the new fuse and what the pass really added (H7): under the cap that is the whole bonus, at the cap less,
+-- so the "+N" every screen pops (rule 2) is never a number the fuse did not get.
+function Tag.pass(r: Round, to: number, now: number): (number, number)
+	local left = Tag.fuseLeft(r, now)
+	local fuse = math.min(left + Config.FUSE_PASS_BONUS, Tag.freshFuse(r.eliminations))
 	r.it = to
 	r.fuse = fuse
 	r.since = now
 	r.frozenUntil = now + Config.TAG_FREEZE
 	r.chaseFrom = r.frozenUntil
-	return fuse
+	return fuse, fuse - left
 end
 
 -- Advance the round. Returns the id eliminated this call, if the fuse ran out. The next holder is the next alive
@@ -163,8 +166,9 @@ function Tag.tick(r: Round, now: number): number?
 end
 
 -- A runner leaves mid-round: out of the rotation; if they held it, the next alive runner takes over the fuse as is.
+-- A round that is already over is left alone (H7): the winner leaving during ROUND_GAP must not rewrite the result.
 function Tag.leave(r: Round, id: number, now: number)
-	if not r.alive[id] then return end
+	if r.over or not r.alive[id] then return end
 	r.alive[id] = false
 	if Tag.aliveCount(r) <= 1 and #r.order > 1 then
 		r.over = true

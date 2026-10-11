@@ -94,9 +94,11 @@ end
 
 -- A confirmed tag: hand the fuse over and tell everyone.
 local function pass(r: Tag.Round, claimant: number, target: number, now: number)
-	local fuse = Tag.pass(r, target, now)
-	log(("TAG %s -> %s, fuse %.1fs"):format(tostring(claimant), tostring(target), fuse))
-	if verdictRemote then verdictRemote:FireAllClients({ from = claimant, to = target, fuse = fuse }) end
+	local fuse, gained = Tag.pass(r, target, now)
+	log(("TAG %s -> %s, fuse %.1fs (+%.1fs)"):format(tostring(claimant), tostring(target), fuse, gained))
+	if verdictRemote then
+		verdictRemote:FireAllClients({ from = claimant, to = target, fuse = fuse, gained = gained })
+	end
 	dirty = true
 end
 
@@ -248,7 +250,18 @@ function Match.start(tagName: string)
 		local i = table.find(order, id)
 		if i then table.remove(order, i) end
 		roots[id], history[id], lastClaim[id], pending[id] = nil, nil, nil, nil
-		if round then Tag.leave(round, id, os.clock()) dirty = true end
+		local r = round
+		if r and not r.over then
+			local now = os.clock()
+			Tag.leave(r, id, now)
+			-- A leave can end the round too (H7): give it the same gap and "wins the round" screen as the tick path,
+			-- or the next frame starts a new round at once.
+			if r.over then
+				nextRoundAt = now + Config.ROUND_GAP
+				log(("%s left, round over, winner %s"):format(tostring(id), tostring(r.winner)))
+			end
+			dirty = true
+		end
 	end)
 	RunService.Heartbeat:Connect(step)
 	if useDummy then print("[Rotag] Studio: a dummy runner (orange box) joins the round; Config.STUDIO_DUMMY") end

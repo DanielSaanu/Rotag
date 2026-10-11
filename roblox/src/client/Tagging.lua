@@ -66,7 +66,7 @@ function Tagging.claim(x: number, y: number)
 	end
 end
 
--- onState(state) after every MatchState; onVerdict(v) after every TagVerdict {from, to, fuse}.
+-- onState(state) after every MatchState; onVerdict(v) after every TagVerdict {from, to, fuse, gained}.
 function Tagging.start(player: Player, onState: (any) -> (), onVerdict: (any) -> ())
 	me = player.UserId
 	task.spawn(function()

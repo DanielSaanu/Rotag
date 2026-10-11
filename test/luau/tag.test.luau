@@ -27,6 +27,20 @@ do -- the cap (Danzo 2026-10-11): a pass never lifts the fuse above the fuse thi
 	assert(near(Tag.pass(r, C, t3), Tag.freshFuse(1) - 20 + Config.FUSE_PASS_BONUS), "under the cap: remaining + bonus")
 end
 
+do -- H7: pass reports what it really added, so the "+N" pop is honest through the cap (QA round 1: 44.1 -> 45.0)
+	local r = Tag.newRound({ A, B, C }, A, 0)
+	local t = Config.START_FREEZE + 0.9 -- 44.1 left: the bonus would pass 45, the real gain is 0.9
+	local fuse, gained = Tag.pass(r, B, t)
+	assert(near(fuse, Config.FUSE_START) and near(gained, 0.9, 1e-6), "at the cap the gain is what fit, not the bonus")
+	local t2 = t + Config.TAG_FREEZE + 20 -- 20 s burnt: under the cap
+	local fuse2, gained2 = Tag.pass(r, C, t2)
+	assert(near(fuse2, Config.FUSE_START - 20 + Config.FUSE_PASS_BONUS), "under the cap: remaining + bonus")
+	assert(near(gained2, Config.FUSE_PASS_BONUS, 1e-6), "under the cap the gain is the whole bonus")
+	local t3 = t2 + Config.TAG_FREEZE -- the instant C may tag: the fuse waited through the freeze, nothing burnt
+	local fuse3, gained3 = Tag.pass(r, A, t3)
+	assert(near(gained3, fuse3 - fuse2, 1e-6), "the gain is the new fuse minus what was left")
+end
+
 do -- the fuse waits while the holder is frozen (start freeze, and the freeze after a pass)
 	local r = Tag.newRound({ A, B }, A, 10)
 	assert(near(Tag.fuseLeft(r, 10 + Config.START_FREEZE), Config.FUSE_START), "no burn in the start freeze")
@@ -94,6 +108,9 @@ do -- leaving: a holder who leaves hands the fuse as is to the next; down to one
 	assert(r.it == B and near(r.fuse, Config.FUSE_START - 10) and not r.over, "B carries A's fuse")
 	Tag.leave(r, C, t + 1)
 	assert(r.over and r.winner == B, "B is the last one in")
+	-- H7: a finished round is not rewritten by a leave in the gap; Match starts ROUND_GAP from the leave that ended it
+	Tag.leave(r, B, t + 2)
+	assert(r.over and r.winner == B and r.alive[B], "the winner leaving after the round ends keeps the result")
 end
 
 do -- rule 6: the server confirms from its own position history, with grace and a capped allowance

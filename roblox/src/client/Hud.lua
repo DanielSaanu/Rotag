@@ -124,11 +124,19 @@ function Hud.start(player: Player)
 	buildMarker()
 end
 
--- A pass landed: "+5" pops on every screen (rule 2).
+-- A pass landed: "+N" pops on every screen (rule 2). N is what the fuse really gained (TagVerdict.gained, H7): the
+-- whole bonus, or less when the cap (tag.md §5) cut it, which says so. No number at all if the server sent none.
 function Hud.pass(v: any, me: number)
 	if not popLabel then return end
 	local who = if v.to == me then "you" else Hud.nameOf(v.to)
-	popLabel.Text = ("+%ds  ->  %s"):format(Config.FUSE_PASS_BONUS, who)
+	local gained = v.gained
+	if type(gained) ~= "number" then
+		popLabel.Text = ("->  %s"):format(who)
+	elseif gained >= Config.FUSE_PASS_BONUS - 0.05 then
+		popLabel.Text = ("+%ds  ->  %s"):format(Config.FUSE_PASS_BONUS, who)
+	else
+		popLabel.Text = ("+%.1fs, capped  ->  %s"):format(math.max(0, gained), who)
+	end
 	popAt = os.clock()
 end
 

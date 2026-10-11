@@ -17,7 +17,7 @@ played solo with the dummy through the remotes in Studio (H6, §7, §9). Feel nu
 | `server/Dummy.lua` | server | the Studio-only stand-in runner (§4) |
 | `server/Runners.lua` | server | marks each body: CollectionService tag `RotagRunner`, attribute `RunnerId` = UserId |
 | `client/Tagging.lua` | client | holds the server's last state; sends claims; tells the frame loop "frozen", "hit-stop", "speed x" |
-| `client/Hud.lua` | client | fuse readout, the +5 pop, the IT marker, one status line |
+| `client/Hud.lua` | client | fuse readout, the "+N" pop (from `TagVerdict.gained`), the IT marker, one status line |
 | `shared/Movement.lua` | both | one new optional input, `speedMult`, multiplies the run speed (the ramp) |
 
 The server is the only thing that writes "it" or the fuse (DESIGN §3 rule 6). The client never decides a tag: it can
@@ -30,7 +30,9 @@ Three RemoteEvents, declared in `default.project.json` and listed in [`README.md
 - **`TagClaim`**, client → server, payload **one number**: the target's runner id. Fired by the holder's client
   when, on ITS screen, its box touches another live runner's box (`Tag.overlaps`, reach 0.5 studs). At most one per
   0.15 s from the client.
-- **`TagVerdict`**, server → all, `{ from, to, fuse }`: a tag counted. Clients pop "+5", hit-stop if involved.
+- **`TagVerdict`**, server → all, `{ from, to, fuse, gained }`: a tag counted. `gained` (H7) is what the pass really
+  added, from `Tag.pass`'s second return: the whole bonus under the cap, less at it. Clients pop "+N" from `gained`
+  (never from `Config`), hit-stop if involved. Additive: a client that ignores `gained` still works.
 - **`MatchState`**, server → all (and to one player on join), a snapshot: `{ round, it, fuse, frozenFor, chaseFor,
   alive, over, winner }`. Durations, not timestamps, so no clock sync is needed: the client counts down from the
   moment it arrives and is corrected by the next one. Sent on every change and at least once a second.
@@ -118,7 +120,10 @@ Round 1: the first to join. Each later round: the next present runner after the 
 - **N players:** as above; joiners mid-round wait for the next round (they run, but are not in play).
 - **After an elimination:** the next ALIVE runner after the eliminated one in join order becomes it, frozen
   `TAG_FREEZE`, with a fresh fuse (§5). Not "the last one who tagged them", which would punish good play.
-- **The holder leaves:** the next alive runner takes the fuse as it stands, frozen. Down to one runner: round over.
+- **The holder leaves:** the next alive runner takes the fuse as it stands, frozen. Down to one runner: round over,
+  with the same `ROUND_GAP` and "wins the round" screen as an elimination (H7: the leave path in `Match` now sets
+  `nextRoundAt` too; before, the next frame started a new round at once). A leave after the round is over changes
+  nothing (`Tag.leave` returns early), so the winner leaving during the gap cannot rewrite the result.
 - "The previous round's leader" (rule 5's other option) needs scoring, which is DESIGN §6.4 (open). Swap it in then.
 
 **(d) Testable before a second client: a server-driven dummy** (`server/Dummy.lua`). In Studio only
@@ -139,6 +144,12 @@ match (`FUSE_SHRINK = 10`, floor `FUSE_MIN = 15`). It applies to the fresh fuse 
 `FUSE_PASS_BONUS` is **2** for now, recorded under DESIGN §2; the rule (remaining + bonus) is unchanged.
 **Cap (Danzo, 2026-10-11):** a pass never lifts the fuse above the fuse this life started with: `min(remaining +
 bonus, Tag.freshFuse(eliminations))`, so 45 on the first life, then 35, 25. Seen in Play: `fuse 45.0s` after quick passes.
+**The pop says what the cap left (H7, rule 2):** `Tag.pass` returns `(fuse, gained)`, `gained = fuse - remaining`;
+`TagVerdict` carries it; the HUD prints `+2s` when the whole bonus fit and `+0.9s, capped` when the cap cut it. QA
+round 1 saw 44.1 → 45.0 pop "+2s". Seen after the fix (Studio Play, ping-pong with the dummy): under the cap
+`TAG ... fuse 41.5s (+2.0s)` / pop `+2s  ->  Dummy`; at the cap `TAG ... fuse 45.0s (+0.4s)` / pop
+`+0.4s, capped  ->  Dummy`, and `+0.0s, capped  ->  you` on a pass at 45.0. If the cap is ever reverted, `gained`
+stays correct with no other change.
 
 **Why not per pass:** shrinking anything on a pass would change the locked "remaining + 5 s". **Why not per round**
 of a best-of session: §2 says "across the match"; a match is one game to the last runner (2–3 minutes, §1), and
@@ -162,7 +173,7 @@ session structure is §6.4, still open. Per elimination also serves rule 3 (forc
   over the player and then over the dummy.
 - **Rule 21, hit-stop:** 80 ms (`HIT_STOP`) on both involved clients when the verdict lands; the body holds still and
   resumes with the same speed. Screen shake: not yet.
-- **Rule 6's catch-up animation: not built.** Today the verdict only moves the marker and pops "+5". It needs the art
+- **Rule 6's catch-up animation: not built.** Today the verdict only moves the marker and pops "+N". It needs the art
   pass (a reach/lunge frame toward the target); recorded here so it is not forgotten (→ Q1).
 - **Eliminated runners keep running** but are out of play (untaggable, HUD says "out") until ghosts exist (DESIGN §6.1).
 - **Gap for "then a second player":** each client draws only its own runner's sprite (`Look` is built for the local

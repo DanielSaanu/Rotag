@@ -68,3 +68,6 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   `START_FREEZE` 3 -> 1 with a GO countdown; `DASH_COOLDOWN` 0.2 -> 0.8; from Danzo: `FUSE_PASS_BONUS` 5 -> 2 (trial),
   fuse capped at the life's fresh fuse, IT marker = red glowing triangle (neon wedges). Play: 3/3 run-through tags.
   → `docs/systems/tag.md`, `docs/systems/movement.md`, N5 corrected, N6, A5, T9.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: H7 (heavy): QA round 1 fixes. `Tag.pass` returns `gained`,
+  `TagVerdict` carries it, HUD pops `+2s` / `+0.4s, capped` (Studio Play: `fuse 45.0s (+0.4s)`); leave that ends a
+  round now gets `ROUND_GAP`; `Tag.leave` ignores a finished round; README `TagVerdict` row. → `docs/systems/tag.md`, N7.
