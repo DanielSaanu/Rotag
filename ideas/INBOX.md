@@ -9,21 +9,23 @@
   is parked below. Design sheet: https://claude.ai/artifact/JrDw2hzBgJ5o4J9abXcNgb
 - **Not done, in order (DESIGN §6):** ghost rules, the crate ability list, art theme, match structure, monetisation,
   the name, bots.
-- **Next build step, Danzo's call:** the tag itself (the fuse, "it", the pass, the +5 s), then a second player.
+- **Next build step, Danzo's call:** a second player (the tag landed 2026-10-11, H5).
 
 ## To do
 
-- [ ] **Next build: tag.** Server-owned "it", the 45 s fuse, client overlap + server confirm (DESIGN §3 rule 6), the
-      +5 s pass, the HUD fuse. Networking and fairness: every piece is escalation trigger 3, so it starts as a handoff.
+- [x] **Tag built (H5, 2026-10-11):** `shared/Tag`, `server/Match`, remotes `TagClaim`/`TagVerdict`/`MatchState`, HUD,
+      an orange Studio-only dummy to chase. Server side seen in Play; client side needs a `rojo serve` restart first.
+      Detail: `docs/systems/tag.md`. Danzo to Play and judge the 1.5 s freeze, the 3 s start wait and the chaser ramp.
+- [ ] **Next build: second player.** Each screen draws only its own runner; the other player is invisible. Then the
+      movement remote with a server speed check (the stated limit of the tag check, `docs/systems/tag.md` §2).
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
 - [x] Movement tests split (2026-10-10): `movement_world.luau` helpers, `movement.test.luau`, `movement_sprites.test.luau`.
-- [ ] Danzo: restart `rojo serve roblox/default.project.json` and reconnect in Studio once, so the new RemoteEvent comes
-      from the project file (it was added to the open place by hand for the test).
+- [x] Danzo (2026-10-11): `rojo serve` restarted and Studio reconnected; `Remotes.SheetIds` now comes from the project file.
 - [ ] Runner polish pass (parked): the poses read "a bit strange" to Danzo. Candidates: longer stride, less knee bend
       in the passing frames, a clearer forward hand. Joints live in `tools/runner-rig.js`; each pass costs an upload.
 - [ ] Decide the art theme (DESIGN §6.3: graphite, neon or glowing graphite). Resolution is settled (2026-10-10): smooth
       vector figures, not pixel art. The runner is inked graphite with a neon visor and scarf.
-- [ ] Check: with Studio's injected D key the runner ran toward -X (screen-left). Confirm D runs right on a real keyboard.
+- [x] Checked by Danzo (2026-10-11): D runs right on a real keyboard. The -X run was Studio's injected key only.
 
 ## Ideas
 
