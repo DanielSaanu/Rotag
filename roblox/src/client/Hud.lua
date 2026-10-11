@@ -133,7 +133,8 @@ function Hud.pass(v: any, me: number)
 	if type(gained) ~= "number" then
 		popLabel.Text = ("->  %s"):format(who)
 	elseif gained >= Config.FUSE_PASS_BONUS - 0.05 then
-		popLabel.Text = ("+%ds  ->  %s"):format(Config.FUSE_PASS_BONUS, who)
+		-- From gained, never from Config (tag.md §5, N7): %d on a non-integer bonus would throw inside the handler (QA round 2).
+		popLabel.Text = ("+%gs  ->  %s"):format(math.floor(gained * 10 + 0.5) / 10, who)
 	else
 		popLabel.Text = ("+%.1fs, capped  ->  %s"):format(math.max(0, gained), who)
 	end
