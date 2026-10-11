@@ -10,8 +10,9 @@
 - **Not done, in order (DESIGN §6):** ghost rules, the crate ability list, art theme, match structure, monetisation,
   the name, bots.
 - **Tag played by Danzo (2026-10-11):** "pretty good": dash good, freeze works. Phone preset still untested.
-- **Next build step (started 2026-10-11, H11):** player 2: other runners drawn, pass-through collision, off-screen arrows,
-  round-ready. Then H12: the movement remote with a server speed check.
+- **Player 2 built (2026-10-11, H11):** other runners drawn from their replicated position, pass-through collision group,
+  off-screen arrows, round waits for every client to draw (5 s cap). Not yet seen with two real clients: Danzo's test
+  below. Detail: `docs/systems/players.md`. Next: H12, the movement remote with a server speed check.
 
 ## To do
 
@@ -31,7 +32,14 @@
       `docs/qa/tag-summary.md`. H7 (honest pop, leave gap) and H8 (spread round starts, spectating) came out of it.
 - [ ] **Danzo confirms: collision between players = pass-through for everyone** (recommended 2026-10-11; chase games do it,
       one plane cannot be walked around, the tag needs overlap). Head-bounce (rule 15) parked as an optional later mechanic.
-- [ ] **Player 2 (H11, 2026-10-11, heavy agent on it).** Each screen draws only its own runner; the other player is invisible. Then the
+- [x] Player 2 (H11, 2026-10-11): `shared/RemotePose`, `client/Others`, `client/Arrows`, collision group `RotagRunners`,
+      remote `Ready`. Solo-verified in Studio with a server-moved stand-in.
+- [ ] **Danzo: two-player test.** Restart `rojo serve` and reconnect (the `Ready` remote was hand-added for the test), then
+      Test tab → Clients and Servers → 2 players → Start. Look for: the other runner drawn and animated the right way with
+      no pose flicker; running through each other with no stop, shove or wall-kick; an edge arrow (red on the holder) when
+      apart; RUN!/count/GO! in both windows; whether tags at run speed look fair (H12's input).
+- [ ] Proposals from the H11 agent, Danzo's call: HUD "waiting for players" while round 1 is held (it reads "round over"
+      today); give the dummy the runner sprite so solo Play exercises the remote-drawing path (one line in `client/Others`). Each screen draws only its own runner; the other player is invisible. Then the
       movement remote with a server speed check (the stated limit of the tag check, `docs/systems/tag.md` §2).
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
 - [x] Movement tests split (2026-10-10): `movement_world.luau` helpers, `movement.test.luau`, `movement_sprites.test.luau`.

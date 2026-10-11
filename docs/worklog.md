@@ -87,3 +87,6 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
 - 2026-10-11 · `claude/friendly-hawking-74891i`: Danzo reversed to dash option 1 (H10, heavy): floor dash ends at run speed,
   H9's recharge gate removed, chain measured x1.325 a run and pinned. DESIGN rule 15 amendment and INBOX updated; pushed.
 - 2026-10-11 · `claude/friendly-hawking-74891i`: H11 (heavy): player 2. Pass-through collision group + probes cast as it (pending Danzo, DESIGN §2), other runners drawn via `shared/RemotePose` (option a), off-screen arrows, `Remotes.Ready` + `READY_TIMEOUT` 5 s, runner models streaming-Persistent. Tested and mutation-checked; seen in solo Play with a stand-in runner; two-client check is Danzo's. → `docs/systems/players.md`, learnings N9, T10, T11.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: H11 (heavy) player 2 landed: remote pose from replicated position (no
+  remote), pass-through collision group, edge arrows, `Ready` round hold. Verified solo; two-client test is Danzo's.
+  Pass-through still "pending Danzo" in DESIGN §2. Pushed.
