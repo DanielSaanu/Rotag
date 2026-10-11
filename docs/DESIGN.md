@@ -99,7 +99,7 @@ Moves should hand speed off to each other:
     - Wall-jump works within 2–3 px of a wall
     - Half gravity at the apex while jump is held
 15. **Refresh on contact.** Dash and double jump come back on landing, wall touch, boost pad or bouncing off a player. This is what makes moves chain.
-    *Exception, Danzo 2026-10-11 (H9):* a dash started on the floor comes back only after the runner has left the floor. A floor-only chain gets one dash; a cooldown alone could not stop the chain beating a run (QA rounds 1–2). Air dash, wall touch and dash-into-jump are unchanged.
+    *Amendment, Danzo 2026-10-11 (H10, replacing H9's recharge-after-air rule the same day):* a dash started on the floor ends at run speed instead of the air dash's end speed, so a floor chain gains only the burst itself. Air dash, refresh on contact and dash-into-jump are unchanged. The chain is still a little faster than a run; the cooldown is the knob (QA rounds 1–2).
 16. **Keep speed between moves.** Dash into jump keeps the speed, platform momentum carries into the jump, and wall-climb leads back into a run. Pizza Tower's open moveset beat a restricted one in testing.
 17. **Grapple rules:**
     - Only clearly marked, colour-coded anchors.
