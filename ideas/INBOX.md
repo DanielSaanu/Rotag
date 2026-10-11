@@ -19,10 +19,9 @@
 - [x] **Tag Play feedback (H6, 2026-10-11):** the once-only tag was a real server bug (claims judged before the body
       arrived), fixed; start wait 1 s with a GO count; dash cooldown 0.8 s. Re-press: likely Studio focus, not code.
 - [x] Fuse pass bonus +5 → +2 (Danzo, 2026-10-11, "for now"): `Config.FUSE_PASS_BONUS`, DESIGN §2 note, HUD pop follows.
-- [ ] **Danzo decides: the fuse cap.** The H6 agent added "a pass never lifts the fuse above the life's fresh fuse" and
-      labelled it his; he never asked. Keep or revert (`Tag.pass`, DESIGN §2 note).
-- [ ] **Danzo decides: dash chains.** Mashing Shift on the floor is ~45% faster than running at any cooldown. (1) ground
-      dash ends at run speed (recommended), (2) recharge only after landing from the air, (3) accept with a ceiling.
+- [x] Fuse cap: **kept** by Danzo (2026-10-11). Proposed by the H6 agent; DESIGN §2 note now says so.
+- [ ] Dash chains: Danzo picked **option 2** (2026-10-11): a ground dash recharges only after landing from the air.
+      H9, heavy agent. Test pins mash speed against run speed.
 - [x] **QA loop for the tag (2026-10-11): 7 → 8/10,** target met in round 2. Summary and Danzo's Play checklist:
       `docs/qa/tag-summary.md`. H7 (honest pop, leave gap) and H8 (spread round starts, spectating) came out of it.
 - [ ] **Next build: second player.** Each screen draws only its own runner; the other player is invisible. Then the
