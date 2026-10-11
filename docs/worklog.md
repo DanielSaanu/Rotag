@@ -84,3 +84,5 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   by the H6 agent), dash chains option 2 (H9, heavy). DESIGN §3 rule 15 carries the H9 exception. `movement.md` sits at 302
   lines: split it on the next edit (→ G3).
 - 2026-10-11 · `claude/friendly-hawking-74891i`: H10 (heavy): H9 undone; a floor dash ends at run speed (`Movement` `dashFloor`, `Config.DASH_END_SPEED_FLOOR = RUN_SPEED`), refresh back to pre-H9; mash/run measured and pinned at x1.325 (cooldown 0.8, Danzo's knob); seen in Play; movement.md §3/§9 rewritten (300 lines, no split), learnings S11/T9 extended.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: Danzo reversed to dash option 1 (H10, heavy): floor dash ends at run speed,
+  H9's recharge gate removed, chain measured x1.325 a run and pinned. DESIGN rule 15 amendment and INBOX updated; pushed.

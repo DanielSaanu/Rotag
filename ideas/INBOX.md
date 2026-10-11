@@ -20,9 +20,11 @@
       arrived), fixed; start wait 1 s with a GO count; dash cooldown 0.8 s. Re-press: likely Studio focus, not code.
 - [x] Fuse pass bonus +5 → +2 (Danzo, 2026-10-11, "for now"): `Config.FUSE_PASS_BONUS`, DESIGN §2 note, HUD pop follows.
 - [x] Fuse cap: **kept** by Danzo (2026-10-11). Proposed by the H6 agent; DESIGN §2 note now says so.
-- [ ] Dash chains: Danzo first picked option 2 (H9: a floor dash recharges only after air), then switched to **option 1**
-      the same day (H10, heavy agent): a floor dash ends at run speed; refresh on contact back to normal. A floor chain stays
-      somewhat faster than a run; `DASH_COOLDOWN` is the knob. DESIGN §3 rule 15 carries the amendment.
+- [x] Dash chains, Danzo's **option 1** (H10, 2026-10-11, replacing H9 the same day): a floor dash ends at run speed
+      (`Config.DASH_END_SPEED_FLOOR`); refresh on contact back to normal. Seen in Play. Measured: a floor chain is x1.325
+      a run at `DASH_COOLDOWN` 0.8 (about +25% at 1.0, +21% at 1.2). The cooldown is Danzo's knob if he wants it slower.
+- [ ] Danzo, optional: a floor dash that runs off a ledge ends at run speed (the rule reads "started on the floor"). The
+      other reading, decide by where it ENDS, would keep 80 off a ledge. Say if the ledge case feels wrong.
 - [x] **QA loop for the tag (2026-10-11): 7 → 8/10,** target met in round 2. Summary and Danzo's Play checklist:
       `docs/qa/tag-summary.md`. H7 (honest pop, leave gap) and H8 (spread round starts, spectating) came out of it.
 - [ ] **Next build: second player.** Each screen draws only its own runner; the other player is invisible. Then the
