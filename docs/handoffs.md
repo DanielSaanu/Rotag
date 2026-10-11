@@ -27,7 +27,32 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-*(none)*
+### H7 — QA round 1 fixes: honest "+gained" pop, round gap after a leave, README row — 2026-10-11 — OPEN
+- **Trigger:** 3 (a remote payload changes: `TagVerdict`; the tag loop in `server/Match.lua`).
+- **Doc:** `docs/systems/README.md` Remotes table (`TagVerdict` row); `docs/systems/tag.md` §2, §5; `docs/qa/tag-round1.md`
+  (the verbatim review and the builder decisions).
+- **Observed (QA round 1, Opus reviewer, Studio Play, 2026-10-11, score 7/10):**
+  1. The pass pop always prints `+FUSE_PASS_BONUS` (`client/Hud.lua` `Hud.pass`), but the cap can make the real gain
+     smaller: seen live, 44.1 → 45.0 is +0.9 and the screen said "+2s". Rule 2 needs the number to be honest.
+  2. A round that ends because a player leaves restarts instantly: `Tag.leave` can set `r.over`, but only the `tick`
+     path in `Match.step` sets `nextRoundAt`; the `PlayerRemoving` handler leaves it stale, so the next frame starts a
+     new round with no `ROUND_GAP` and no "wins the round" screen.
+  3. `docs/systems/README.md` Remotes table, `TagVerdict` row, still says "remaining + 5" and "+5".
+- **Evidence:** `roblox/src/client/Hud.lua` (`Hud.pass`), `roblox/src/server/Match.lua` (`step`: `nextRoundAt` only on
+  the tick path; `PlayerRemoving` handler), `roblox/src/shared/Tag.lua` (`Tag.pass`, the cap), commit add3c07.
+- **Routine session's read (guess):** `Tag.pass` returns (or Match computes) `gained = newFuse - leftBefore`;
+  `TagVerdict` becomes `{ from, to, fuse, gained }` (additive: old clients ignore the field); `Hud.pass` prints
+  `+%.0fs` from `gained` (or "+0s, capped" when it rounds to 0). In `PlayerRemoving`, after `Tag.leave`, set
+  `nextRoundAt = os.clock() + Config.ROUND_GAP` when the round is over. Pin both with Luau tests where the rule is
+  pure (`gained` through the cap; `leave` ending a round) and update the README row and tag.md §2/§5 in the same commit.
+- **PRESERVE (the reviewer's list; do not regress):** one-number `TagClaim` judged against the server's own history;
+  the fuse waiting while frozen via `max(since, frozenUntil)`; pending claims re-judged every frame with `canClaim`;
+  the Studio-only dummy with `CanQuery = false` claiming at rewind 0; the big centred countdown then GO.
+- **Not in this entry:** the dash-chain speed question (a design fork, Danzo's; pending his answer) and anything the
+  round file lists as deferred. The routine session has already moved the dummy patrol off spawn (`server/Dummy.lua`)
+  and downgraded the PlayerModule warning (`client/Controls.lua`): do not touch those two files.
+- **Decision needed:** none beyond the payload shape; if the cap is reverted later, `gained` stays correct.
+- **Blocked routine work:** QA round 2 waits for this.
 
 ## Resolved
 

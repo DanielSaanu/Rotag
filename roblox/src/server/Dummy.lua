@@ -9,7 +9,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Dummy = {}
 Dummy.ID = -1000 -- Studio's local-server test players are -1, -2, ...; this never collides with them
 
-local PATROL = 40 -- studs either side of x = 0
+local PATROL_MIN, PATROL_MAX = 12, 52 -- studs; the patrol stays clear of the spawn at x = 0 (QA round 1: an idle
+-- runner at spawn was tagged and passed to three times before touching a key)
 local PATROL_SPEED = 18 -- slower than a run (45), so a player can catch it
 local CHASE_SPEED = 30 -- as "it": slower than a run, so a player can escape it
 local Y = Config.RUNNER_HEIGHT / 2 -- standing on the test map's floor (top at y = 0)
@@ -27,7 +28,7 @@ function Dummy.new(tagName: string)
 	root.Color = Color3.fromRGB(255, 170, 60)
 	root.Material = Enum.Material.Neon
 	root.Transparency = 0.35
-	root.CFrame = CFrame.new(PATROL / 2, Y, 0)
+	root.CFrame = CFrame.new((PATROL_MIN + PATROL_MAX) / 2, Y, 0)
 	root.Parent = model
 	model.PrimaryPart = root
 	model:SetAttribute("RunnerId", Dummy.ID)
@@ -45,7 +46,7 @@ function Dummy.step(d, dt: number, chaseX: number?, frozen: boolean)
 		x += math.sign(dx) * math.min(math.abs(dx), CHASE_SPEED * dt)
 	else
 		x += d.dir * PATROL_SPEED * dt
-		if x > PATROL then d.dir = -1 elseif x < -PATROL then d.dir = 1 end
+		if x > PATROL_MAX then d.dir = -1 elseif x < PATROL_MIN then d.dir = 1 end
 	end
 	d.root.CFrame = CFrame.new(x, Y, 0)
 end

@@ -107,7 +107,8 @@ local function loadPlayerControls(player: Player)
 	if ok and result then
 		playerControls = result
 	else
-		warn("[Rotag] PlayerModule controls not found; running from Humanoid.MoveDirection instead: " .. tostring(result))
+		-- Expected in this Studio (no PlayerModule under PlayerScripts, movement.md §5): a note, not a warning (QA round 1).
+		print("[Rotag] no PlayerModule controls; reading Humanoid.MoveDirection" .. (if result then ": " .. tostring(result) else ""))
 	end
 end
 
