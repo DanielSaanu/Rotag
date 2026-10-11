@@ -182,6 +182,8 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		statusLabel.Text = "you're it: wait for GO"
 	elseif frozenLeft > 0 and inRound then
 		statusLabel.Text = ("%s is it: run!"):format(Hud.nameOf(state.it))
+	elseif not inRound and type(state.spectating) == "table" and table.find(state.spectating, me) then
+		statusLabel.Text = "next round soon" -- joined after this round began (H8): waiting, not eliminated
 	elseif not inRound then
 		statusLabel.Text = "out (next round soon)"
 	else

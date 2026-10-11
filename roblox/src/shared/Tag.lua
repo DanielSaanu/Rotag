@@ -43,6 +43,18 @@ function Tag.nextStarter(order: { number }, present: { [number]: boolean }, prev
 	return nil
 end
 
+-- Where each runner starts a round (H8, tag.md §4): evenly along `spread` studs of floor centred on `centre`, the
+-- starter at the left end and the rest in rotation order after it, so the new "it" never starts beside anyone. One
+-- runner stands at the left end. Returns { [id] = x }. The server places the bodies; this only picks the spots.
+function Tag.startPlaces(order: { number }, starter: number, centre: number, spread: number): { [number]: number }
+	local ids, start = {}, table.find(order, starter) or 1
+	for k = 0, #order - 1 do table.insert(ids, order[(start + k - 1) % #order + 1]) end
+	local left, gap = centre - spread / 2, if #ids > 1 then spread / (#ids - 1) else 0
+	local places = {}
+	for i, id in ids do places[id] = left + (i - 1) * gap end
+	return places
+end
+
 function Tag.newRound(order: { number }, starter: number, now: number): Round
 	local alive = {}
 	for _, id in order do alive[id] = true end

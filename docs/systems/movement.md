@@ -63,6 +63,10 @@ character has a Humanoid; `CharacterAdded`, the camera scripts, and automatic ne
 all expect one. With `PlatformStand` on, it applies no forces, and `JumpPower = 0` hides Roblox's own touch jump
 button (ours replaces it).
 
+**Moving a body from the server: rebuild it, never write its CFrame (H8).** The player owns the box's physics, so a
+server `CFrame` write on a moving runner is overwritten by the owner's next updates (seen in Studio). Round start
+places runners by rebuilding them at the spot (`Runners.spawn`); see [tag.md](tag.md) §4.
+
 **Swapping it:** the body lives in two files. `server/Runners.lua` builds it; `client/Body.lua` reads its position and
 surroundings and applies a velocity. `Movement` never sees an Instance. To try the stock character, rewrite those
 two files; nothing else changes.

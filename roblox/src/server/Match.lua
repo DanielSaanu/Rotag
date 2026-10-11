@@ -9,6 +9,8 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Tag = require(Shared:WaitForChild("Tag"))
 local Dummy = require(script.Parent:WaitForChild("Dummy"))
+local Runners = require(script.Parent:WaitForChild("Runners"))
+local Arena = require(script.Parent:WaitForChild("Arena"))
 
 local Match = {}
 
@@ -51,9 +53,13 @@ end
 
 local function snapshot(now: number)
 	local r = round
-	local alive = {}
+	local alive, spectating = {}, {}
 	if r then
 		for _, id in r.order do if r.alive[id] then table.insert(alive, id) end end
+	end
+	-- Present but not in this round (joined after it began): "next round soon", not "out" (H8).
+	for _, id in order do
+		if rootOf(id) and not (r and table.find(r.order, id)) then table.insert(spectating, id) end
 	end
 	return {
 		round = roundNo,
@@ -62,6 +68,7 @@ local function snapshot(now: number)
 		frozenFor = if r then math.max(0, r.frozenUntil - now) else 0,
 		chaseFor = if r then now - r.chaseFrom else 0,
 		alive = alive,
+		spectating = spectating,
 		over = r == nil or r.over,
 		winner = r and r.winner,
 	}
@@ -75,6 +82,20 @@ local function sendState(now: number, to: Player?)
 	lastSent, dirty = now, false
 end
 
+-- Round start (H8, tag.md §4): every runner to its spot from Tag.startPlaces. A player's body is REBUILT there
+-- (Runners.spawn): the client owns its physics, and a server CFrame write on a moving owned body is overwritten by
+-- the owner's next update (seen in Studio: x -60 for 0.2 s, then the owner's x again). A new part placed before
+-- SetNetworkOwner is the one placement the owner cannot undo, and its client starts a fresh Movement state there.
+local function place(id: number, x: number)
+	history[id] = {}
+	if id == Dummy.ID then
+		if dummy then Dummy.place(dummy, x) end
+		return
+	end
+	local player = Players:GetPlayerByUserId(id)
+	if player then Runners.spawn(player, Vector3.new(x, Arena.SPAWN.Y, 0)) end
+end
+
 local function startRound(now: number)
 	local present = {}
 	for _, id in order do if rootOf(id) then present[id] = true end end
@@ -86,6 +107,7 @@ local function startRound(now: number)
 	if not (starter and anyPlayer) then return end -- the dummy never plays alone
 	roundNo += 1
 	lastStarter = starter
+	for id, x in Tag.startPlaces(ids, starter, Arena.SPAWN.X, Config.START_SPREAD) do place(id, x) end
 	round = Tag.newRound(ids, starter, now)
 	table.clear(pending)
 	log(("round %d: %d runner(s), %s is it with %ds"):format(roundNo, #ids, tostring(starter), Config.FUSE_START))

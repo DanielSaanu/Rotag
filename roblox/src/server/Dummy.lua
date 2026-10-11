@@ -37,6 +37,11 @@ function Dummy.new(tagName: string)
 	return { model = model, root = root, dir = 1 }
 end
 
+-- Round start (H8): stand at `x` on the floor. Outside the patrol, Dummy.step walks it back in.
+function Dummy.place(d, x: number)
+	d.root.CFrame = CFrame.new(x, Y, 0)
+end
+
 -- One server frame. `chaseX` is the nearest alive player's x when the dummy is it and not frozen, else nil.
 function Dummy.step(d, dt: number, chaseX: number?, frozen: boolean)
 	if frozen then return end

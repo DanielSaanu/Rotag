@@ -117,7 +117,9 @@ wait counts from the server's round start, and in Studio the client draws its fi
 Round 1: the first to join. Each later round: the next present runner after the last round's starter, wrapping.
 - **One player:** they are it. The fuse runs, they are eliminated at 0, the round ends with no winner, a new one starts
   after `ROUND_GAP` (4 s). This is the solo fuse test.
-- **N players:** as above; joiners mid-round wait for the next round (they run, but are not in play).
+- **N players:** as above; joiners mid-round wait for the next round (they run, but are not in play). The HUD tells
+  them "next round soon" from `MatchState.spectating` (H8: present ids not in the round), never "out", which reads as
+  eliminated; "out (next round soon)" stays for the eliminated.
 - **After an elimination:** the next ALIVE runner after the eliminated one in join order becomes it, frozen
   `TAG_FREEZE`, with a fresh fuse (§5). Not "the last one who tagged them", which would punish good play.
 - **The holder leaves:** the next alive runner takes the fuse as it stands, frozen. Down to one runner: round over,
@@ -126,10 +128,34 @@ Round 1: the first to join. Each later round: the next present runner after the 
   nothing (`Tag.leave` returns early), so the winner leaving during the gap cannot rewrite the result.
 - "The previous round's leader" (rule 5's other option) needs scoring, which is DESIGN §6.4 (open). Swap it in then.
 
+**Round start places everyone (H8, QA round 2).** Before, a round began wherever everyone stood: round 2 opened with
+the dummy as it ~9 studs from the idle player and tagged it within seconds (`TAG -1000 -> <player>, fuse 45.0s
+(+0.4s)`); the 1 s `START_FREEZE` cannot cover a start beside someone.
+- **The spread rule** (`Tag.startPlaces`, pure, tested and mutation-checked): every runner in the new round stands on
+  the floor, evenly over `Config.START_SPREAD` (120) studs centred on the spawn (x -60..60 on the test map, clear of
+  the wall-jump walls at x 72+). The starter takes the left end; the rest follow in rotation order after it. A full
+  match plus the Studio dummy (5) starts 30 studs apart, 4 players 40, 2 players 120; one runner stands at the left
+  end. The test pins "at least 20 apart" for `PLAYERS_PER_MATCH + 1`. The dummy takes a spot like any runner (not its
+  patrol start, as the brief guessed): outside its patrol it walks back in (`Dummy.place`, `Dummy.step`), and as it
+  it chases from its spot.
+- **The mechanism: (b), rebuild each player's body at its spot** (`Runners.spawn` from `Match.startRound`). Option
+  (a), a server `CFrame` write on the existing body, was tried in Studio first: it held on an idle runner, but on a
+  running one the server read x -60 for 0.2 s and then the owner's own updates again (x -33, -34, ...), and the client
+  never moved (it ended at x 71 against a wall). The player owns the body's physics (`SetNetworkOwner`), so a server
+  write races the owner. A new part placed before `SetNetworkOwner` is the one placement the owner cannot undo, and it
+  is the path every spawn already takes: the client's `CharacterAdded` builds a fresh `Movement` state (no old `vx`,
+  dash or charge carried in), resets the camera and rebuilds `Look`, and `Match` re-registers the root (fresh history).
+  No new remote, no client code. Cost: one small model per player per round.
+- **Seen in Play (2026-10-11, solo + dummy, four rounds):** `client: runner ready at (-60.0, 1.8)` as starter in rounds
+  1 and 3, `(60.0, 1.8)` in rounds 2 and 4 with the dummy starting at -60. Running left at -45 when round 4 began
+  (server x -51.3, client x -59.4), the new body read x 60.00 on the server and the client in the next frame and held;
+  the held key carried on from rest. The dummy's first tag of a round came only after a chase.
+- A late joiner's body is not moved: they are not in play, and the next round places them with everyone else.
+
 **(d) Testable before a second client: a server-driven dummy** (`server/Dummy.lua`). In Studio only
 (`RunService:IsStudio()` and `Config.STUDIO_DUMMY`, read once at boot, → N1), an orange neon box joins the round after
 the first player, under runner id **-1000** (Studio's local-server test players are -1, -2, ...; this never collides).
-It is anchored and moved by the server along the floor: patrols ±40 studs at 18 studs/s; as it, chases the nearest
+It is anchored and moved by the server along the floor: patrols x 12..52 at 18 studs/s (off the spawn, QA round 1); as it, chases the nearest
 alive player at 30 studs/s (both below the 45 run speed, so it can be caught and escaped). **`CanQuery = false`
 (H6):** before, the client's wall probes hit it, so it was a moving wall that stopped a chaser dead behind it (`vx`
 sawing 0 to -42 at a 2-stud gap in the log), refreshed the dash on contact and made a run-through impossible. It never plays alone.
@@ -222,6 +248,7 @@ run logged `claim 8061215879 -> -1000 dropped: no overlap in the server's last 0
 | `RAMP_DELAY`, `RAMP_TIME`, `RAMP_MAX` | 5, 15, 0.15 | the chaser ramp (rule 4) |
 | `HIT_STOP` | 0.08 | rule 21 |
 | `ROUND_GAP` | 4 | seconds between rounds |
+| `START_SPREAD` | 120 | studs of floor the round's runners start spread over, centred on the spawn (§4, H8) |
 | `STUDIO_DUMMY` | true | the dummy, Studio only |
 
 ## 9. H6 verdicts (Danzo's first Play with the remotes, 2026-10-11)

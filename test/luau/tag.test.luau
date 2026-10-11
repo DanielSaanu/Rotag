@@ -169,6 +169,21 @@ do -- a run straight through the dummy (Danzo: "only able to tag the block once"
 	assert(not Tag.touchedBetween(a, b, from, at + 0.03, lag), "nor a frame before the claimant's body shows the touch")
 end
 
+do -- H8: round start spreads everyone; the starter at the left end, the rest in rotation order, evenly apart
+	local p = Tag.startPlaces({ A, B, C, D }, C, 0, 120)
+	assert(near(p[C], -60) and near(p[D], -20) and near(p[A], 20) and near(p[B], 60), "starter left, rotation after it")
+	local solo = Tag.startPlaces({ A }, A, 5, 120)
+	assert(near(solo[A], -55), "one runner stands at the left end")
+	local full = {}
+	for i = 1, Config.PLAYERS_PER_MATCH + 1 do full[i] = i end -- a full match plus the Studio dummy
+	local q = Tag.startPlaces(full, 2, 0, Config.START_SPREAD)
+	for _, a in full do
+		for _, b in full do
+			assert(a == b or math.abs(q[a] - q[b]) >= 20, "a full round starts at least 20 studs apart")
+		end
+	end
+end
+
 do -- a chase in step: the tagger trails the dummy at a touch on its screen; on the server it never touches in any
 	-- one frame, so waiting alone can never confirm it; pairing with the target's older samples does
 	local function dummy(t) return 30 * t end

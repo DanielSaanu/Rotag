@@ -71,3 +71,8 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
 - 2026-10-11 · `claude/friendly-hawking-74891i`: H7 (heavy): QA round 1 fixes. `Tag.pass` returns `gained`,
   `TagVerdict` carries it, HUD pops `+2s` / `+0.4s, capped` (Studio Play: `fuse 45.0s (+0.4s)`); leave that ends a
   round now gets `ROUND_GAP`; `Tag.leave` ignores a finished round; README `TagVerdict` row. → `docs/systems/tag.md`, N7.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: H8 (heavy): QA round 2 fixes. Round start spreads everyone
+  (`Tag.startPlaces`, `Config.START_SPREAD` 120, starter at the left end) by rebuilding each player's body there
+  (`Runners.spawn`; a server CFrame write lost to the owner while running, seen in Studio); `MatchState.spectating`
+  and "next round soon" for late joiners. Play: four rounds, bodies at -60/60 on server and client, held while running.
+  → `docs/systems/tag.md` §4, N8.

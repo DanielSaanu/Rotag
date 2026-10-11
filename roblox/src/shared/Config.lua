@@ -26,6 +26,8 @@ Config.RAMP_MAX = 0.15            -- the full boost: +15% run speed; resets on e
 Config.HIT_STOP = 0.08            -- rule 21: seconds both runners hold still when a tag lands (client only)
 Config.STUDIO_DUMMY = true        -- in Studio only, a server-driven dummy runner joins the round (tag.md §4)
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
+Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
+                                  -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
 
 Config.COYOTE_TIME = 0.1          -- rule 14
 Config.JUMP_BUFFER = 0.08

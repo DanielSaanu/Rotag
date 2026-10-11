@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (H7: N7)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (H8: N8)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -134,6 +134,12 @@ path that can end a phase sets that phase's follow-on timers.** The pass pop pri
 had cut the real gain to +0.9; and a round ended by a leave restarted at once because only the `tick` path set
 `nextRoundAt`. Have the pure rule RETURN what happened (`Tag.pass` -> `fuse, gained`) and send that; after every call
 that may set `over`, check it and schedule the gap, not just after the usual one. *(2026-10-11, handoff H7.)*
+
+**N8 — The server never moves a body the client owns by writing its CFrame; it rebuilds it, or asks the owner.** A
+server write on a client-owned part held while the runner stood still, and lost to the owner within 0.2 s while it ran:
+the server's history read the new spot, then the old track again, and the client never moved. A test on an idle
+body proves nothing: test the move while the body is moving. To place a runner, build a new part at the spot BEFORE
+`SetNetworkOwner` (the spawn path), or have the owner's client move itself. *(2026-10-11, handoff H8, `Match.place`.)*
 
 ## T — Tooling
 
