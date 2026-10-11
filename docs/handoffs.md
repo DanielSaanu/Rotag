@@ -27,32 +27,14 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H9 — Dash chains: a ground dash recharges only after landing from the air (Danzo's option 2) — 2026-10-11 — OPEN
-- **Trigger:** 2 (`shared/Movement.lua` refresh rule, `shared/Config.lua`, their tests). The design choice is made:
-  Danzo picked option 2 on 2026-10-11 ("dash chans 2"). This entry is the implementation, not the decision.
-- **Doc:** `docs/systems/movement.md` §3 (the rules), §9 (tests); `docs/DESIGN.md` §3 rules 15 (refresh on contact),
-  16 (keep speed between moves), 18 (hidden speed tech); `docs/qa/tag-summary.md` ("Open FIX items").
-- **Observed (QA rounds 1 and 2):** mashing Shift on the floor averages ~64.5 studs/s against a 44.4 run (+45%) at
-  `DASH_COOLDOWN` 0.8 s. Each dash gains about 14 studs over running ((120 − 45) × 0.15 plus the 80 → 45 bleed), so
-  no cooldown alone closes it. The current test only counts dashes, never speed (`movement.test.luau` ~173–179).
-- **Evidence:** `shared/Movement.lua` 57–59 (`refresh`: `dashes = 1` whenever called), 101–111 (landing calls
-  `refresh`), 115–117 (wall touch in the air calls `refresh`), 127–137 (dash start), 161–165 (dash end speed);
-  `shared/Config.lua` `DASH_COOLDOWN 0.8`, `DASH_SPEED 120`, `DASH_TIME 0.15`, `DASH_END_SPEED 80`.
-- **Routine session's read (guess):** the charge comes back on a landing only if the runner was airborne since the last
-  dash started (a dash that begins and ends on the floor does not count its own floor as a "landing"), and on a wall
-  touch as today. Mechanism: a flag `s.airSinceDash` set false when a dash starts, set true on any frame not grounded;
-  `refresh` on landing restores `dashes` only if the flag is true. Dash into jump (rule 16) and air dash → landing →
-  dash all keep working; a floor-only chain gets exactly one dash until the runner leaves the ground. Keep
-  `DASH_COOLDOWN` 0.8 as the second guard. Tests: (1) two ground dashes with no air between: the second never
-  starts, however long you wait; (2) ground dash → jump → land → dash works; (3) mash Shift for 3 s on the floor:
-  average speed within ~10% of `RUN_SPEED` after the first dash's burst (pin mash speed against run speed, as the
-  reviewer asked); (4) the existing refresh-on-contact and dash-into-jump tests still pass. Mutation-check.
-- **Decision needed:** none on the rule. If the exact "landing from the air" definition has a corner case (a dash off a
-  ledge that lands mid-dash; wall touch mid-dash), pick the simplest reading, record it in movement.md §3, and list it
-  for Danzo's hands.
-- **Blocked routine work:** none.
+None.
 
 ## Resolved
+
+### H9 — Dash chains: a ground dash recharges only after landing from the air (Danzo's option 2) — 2026-10-11 — RESOLVED
+- **Resolved 2026-10-11:** `State.airSinceDash` (dash start sets `not grounded`, any airborne frame sets true;
+  `refresh` gives the dash back only when true); cooldown 0.8 kept as the second guard. Mashing 3 s on the floor: one
+  dash, 45.0 studs/s after the burst (old rule 60.5); confirmed in Play. → `docs/systems/movement.md` §3, §9; S11.
 
 ### H8 — QA round 2 fixes: spread positions at round start; a spectating list in MatchState — 2026-10-11 — RESOLVED
 - **Resolved 2026-10-11:** round start rebuilds each player's body at its spot (`Runners.spawn`, option (b); a server

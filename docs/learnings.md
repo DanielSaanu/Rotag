@@ -88,6 +88,11 @@ and the caller clears on that. *(inherited, handoff H11.)*
 preference is not a guarantee: mark the rule in the row and let the pure picker skip it, so the rule is tested without
 Studio. *(inherited, handoff H11.)*
 
+**S11 — A rate limit cannot cap a per-use gain: test the outcome the limit protects, not the count it allows.** A dash
+cooldown passed its "one dash per 0.8 s" test while mashing still ran 45% faster than running, because each use banks
+a fixed gain and the cooldown only spaces them. Assert the protected quantity (average speed against run speed, total
+gained), and watch that assertion fail on the old rule. *(2026-10-11, handoff H9, `movement.test.luau`.)*
+
 ## N — Networking and fairness
 
 **N1 — A mode that must never touch real data is gated where the store is OPENED, and read once at boot.** Returning

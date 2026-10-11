@@ -96,7 +96,7 @@ Celeste's numbers, mapped at **0.5 studs per Celeste pixel** (its 8 px tile = ou
 | Double jump | 1, same speed and hold | |
 | Wall jump | within 3 px (0.75 studs), kicks 65 studs/s away; the stick reads "away" for 0.16 s | |
 | Wall slide | fall capped at 10 studs/s while pushing into a wall | |
-| Dash | horizontal, 120 studs/s for 0.15 s (18 studs), no gravity, ends at 80; 0.8 s cooldown (H6, was 0.2) | `DASH_COOLDOWN` is Danzo's knob |
+| Dash | horizontal, 120 studs/s for 0.15 s (18 studs), no gravity, ends at 80; 0.8 s cooldown (H6, was 0.2); a floor dash comes back only after the runner leaves the floor (H9) | `DASH_COOLDOWN` is Danzo's knob |
 | Stick | digital past a 0.3 deadzone | a diagonal thumb runs full speed (rule 24) |
 
 **Measured** (the pure rules, 60 fps): a tap hops 3.5 studs (0.9 tiles); a full hold 14.25 studs (3.6 tiles), apex
@@ -106,7 +106,27 @@ are set against these.
 **Jump priority:** ground (or coyote) > wall (either wall within reach, the nearer one) > double.
 
 **Refresh on contact (rule 15):** landing and touching a wall give back the double jump and the dash. A wall jump
-counts as a wall touch. A dash in progress keeps its charge spent.
+counts as a wall touch. A dash in progress keeps its charge spent. **Except (H9):** a dash started on the floor comes
+back only after the runner has been airborne since it started.
+
+**Floor dashes need air to recharge (H9, 2026-10-11, Danzo's option 2).** QA rounds 1 and 2: mashing Shift on the floor
+still averaged ~64.5 studs/s against a 44.4 run at the 0.8 s cooldown, because each dash gains a fixed ~14-22 studs
+over running and a cooldown only spaces those gains out; it can never cap them. **The rule as built:** a State flag
+`airSinceDash`. A dash start sets it to `not grounded` (an air dash is already airborne, so air dashes are exactly as
+before); every frame that is not grounded sets it true; `refresh` gives the dash back only when the flag is true. The
+landing path and the wall-touch path both go through `refresh`, but a wall touch only happens airborne, so the flag is
+always true there: walls behave as before. `DASH_COOLDOWN` 0.8 stays as the second guard (dash, tap hop, land inside
+0.8 s: the charge is back but the press waits for the cooldown). Rule 15 is narrowed, not dropped: landing still gives
+back the double jump always, and the dash whenever there was air since it. Rule 16 is untouched (dash into jump keeps
+the speed, and that jump's air recharges the dash for the landing).
+**Corner readings (simplest, for Danzo's hands):** (a) a floor dash off a ledge: the dash is flat with gravity off, so
+it cannot land mid-dash; it is airborne past the edge and the landing after it gives the charge back. (b) Ground dash
+into a wall: a grounded wall touch never refreshed, so no charge until the runner leaves the floor. (c) Dash and
+wall-kick on the same frame in the air: the kick refunds the dash, as before H9. (d) A one-frame ungrounded blip on a
+floor seam (wider than `GROUND_SNAP` 0.2) would count as air and recharge; not seen in Play, the test map is flat.
+**Numbers** (60 fps, running, mashing 3 s): 1 dash, 45.0 studs/s over seconds 1-3 (run 45.0), +16.3 studs in all;
+the old rule gives 4 dashes and 60.5 (+34%). **Studio** (injected keys, dash = root `|vx| > 100`): 16 floor Shifts
+0.3 s apart fired one dash; Space, land, Shift fired one more; two later floor Shifts fired none. Output clean.
 
 **Dash cooldown (H6, 2026-10-11).** Danzo in Play: "you can just spam it for major speed increase". Cause: the charge
 comes back on every landing (rule 15) and the cooldown was 0.2 s, only 0.05 s past the dash itself, so a grounded
@@ -114,14 +134,14 @@ runner could dash again 0.2 s after the last one: ~120 for 0.15 s plus the 80 en
 average against a 45 run. **Mechanism kept, number raised:** `DASH_COOLDOWN` 0.2 -> **0.8 s**, counted from the dash
 start, and it gates the dash even when the charge is back. Rule 15 is untouched (the charge still returns on contact;
 it just cannot be spent until the cooldown ends) and so is rule 16 (a jump out of a dash keeps its speed). Mashed,
-that is one dash per 0.8 s: on paper ~62 studs/s average with the 80 bleeding to 45, against 110 before. Why not
-"the charge only returns after leaving the ground": that changes rule 15 and punishes the dash-jump-land rhythm
-parkour wants; a time gate is one knob. **0.8 is a guess, Danzo's to tune** (0.6 feels snappier, 1.0 makes the dash
-a decision). Tested: two ground presses 0.3 s apart start one dash, the second starts after the cooldown, and 3 s of
+that is one dash per 0.8 s: on paper ~62 studs/s average with the 80 bleeding to 45, against 110 before. (Its old "why not refresh only after air" is superseded by H9
+above.) **0.8 is a guess, Danzo's to tune** (0.6 feels snappier, 1.0 makes the dash a decision). Tested: two ground presses 0.3 s apart start one dash, the second starts after the cooldown, and 3 s of
 mashing gives exactly `ceil(3 / DASH_COOLDOWN)` dashes (`movement.test.luau`; removing the cooldown check or
 restoring 0.2 fails it). The air-dash pose test now uses a fresh airborne runner, because its ground dash a moment
 earlier is still cooling down. Studio: dash starts 0.9 s or more apart while mashing (the MCP's key timing is too
-loose for a rate, → T9).
+loose for a rate, → T9). *H9 rewrote this test:* the charge no longer returns on the floor, so the cooldown case is now
+dash, tap hop, land inside the cooldown, press (refused), press after it (dashes); and the count of mashed dashes was
+the wrong proxy (→ S11).
 
 **Keep speed (rule 16):** a jump ends a dash and does not touch `vx`, so dash-into-jump carries 120 (plus the jump
 boost) into the air, bleeding only at the over-speed rate while held. A double jump does the same. A wall kick
@@ -271,7 +291,10 @@ pulled in by a `--!include movement_world.luau` first line that `test/luau/run.j
 own file, `movement_sprites.test.luau`, on the same helpers (split 2026-10-10). Covered: run and stop times, the digital stick, coyote (keyboard and the wider touch
 window), the buffer (on time, too early, landing-aware), variable jump and half gravity, double jump and its limit,
 refresh on landing and on a wall touch, wall jump reach, the force window and the bank, three wall jumps up a
-chimney, dash, cooldown (and the H6 spam case), dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick (the
+chimney, dash, cooldown (and the H6 spam case), the H9 floor rule (no second floor dash in 5 s, dash-jump-land-dash, 3 s of
+mashing within 10% of `RUN_SPEED` after the first burst and at most one dash gained over running, the ledge dash, the
+same-frame air dash and kick; mutation-checked: dropping the flag check, the airborne set, or setting the flag to a
+constant at dash start each fails a named assertion), dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick (the
 eight run frames in order, one cycle per `RUN_CYCLE` studs whatever the frame count, the air poses by `vy`, the wall
 slide, the dash: §3).
 `test/luau/sidecam.test.luau` pins the view height, settling, the lead and its cap, and frame-rate independence.

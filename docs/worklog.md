@@ -79,3 +79,4 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
 - 2026-10-11 · `claude/friendly-hawking-74891i`: QA loop on the tag: round 1 7/10, round 2 8/10 (target). Routine fixes:
   dummy patrol off spawn, PlayerModule note, pop from `gained` with `%g`. H7 and H8 came out of the rounds. Summary and
   Danzo's checklist in `docs/qa/tag-summary.md`; round files archived. Open for Danzo: dash chains, the fuse cap.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: H9 (heavy): a floor dash recharges only after air (`Movement` `airSinceDash`), mash speed pinned against run speed in `movement.test.luau` (45.0 vs old 60.5), seen in Play; movement.md §3/§9, learnings S11.
