@@ -36,6 +36,11 @@ local pending: { [number]: { target: number, from: number, deadline: number, lag
 local round: Tag.Round? = nil
 local roundNo, nextRoundAt = 0, 0
 local lastStarter: number? = nil
+-- Round-ready (H11, players.md §5): players whose client has drawn its runner (Remotes.Ready), and since when the
+-- next round has been due but held for them.
+local ready: { [number]: boolean } = {}
+local dueSince: number? = nil
+local BOTS = { [Dummy.ID] = true }
 local lastSent, dirty = -math.huge, true
 local dummy = nil
 local studio = RunService:IsStudio()
@@ -74,7 +79,16 @@ local function snapshot(now: number)
 	}
 end
 
-local stateRemote, verdictRemote, claimRemote
+local stateRemote, verdictRemote, claimRemote, readyRemote
+
+-- Client -> server, no payload (→ N4): "my client is up and has drawn my runner". Only the sender is read; a second
+-- one changes nothing. A client that lies only starts a round it cannot see yet.
+local function onReady(player: Player)
+	local id = player.UserId
+	if ready[id] then return end
+	ready[id] = true
+	log(("%s ready (client drew its runner)"):format(tostring(id)))
+end
 
 local function sendState(now: number, to: Player?)
 	if not stateRemote then return end
@@ -105,6 +119,18 @@ local function startRound(now: number)
 	for _, id in ids do if id ~= Dummy.ID then anyPlayer = true end end
 	local starter = Tag.nextStarter(ids, present, lastStarter)
 	if not (starter and anyPlayer) then return end -- the dummy never plays alone
+	local since = dueSince or now
+	if not dueSince then
+		dueSince = now
+		if not Tag.readyToStart(ids, ready, BOTS, 0) then log("round held: waiting for every client to draw") end
+	end
+	if not Tag.readyToStart(ids, ready, BOTS, now - since) then return end
+	dueSince = nil
+	for _, id in ids do
+		if not (BOTS[id] or ready[id]) then
+			log(("%s never sent Ready; started after %ds anyway"):format(tostring(id), Config.READY_TIMEOUT))
+		end
+	end
 	roundNo += 1
 	lastStarter = starter
 	for id, x in Tag.startPlaces(ids, starter, Arena.SPAWN.X, Config.START_SPREAD) do place(id, x) end
@@ -244,6 +270,8 @@ end
 -- Call once at boot, after the map exists and before Runners.start.
 function Match.start(tagName: string)
 	stateRemote, verdictRemote, claimRemote = remote("MatchState"), remote("TagVerdict"), remote("TagClaim")
+	readyRemote = remote("Ready")
+	if readyRemote then readyRemote.OnServerEvent:Connect(onReady) end
 	-- Server -> client events: the server never listens (→ N3).
 	if stateRemote then stateRemote.OnServerEvent:Connect(function() end) end
 	if verdictRemote then verdictRemote.OnServerEvent:Connect(function() end) end
@@ -271,7 +299,7 @@ function Match.start(tagName: string)
 		local id = player.UserId
 		local i = table.find(order, id)
 		if i then table.remove(order, i) end
-		roots[id], history[id], lastClaim[id], pending[id] = nil, nil, nil, nil
+		roots[id], history[id], lastClaim[id], pending[id], ready[id] = nil, nil, nil, nil, nil
 		local r = round
 		if r and not r.over then
 			local now = os.clock()

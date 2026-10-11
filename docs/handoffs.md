@@ -27,59 +27,16 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H11 — Player 2: other runners drawn on every screen, pass-through collision, off-screen arrows, round-ready — 2026-10-11 — OPEN
-- **Trigger:** 1 (collision between players: a §2/§3 addition; the arrows are already locked in §2), 2 (`shared/` helpers
-  for the arrows and remote sprite pick), 3 (any new remote; what the server trusts about another client's pose).
-- **Doc:** `docs/DESIGN.md` §2 "Players and map" (off-screen arrows), §3 rules 6, 15 ("bouncing off a player"), 27;
-  `docs/systems/sprites-and-animation.md` §4 (how the local runner is drawn); `docs/systems/movement.md` §2 (the body,
-  `SetNetworkOwner(player)`), §3 (sprite pick `Movement.sprite`); `docs/systems/tag.md` §2 (the stated anti-cheat
-  limit), §4 (round start, H8 "ready" note); `docs/systems/README.md` Remotes.
-- **Observed:** Danzo played the tag solo on 2026-10-11 and is happy ("dash is good, freeze works"); he said "go on
-  player 2". Today each client draws only its own runner (`client/Look.lua` is built for the local character), so a
-  second real player is an invisible body. The map is wider than the screen and nothing points at other players.
-  Runner bodies collide with each other and block each other's wall probes (the H6 dummy showed it: a solid runner
-  stopped a chaser dead and refreshed its dash on contact). In Studio the client draws its first frame ~2.5 s after the
-  server starts round 1, so the start wait is over before it is seen (H6 note). Danzo asked how similar games handle
-  collision between players who are not "it".
-- **Evidence:** `roblox/src/client/{Look.lua,Body.lua,Client.client.lua,SideCamera.lua,Hud.lua}`,
-  `roblox/src/server/{Runners.lua,Match.lua,Dummy.lua}` (`CanCollide`/`CanQuery` on the dummy root; `Runners.TAG`
-  and the `RunnerId` attribute every runner model carries), `roblox/src/shared/{Movement.lua,SideCam.lua,Sprites.lua}`,
-  `roblox/default.project.json` Remotes. HEAD 767e10b.
-- **Routine session's read (guesses, in scope order):**
-  1. **Collision: pass-through for everyone, "it" included.** Routine session's recommendation, given to Danzo with the
-     reasons (chase games pass through: Gorilla Tag, SpeedRunners, UCH, most Roblox tag games via a collision group;
-     one plane means a blocker cannot be walked around, rule 27; the tag is confirmed by OVERLAP, which blocking
-     prevents; the dummy already had to go pass-through in H6). Danzo has NOT yet confirmed; build pass-through as the
-     default and record it in DESIGN §2 as "recommended, pending Danzo" unless the routine session relays his word.
-     Mechanism guess: one collision group for runner roots that does not collide with itself; wall probes
-     (`Movement`'s wall/ground raycasts via the client) must ignore other runners (RaycastParams filter or `CanQuery`
-     off on the root, as the dummy does). Rule 15's "bouncing off a player" is a later optional head-bounce; note it,
-     don't build it.
-  2. **Draw other runners.** Each client needs a `Look` per other runner, fed by the replicated body position. The
-     sprite pick (`Movement.sprite`) needs pose state the server does not have (vx, vy, grounded, dash, facing). Options:
-     (a) derive it client-side from the replicated root's velocity and a ground probe (no remote, approximate);
-     (b) the owning client sends a small pose packet (frame/facing) through a remote the server relays (cosmetic only:
-     never trusted for rules, rate-limited, shape-checked → N3/N4). Prefer whichever reads well at run speed; say which.
-     The dummy can get a sprite too (it is an orange box today) or stay a box: Danzo's call, default box.
-  3. **Off-screen arrows** (§2, locked): HUD edge markers pointing at each other runner, the holder's in red. Pure maths
-     in `shared/SideCam.lua` or a new shared helper (tested): world x/y → screen edge point and direction.
-  4. **Round-ready:** round 1 should not start until each present client has drawn (H6/H8 note). Guess: a client → server
-     `Ready` remote (no payload; the server reads only the sender) and `Match.startRound` waits for all present players
-     or a timeout (`Config.READY_TIMEOUT` ~5 s) so one stalled client cannot hold the round.
-  5. **Not in this entry (next, H12):** the movement remote with a server speed check (tag.md §2's stated limit) and the
-     two-client measurement of `TAG_VIEW_DELAY`. Do not start it; note anything you learn that it needs.
-  6. **Testing:** Studio's Test → Clients and Servers with 2 players if the MCP can drive it; otherwise the dummy plus a
-     hand-check in Play, and a precise ask for Danzo (two-player local test on his PC, what to look for).
-- **PRESERVE (QA rounds 1–2):** one-number `TagClaim` judged on the server's history; `gained` in `TagVerdict`; the
-  fuse waiting while frozen; pending claims re-judged every frame; the Studio-only dummy; RUN!/count/GO!; H8's
-  spread round start by respawn (a server CFrame write does not hold on a client-owned body, N8).
-- **Decision needed:** (1) collision (recommended pass-through; confirm with Danzo through the routine session if a
-  question arises, do not decide alone); (2) remote-pose mechanism a or b; (3) the ready timeout. Record each in a new
-  `docs/systems/players.md` (≤300 lines) plus a line in `docs/systems/README.md`, the Remotes table for any new remote,
-  and the DESIGN §2 collision line.
-- **Blocked routine work:** none. INBOX: the phone preset is still untested by Danzo (his note).
+_None._
 
 ## Resolved
+
+### H11 — Player 2: other runners drawn on every screen, pass-through collision, off-screen arrows, round-ready — 2026-10-11 — RESOLVED
+- **Resolved 2026-10-11:** runners pass through each other via the `RotagRunners` collision group, probes cast as it
+  (recommended, pending Danzo; DESIGN §2 line); other runners drawn from their replicated position by `shared/RemotePose`
+  (option a, no remote; 92% pose agreement measured); off-screen arrows (`SideCam.edgeArrow`, `client/Arrows`); new
+  remote `Ready` (no payload), round held up to `READY_TIMEOUT` 5 s. Seen in solo Play with a stand-in runner; the MCP
+  cannot run two clients, so the two-player check is Danzo's. → `docs/systems/players.md`; learnings N9, T10, T11.
 
 ### H10 — Dash chains, take two: Danzo switched to option 1 (a floor dash ends at run speed); undo option 2 — 2026-10-11 — RESOLVED
 - **Resolved 2026-10-11:** `airSinceDash` removed (refresh as before H9); `State.dashFloor` set at dash start, a floor

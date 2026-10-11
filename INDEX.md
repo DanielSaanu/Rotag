@@ -28,6 +28,8 @@ to (`roblox/default.project.json`).
   camera, controls, juice, the test map, the two drawing methods. Before any movement, camera or controls change.
 - [`docs/systems/tag.md`](docs/systems/tag.md): the tag, the fuse, elimination, what the server trusts from a tag claim,
   the Studio dummy runner. Before any tag, fuse, round or remote change.
+- [`docs/systems/players.md`](docs/systems/players.md): more than one runner: other runners drawn on every screen, pass-through
+  collision, off-screen arrows, round-ready. Before any multiplayer, collision or HUD-arrow change.
 - [`docs/systems/art-pipeline.md`](docs/systems/art-pipeline.md): the node pipeline (draw, compose, pack, upload).
 - [`docs/ROBLOX_SETUP.md`](docs/ROBLOX_SETUP.md): installing Rojo, connecting Studio, the Open Cloud key, uploading,
   the decal-vs-image gotcha. Setup or toolchain problems.

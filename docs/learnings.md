@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (H8: N8)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (H11: N9, T10, T11)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -149,6 +149,12 @@ the server's history read the new spot, then the old track again, and the client
 body proves nothing: test the move while the body is moving. To place a runner, build a new part at the spot BEFORE
 `SetNetworkOwner` (the spawn path), or have the owner's client move itself. *(2026-10-11, handoff H8, `Match.place`.)*
 
+**N9 — Another player's look comes from the same replicated stream as its position, not from a faster remote.** A
+RemoteEvent lands ~0.18 s before the body it describes (N6), so a relayed pose would show a jump before the body rises.
+Derive the pose from the replicated position on each screen (pure, tested against a real `Movement` run), and expect
+that stream to land in STEPS (held 2-3 frames, then jumping): hold an unchanged frame over to the next move instead of
+reading it as a stop, and treat a step faster than any move as a teleport. *(2026-10-11, handoff H11, `RemotePose`.)*
+
 ## T — Tooling
 
 **T1 — The line ceiling in `test/structure.test.js` is a design input, not a lint you notice at the end.** The 400
@@ -194,6 +200,19 @@ for the test and put it back before the tests run. Remove anything solid the har
 is a wall to the client's probes unless `CanQuery = false`. *(2026-10-11, handoff H6.)* The match keeps running under a key
 script: the Studio dummy's tag freezes you 1.5 s and a round end rebuilds your body at a spot, so read the Output's
 TAG and round lines before calling a missing dash or a jump in x a bug. *(2026-10-11, handoff H10.)*
+
+**T10 — The Studio MCP runs one client; it cannot start Test → Clients and Servers.** `start_stop_play` is plain
+Play, and setting `TestService.NumberOfPlayers` first still starts one player (put it back to 0). To test what one
+client shows of another, have the server build a stand-in with the same tag and attributes as a runner and move it on
+a script, log the client's view per frame, and leave the real two-client check to Danzo with a list of what to look
+for. *(2026-10-11, handoff H11.)*
+
+**T11 — Pass-through on Roblox is a collision group AND the probes cast as that group.** A ray hits anything with
+`CanQuery`, collidable or not, so a group that ignores itself still leaves the other body as a wall and a floor to the
+raycast contacts; set `RaycastParams.CollisionGroup` to the caster's group. `CanQuery = false` is only allowed while
+`CanCollide` is false, so it is not an option for a body that must hit walls. Prove it with a control: the same block
+in `Default` must stop the runner. And with `StreamingEnabled`, anything every client must always see (runner models)
+needs `ModelStreamingMode = Persistent`. *(2026-10-11, handoff H11.)*
 
 ## G — Git and generated files
 

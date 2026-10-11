@@ -31,6 +31,7 @@ A **2D multiplayer parkour tag game on Roblox**. Four players race around a side
 ### Players and map
 - **4 players** per match.
 - Map **larger than the screen**. Each player has their own camera, with **off-screen arrows** pointing to the other players.
+- Collision between players: **pass-through for all players**, recommended 2026-10-11, pending Danzo's confirmation ([players.md](systems/players.md) §2).
 
 ### Movement kit (everyone gets every move from the start)
 - Run

@@ -34,4 +34,29 @@ do -- frame-rate independent: 30 fps and 60 fps end in the same place
 	assert(near(a.x, b.x, 1e-6), "same place at either frame rate")
 end
 
+do -- off-screen arrows (H11, players.md §4): none on screen, at the edge toward the target, rotated to point at it
+	local H = Config.CAMERA_VIEW_HEIGHT
+	local aspect = 16 / 9
+	local W = H * aspect
+	assert(SideCam.edgeArrow(0, 0, aspect, W / 2 - 1, H / 2 - 1, 2, 3) == nil, "on screen: no arrow")
+	assert(SideCam.edgeArrow(0, 0, aspect, W / 2 + 1.5, 0, 2, 3) == nil, "half the sprite still showing: no arrow")
+	local r = SideCam.edgeArrow(0, 0, aspect, 500, 0, 2, 3)
+	assert(r and near(r.v, 0.5) and near(r.u, 0.5 + (W / 2 - 3) / W) and near(r.rotation, 0), "right: right edge, points right")
+	local l = SideCam.edgeArrow(10, 5, aspect, -500, 5, 2, 3)
+	assert(l and near(l.u, 0.5 - (W / 2 - 3) / W) and near(math.abs(l.rotation), 180), "left: left edge, points left")
+	local up = SideCam.edgeArrow(0, 0, aspect, 0, 300, 2, 3)
+	assert(up and near(up.u, 0.5) and near(up.v, 0.5 - (H / 2 - 3) / H) and near(up.rotation, -90), "above: top, points up")
+	local dn = SideCam.edgeArrow(0, 0, aspect, 0, -300, 2, 3)
+	assert(dn and near(dn.v, 0.5 + (H / 2 - 3) / H) and near(dn.rotation, 90), "below: bottom (v grows down), points down")
+	-- A far corner: on the line from the centre to the target, clamped to whichever edge it meets first, inside the view.
+	local c = SideCam.edgeArrow(0, 0, aspect, 400, 100, 2, 3)
+	assert(c and c.u > 0.5 and c.u <= 1 and c.v < 0.5 and c.v >= 0, "up-right: inside the view")
+	local px, py = (c.u - 0.5) * W, (0.5 - c.v) * H
+	assert(near(py / px, 100 / 400, 1e-9), "on the line to the target")
+	assert(near(px, W / 2 - 3) or near(py, H / 2 - 3), "on the inset edge")
+	assert(near(c.distance, math.sqrt(400 * 400 + 100 * 100)), "distance from the view's centre")
+	-- The aspect matters: a tall phone shows less width, so the same target needs an arrow sooner.
+	assert(SideCam.edgeArrow(0, 0, 2, 40, 0, 0, 3) == nil and SideCam.edgeArrow(0, 0, 0.5, 40, 0, 0, 3) ~= nil, "aspect")
+end
+
 print("sidecam ok")

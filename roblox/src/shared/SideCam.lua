@@ -30,4 +30,28 @@ function SideCam.step(cam: Cam, targetX: number, targetY: number, vx: number, dt
 	return cam
 end
 
+-- Off-screen arrows (DESIGN §2: each player has their own camera, with arrows to the other players; players.md §4).
+-- The camera looks straight down the plane's normal, so on the plane z = 0 the screen is linear in x and y: the view
+-- is CAMERA_VIEW_HEIGHT studs tall and that times `aspect` (width / height) wide, centred on (camX, camY). A target
+-- whose centre is within `margin` studs past the view's edge still shows part of its sprite: no arrow (nil).
+-- Otherwise: where the arrow sits, as screen fractions (u right, v DOWN, 0..1), `inset` studs in from the edge on the
+-- line from the view's centre to the target; its rotation in GUI degrees (clockwise, 0 = pointing right); and the
+-- distance in studs from the view's centre.
+export type Arrow = { u: number, v: number, rotation: number, distance: number }
+function SideCam.edgeArrow(camX: number, camY: number, aspect: number, tx: number, ty: number, margin: number,
+	inset: number): Arrow?
+	local h = Config.CAMERA_VIEW_HEIGHT
+	local w = h * aspect
+	local dx, dy = tx - camX, ty - camY
+	if math.abs(dx) <= w / 2 + margin and math.abs(dy) <= h / 2 + margin then return nil end
+	local hx, hy = math.max(0, w / 2 - inset), math.max(0, h / 2 - inset)
+	local scale = math.min(if dx ~= 0 then hx / math.abs(dx) else math.huge, if dy ~= 0 then hy / math.abs(dy) else math.huge)
+	return {
+		u = 0.5 + dx * scale / w,
+		v = 0.5 - dy * scale / h,
+		rotation = -math.deg(math.atan2(dy, dx)),
+		distance = math.sqrt(dx * dx + dy * dy),
+	}
+end
+
 return SideCam

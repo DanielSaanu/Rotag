@@ -29,6 +29,7 @@ code. Add a row here in the same commit as the declaration. Never rename one: bo
 | `SheetIds` | server → one client, once on join | `{ [number]: string }`: one `"rbxassetid://<digits>"` per sheet, in `Sprites.Sheets` order (the return of `Sprites.ResolveOnServer()`) | `server/Server.server.lua` fires; `client/Client.client.lua` applies with `Sprites.ApplySheetIds` |
 | `TagClaim` | client → server, at most every 0.15 s while the sender is it | `number`: the target's runner id (a UserId, or -1000 for the Studio dummy). Nothing else is read | `client/Tagging.lua` fires; `server/Match.lua` checks rate, who may claim, and its OWN position history ([tag.md](tag.md) §2) |
 | `TagVerdict` | server → all, on each confirmed tag | `{ from: number, to: number, fuse: number, gained: number }`: fuse = the new holder's seconds, min(remaining + `FUSE_PASS_BONUS`, the life's fresh fuse); gained = what the pass really added (H7) | `server/Match.lua` fires; `client/Tagging.lua` (hit-stop) and `client/Hud.lua` (the "+N" pop, from `gained`) |
+| `Ready` | client → server, once per client session, after its runner's first draw | none: only the sender is read; a repeat changes nothing (H11) | `client/Client.client.lua` fires; `server/Match.lua` holds a due round until every present player is ready or `Config.READY_TIMEOUT` (5 s) has passed ([players.md](players.md) §5) |
 | `MatchState` | server → all on every change and at least once a second; → one client on join | `{ round, it: number?, fuse, frozenFor, chaseFor, alive: { number }, spectating: { number }, over: boolean, winner: number? }` (`spectating`, H8: present but joined after the round began): durations in seconds, no timestamps | `server/Match.lua` fires; `client/Tagging.lua` holds it, `client/Hud.lua` draws it |
 
 **`SheetIds` (H4, 2026-10-10).** Uploads are Decals; the server resolves the Image id at boot and this carries it to
@@ -72,6 +73,7 @@ One file each. Read only the one your task touches.
 | The art pipeline (node) | [art-pipeline.md](art-pipeline.md) | `bin/warehouse.js`, `src/*.js` |
 | Movement and feel (the body, the rules, camera, controls, juice) | [movement.md](movement.md) | `shared/Movement`, `shared/SideCam`, `client/Body`, `client/Controls`, `client/Look`, `client/SideCamera`, `server/Runners` |
 | Tag, the fuse, elimination | [tag.md](tag.md) | `shared/Tag`, `server/Match`, `server/Dummy`, `client/Tagging`, `client/Hud` |
+| Players: other runners drawn, pass-through collision, off-screen arrows, round-ready (H11) | [players.md](players.md) | `shared/RemotePose`, `SideCam.edgeArrow`, `Tag.readyToStart`, `client/Others`, `client/Arrows`, `server/Runners` |
 | Ghosts | *(not built; DESIGN §6.1 is open)* | |
 | Crates and abilities | *(not built; DESIGN §6.2 is open)* | |
 | Maps | the first-playable test map only: [movement.md](movement.md) §7 | `server/Arena` |

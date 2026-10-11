@@ -28,6 +28,7 @@ Config.STUDIO_DUMMY = true        -- in Studio only, a server-driven dummy runne
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
+Config.READY_TIMEOUT = 5          -- seconds a due round waits for every present client's Ready (H11, players.md §5)
 
 Config.COYOTE_TIME = 0.1          -- rule 14
 Config.JUMP_BUFFER = 0.08

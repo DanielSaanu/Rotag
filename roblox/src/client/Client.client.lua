@@ -14,10 +14,13 @@ local Look = require(script.Parent:WaitForChild("Look"))
 local SideCamera = require(script.Parent:WaitForChild("SideCamera"))
 local Tagging = require(script.Parent:WaitForChild("Tagging"))
 local Hud = require(script.Parent:WaitForChild("Hud"))
+local Others = require(script.Parent:WaitForChild("Others"))
+local Arrows = require(script.Parent:WaitForChild("Arrows"))
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
 local FELL_OUT = -60 -- below the floor by this much: back to where this body spawned
+local REMOTES_WAIT = 10 -- seconds to wait for the Remotes folder and Remotes.Ready
 
 local current = nil -- { character, humanoid, root, body, look, state, spawnX, spawnY, pending }
 
@@ -91,16 +94,37 @@ RunService.PreSimulation:Connect(function(dt: number)
 	Tagging.claim(s.x, s.y)
 end)
 
--- Before drawing: camera, then the sprite.
+-- Round-ready (H11, docs/systems/players.md §5): tell the server once, after our runner's first draw, that this
+-- client is up and drawing, so round 1 does not start (and count down) before it is seen. No payload.
+local readySent = false
+local function sendReady()
+	readySent = true
+	task.spawn(function()
+		local remotes = ReplicatedStorage:WaitForChild("Remotes", REMOTES_WAIT)
+		local remote = remotes and remotes:WaitForChild("Ready", REMOTES_WAIT)
+		if remote and remote:IsA("RemoteEvent") then
+			remote:FireServer()
+			print("[Rotag] client: ready sent")
+		else
+			warn("[Rotag] no Remotes.Ready (restart rojo serve); the server starts the round after its timeout")
+		end
+	end)
+end
+
+-- Before drawing: camera, then our sprite, then everyone else's sprite and the off-screen arrows (H11).
 RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, function(dt: number)
 	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	local c = current
-	if not c or not c.root.Parent then return end
-	local pos = c.root.Position
-	SideCamera.update(pos.X, pos.Y, c.state.vx, dt)
-	c.look:react(c.pending)
-	c.pending = {}
-	c.look:draw(Movement.spriteFor(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
+	if c and c.root.Parent then
+		local pos = c.root.Position
+		SideCamera.update(pos.X, pos.Y, c.state.vx, dt)
+		c.look:react(c.pending)
+		c.pending = {}
+		c.look:draw(Movement.spriteFor(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
+		if not readySent then sendReady() end
+	end
+	Others.draw(dt)
+	Arrows.update(Tagging.me(), Tagging.state())
 end)
 
 -- The sheet ids the server resolved (Remotes.SheetIds, docs/systems/README.md). Nothing waits for them: the runner
@@ -134,6 +158,7 @@ task.spawn(function()
 		Sprites.ApplySheetIds(ids)
 		arrived = true
 		if current then current.look:refresh() end
+		Others.refresh()
 		print(("[Rotag] client: %d sheet id(s) from the server, sheet 1 = %s"):format(n, tostring(ids[1])))
 	end)
 	task.delay(SHEET_IDS_WAIT, function()
@@ -146,6 +171,8 @@ end)
 
 Controls.start(player)
 Hud.start(player)
+Arrows.start(player, Hud.nameOf)
+Others.start(player)
 Tagging.start(player, function() end, function(v) Hud.pass(v, player.UserId) end)
 player.CharacterAdded:Connect(setup)
 player.CharacterRemoving:Connect(function(character)

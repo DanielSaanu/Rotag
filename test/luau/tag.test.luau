@@ -223,4 +223,16 @@ do -- rule 4: the chaser ramp starts after RAMP_DELAY, reaches RAMP_MAX after RA
 	assert(near(s.vx, Config.RUN_SPEED, 1e-6), "no multiplier: back to the plain top speed")
 end
 
+do -- round-ready (H11, players.md §5): wait for every present player's Ready, never for a bot, never past the timeout
+	local DUMMY = -1000
+	local ids = { A, B, DUMMY }
+	local bots = { [DUMMY] = true }
+	assert(not Tag.readyToStart(ids, { [A] = true }, bots, 0), "B has not drawn yet: wait")
+	assert(Tag.readyToStart(ids, { [A] = true, [B] = true }, bots, 0), "both players ready; the dummy is never waited for")
+	assert(not Tag.readyToStart(ids, { [A] = true }, bots, Config.READY_TIMEOUT - 0.01), "still inside the timeout")
+	assert(Tag.readyToStart(ids, { [A] = true }, bots, Config.READY_TIMEOUT), "one stalled client cannot hold the round")
+	assert(not Tag.readyToStart(ids, { [A] = true }, {}, 0), "a runner not marked bot is waited for")
+	assert(Config.READY_TIMEOUT > 0 and Config.READY_TIMEOUT <= 10, "a short timeout (H11: ~5 s)")
+end
+
 print("tag ok")

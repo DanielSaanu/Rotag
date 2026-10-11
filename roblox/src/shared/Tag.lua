@@ -205,4 +205,16 @@ function Tag.chaserBoost(chaseTime: number): number
 	return 1 + Config.RAMP_MAX * math.min(1, t / Config.RAMP_TIME)
 end
 
+-- Round-ready (H11, players.md §5): a round may start once every present PLAYER has told the server it is drawing
+-- (Remotes.Ready), or once the round has waited `waited` >= Config.READY_TIMEOUT for them, so one stalled client
+-- cannot hold everyone. `bots` are runners with no client (the Studio dummy): never waited for.
+function Tag.readyToStart(ids: { number }, ready: { [number]: boolean }, bots: { [number]: boolean }, waited: number)
+	: boolean
+	if waited >= Config.READY_TIMEOUT then return true end
+	for _, id in ids do
+		if not bots[id] and not ready[id] then return false end
+	end
+	return true
+end
+
 return Tag

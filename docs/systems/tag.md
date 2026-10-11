@@ -151,6 +151,8 @@ the dummy as it ~9 studs from the idle player and tagged it within seconds (`TAG
   (server x -51.3, client x -59.4), the new body read x 60.00 on the server and the client in the next frame and held;
   the held key carried on from rest. The dummy's first tag of a round came only after a chase.
 - A late joiner's body is not moved: they are not in play, and the next round places them with everyone else.
+- **Round-ready (H11):** a due round now waits for every present client's `Ready` (max `READY_TIMEOUT`, 5 s), so round 1's
+  count is seen from the start: [players.md](players.md) §5.
 
 **(d) Testable before a second client: a server-driven dummy** (`server/Dummy.lua`). In Studio only
 (`RunService:IsStudio()` and `Config.STUDIO_DUMMY`, read once at boot, → N1), an orange neon box joins the round after

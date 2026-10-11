@@ -3,6 +3,7 @@
 -- Why not the stock character: docs/systems/movement.md, "The character". The client drives the box
 -- (client/Body.lua); the server only builds it, owns its spawn and hands its physics to the player.
 local CollectionService = game:GetService("CollectionService")
+local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
@@ -10,6 +11,10 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 
 local Runners = {}
 Runners.TAG = "RotagRunner" -- CollectionService tag on every runner body, a player's or the Studio dummy's
+-- Runners pass through each other, "it" included (H11, docs/systems/players.md §2): every runner root is in this
+-- collision group, which does not collide with itself. client/Body.lua casts its probes AS this group, so another
+-- runner is never a wall or a floor either.
+Runners.GROUP = "RotagRunners"
 
 -- No friction against walls and floors (a stored speed must not rub away, and a wall slide must not stick);
 -- the high weights make OUR zeros win when two parts' friction is combined.
@@ -27,6 +32,7 @@ local function build(player: Player, spawnAt: Vector3): Model
 	root.CanCollide = true
 	root.Anchored = false
 	root.CustomPhysicalProperties = FRICTIONLESS
+	root.CollisionGroup = Runners.GROUP
 	root.Parent = model
 
 	-- A Humanoid without a Head can die on its own; give it a weightless, non-colliding one.
@@ -56,6 +62,8 @@ local function build(player: Player, spawnAt: Vector3): Model
 	humanoid.Parent = model
 
 	model.PrimaryPart = root
+	-- Every client needs every runner however far away (the tag claim, the off-screen arrows): never streamed out.
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	-- How the tag finds runners (docs/systems/tag.md §4): a tag on the model, and its runner id (the UserId).
 	model:SetAttribute("RunnerId", player.UserId)
 	CollectionService:AddTag(model, Runners.TAG)
@@ -84,6 +92,10 @@ end
 -- Call once at boot, before anyone has a character.
 function Runners.start(spawnAt: Vector3)
 	Players.CharacterAutoLoads = false
+	if not PhysicsService:IsCollisionGroupRegistered(Runners.GROUP) then
+		PhysicsService:RegisterCollisionGroup(Runners.GROUP)
+	end
+	PhysicsService:CollisionGroupSetCollidable(Runners.GROUP, Runners.GROUP, false)
 	-- Shift is the dash. Roblox's shift-lock would grab it too; the client also sinks Shift (client/Controls.lua).
 	pcall(function() StarterPlayer.EnableMouseLockOption = false end)
 	local function onPlayer(player: Player)

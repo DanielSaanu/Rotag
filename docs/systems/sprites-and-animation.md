@@ -122,6 +122,7 @@ has a different parent:
   in the world and shifts against the map as the camera moves, which Danzo preferred by a wide margin. **Flip:** a
   negative `ImageRectSize.X` with the offset moved to the rect's right edge, under `ScaleType.Stretch`; confirmed in
   Studio. (A mirrored second scene also works but doubles the frames in the sheet.) Detail: [movement.md](movement.md) §6.
+  Other players' runners get the same `Look` on each screen, posed from their replicated position (H11, [players.md](players.md) §3).
 - **Tiles, platforms, walls**: a `SurfaceGui` on the camera-facing face of the collision Part, one ImageLabel per
   tile or a `ScaleType = Tile` label over a repeating sprite. The Part is the collider; the GUI is the look. Grapple
   anchors, boost pads and hazards are the same with their colour-coded sprite (DESIGN §3 rule 29).

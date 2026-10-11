@@ -31,6 +31,7 @@ function Dummy.new(tagName: string)
 	root.CFrame = CFrame.new((PATROL_MIN + PATROL_MAX) / 2, Y, 0)
 	root.Parent = model
 	model.PrimaryPart = root
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- like every runner (Runners.build, H11)
 	model:SetAttribute("RunnerId", Dummy.ID)
 	CollectionService:AddTag(model, tagName)
 	model.Parent = workspace

@@ -22,6 +22,9 @@ function Body.new(character: Model, root: BasePart)
 	self.params.FilterType = Enum.RaycastFilterType.Exclude
 	self.params.FilterDescendantsInstances = { character }
 	self.params.IgnoreWater = true
+	-- Cast as the runner's own collision group (server/Runners.lua, H11): other runners pass through us, so they are
+	-- never a wall to kick off or a floor to land on either. Read from the part, so the name lives in one place.
+	self.params.CollisionGroup = root.CollisionGroup
 	-- Cancel Roblox gravity on the runner: Movement integrates its own (half gravity at the apex, the dash).
 	local attachment = Instance.new("Attachment")
 	attachment.Name = "RotagAntiGravity"
