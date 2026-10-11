@@ -83,3 +83,4 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
 - 2026-10-11 · `claude/friendly-hawking-74891i`: Danzo's calls after the QA loop: fuse cap kept (DESIGN §2 note corrected: proposed
   by the H6 agent), dash chains option 2 (H9, heavy). DESIGN §3 rule 15 carries the H9 exception. `movement.md` sits at 302
   lines: split it on the next edit (→ G3).
+- 2026-10-11 · `claude/friendly-hawking-74891i`: H10 (heavy): H9 undone; a floor dash ends at run speed (`Movement` `dashFloor`, `Config.DASH_END_SPEED_FLOOR = RUN_SPEED`), refresh back to pre-H9; mash/run measured and pinned at x1.325 (cooldown 0.8, Danzo's knob); seen in Play; movement.md §3/§9 rewritten (300 lines, no split), learnings S11/T9 extended.

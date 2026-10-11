@@ -27,40 +27,21 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H10 — Dash chains, take two: Danzo switched to option 1 (a floor dash ends at run speed); undo option 2 — 2026-10-11 — OPEN
-- **Trigger:** 2 (`shared/Movement.lua`, `shared/Config.lua`, their tests). The design choice is made: Danzo on
-  2026-10-11, "i take it back go with option 1", replacing option 2 (H9). This entry is the implementation.
-- **Doc:** `docs/systems/movement.md` §3, §9 (the H9 paragraphs must be rewritten, not appended: the file is at 302
-  lines, so split it per CLAUDE.md "keep docs under ~300" / learnings G3 if the rewrite does not bring it under);
-  `docs/DESIGN.md` §3 rule 15 (the routine session is updating the exception note now; do not edit DESIGN.md);
-  `docs/learnings.md` S11 (still true; keep).
-- **Observed:** H9 (commit 942e2e9) made a floor dash recharge only after air (`airSinceDash`). Danzo has reversed
-  that: option 1 is that a dash started on the floor ends at `RUN_SPEED` instead of `DASH_END_SPEED` (80); in the
-  air the dash still ends at 80 and dash-into-jump still keeps the dash speed (rule 16). Refresh on contact (rule 15)
-  returns to its pre-H9 form: the charge comes back on every landing and wall touch.
-- **Evidence:** `shared/Movement.lua` (the `airSinceDash` field, its sets at dash start and in the air, the gate in
-  `refresh`; the dash end at ~161–165 setting `vx = dashDir * DASH_END_SPEED`); `test/luau/movement.test.luau`
-  (the H9 checks: no second floor dash in 5 s, ledge dash, same-frame kick, mash-speed-equals-run; the pre-H9
-  cooldown checks); `test/luau/movement_sprites.test.luau` (uses a fresh airborne runner for the air-dash pose since
-  H6); `docs/systems/movement.md` §3 and §9 H9 text.
-- **Routine session's read (guess):** remove `airSinceDash` entirely (field, sets, gate) so `refresh` is as before H9.
-  At dash end: `s.vx = s.dashDir * (if s.grounded then Config.RUN_SPEED else Config.DASH_END_SPEED)`; consider a
-  Config knob `DASH_END_SPEED_GROUND = RUN_SPEED` so Danzo can tune it. Expected outcome at `DASH_COOLDOWN` 0.8:
-  each floor dash gains (120 − 45) × 0.15 ≈ 11 studs over a run, a chain ≈ +30% (the routine session's arithmetic;
-  measure it). Tests: (1) a floor dash ends at run speed, an air dash ends at 80; (2) dash-into-jump keeps 120 (the
-  existing rule 16 test); (3) refresh on landing restores the dash (pre-H9 behaviour); (4) the mash-vs-run test
-  becomes a MEASUREMENT pinned at the observed ratio with a comment that the number is Danzo's to judge, so the next
-  cooldown change shows up as a test diff rather than silently (→ S11). Mutation-check.
-- **Decision needed:** none on the rule. Report the measured mash-vs-run ratio plainly so Danzo can raise
-  `DASH_COOLDOWN` if he wants the chain slower; do not change the cooldown yourself.
-- **Blocked routine work:** none.
+(none)
 
 ## Resolved
+
+### H10 — Dash chains, take two: Danzo switched to option 1 (a floor dash ends at run speed); undo option 2 — 2026-10-11 — RESOLVED
+- **Resolved 2026-10-11:** `airSinceDash` removed (refresh as before H9); `State.dashFloor` set at dash start, a floor
+  dash ends at `Config.DASH_END_SPEED_FLOOR` (= `RUN_SPEED`), an air dash at 80, a jump out of either keeps 120. Mashing
+  from rest over five cooldowns: 59.06 vs 44.58 studs/s, x1.325, pinned as a measurement; `DASH_COOLDOWN` 0.8 left
+  for Danzo. Seen in Play. → `docs/systems/movement.md` §3, §9; learnings S11, T9.
 
 ### H9 — Dash chains: a ground dash recharges only after landing from the air (Danzo's option 2) — 2026-10-11 — RESOLVED
 - **Resolved 2026-10-11:** `State.airSinceDash` (dash start sets `not grounded`, any airborne frame sets true;
   `refresh` gives the dash back only when true); cooldown 0.8 kept as the second guard. Mashing 3 s on the floor: one
   dash, 45.0 studs/s after the burst (old rule 60.5); confirmed in Play. → `docs/systems/movement.md` §3, §9; S11.
+  **Superseded the same day by H10** (Danzo switched to option 1); `airSinceDash` is gone.
 
 ### H8 — QA round 2 fixes: spread positions at round start; a spectating list in MatchState — 2026-10-11 — RESOLVED
 - **Resolved 2026-10-11:** round start rebuilds each player's body at its spot (`Runners.spawn`, option (b); a server

@@ -56,6 +56,7 @@ Config.WALL_SLIDE_MAX = 10        -- fall speed cap while pushing into a wall
 Config.DASH_SPEED = 120
 Config.DASH_TIME = 0.15
 Config.DASH_END_SPEED = 80
+Config.DASH_END_SPEED_FLOOR = Config.RUN_SPEED -- H10: a dash started on the floor ends here instead
 Config.DASH_COOLDOWN = 0.8        -- seconds from one dash to the next, even with the charge back (H6: 0.2 let
                                   -- a grounded runner chain dashes at ~110 studs/s). Danzo's to tune
 Config.TOUCH_WINDOW_SCALE = 1.25  -- coyote and buffer are this much wider on touch (rule 23)

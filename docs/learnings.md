@@ -92,6 +92,9 @@ Studio. *(inherited, handoff H11.)*
 cooldown passed its "one dash per 0.8 s" test while mashing still ran 45% faster than running, because each use banks
 a fixed gain and the cooldown only spaces them. Assert the protected quantity (average speed against run speed, total
 gained), and watch that assertion fail on the old rule. *(2026-10-11, handoff H9, `movement.test.luau`.)*
+When the right amount is a judgement call, pin the MEASURED value tightly and say in the test that it is a measurement,
+so the next tuning change shows as a diff; measure over a whole number of cycles (3 s at a 0.8 s cooldown read x1.350,
+five cooldowns x1.325). *(2026-10-11, handoff H10.)*
 
 ## N — Networking and fairness
 
@@ -188,7 +191,9 @@ timed from outside; a key sent in the first seconds after Play starts was swallo
 list of `keyPress` steps spread over ~0.5 s each. Start a Heartbeat logger in the client first (`_G` table, one row per
 frame), send the whole key script in ONE call, then read the log. To hit a short window, lengthen it in `Config`
 for the test and put it back before the tests run. Remove anything solid the harness adds (→ T5): a server-moved part
-is a wall to the client's probes unless `CanQuery = false`. *(2026-10-11, handoff H6.)*
+is a wall to the client's probes unless `CanQuery = false`. *(2026-10-11, handoff H6.)* The match keeps running under a key
+script: the Studio dummy's tag freezes you 1.5 s and a round end rebuilds your body at a spot, so read the Output's
+TAG and round lines before calling a missing dash or a jump in x a bug. *(2026-10-11, handoff H10.)*
 
 ## G — Git and generated files
 

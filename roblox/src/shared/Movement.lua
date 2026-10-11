@@ -18,7 +18,7 @@ export type Events = { landed: number?, jump: string?, dash: boolean? }
 export type State = {
 	x: number, y: number, vx: number, vy: number, facing: number, grounded: boolean,
 	coyote: number, jumpBuffer: number, jumpHold: number, holdSpeed: number,
-	airJumps: number, dashes: number, dashTime: number, dashDir: number, dashCooldown: number, airSinceDash: boolean,
+	airJumps: number, dashes: number, dashTime: number, dashDir: number, dashCooldown: number, dashFloor: boolean,
 	wallForce: number, wallForceDir: number, runDistance: number, runFrom: number, stillTime: number,
 	sliding: boolean, events: Events,
 }
@@ -47,18 +47,16 @@ function Movement.new(x: number, y: number): State
 	return {
 		x = x, y = y, vx = 0, vy = 0, facing = 1, grounded = false,
 		coyote = 0, jumpBuffer = 0, jumpHold = 0, holdSpeed = 0,
-		airJumps = Config.AIR_JUMPS, dashes = 1, dashTime = 0, dashDir = 1, dashCooldown = 0, airSinceDash = true,
+		airJumps = Config.AIR_JUMPS, dashes = 1, dashTime = 0, dashDir = 1, dashCooldown = 0, dashFloor = false,
 		wallForce = 0, wallForceDir = 0, runDistance = 0, runFrom = 0, stillTime = 0, sliding = false,
 		events = {},
 	}
 end
 
--- Rule 15: dash and double jump come back on landing and on a wall touch. A dash in progress keeps its charge spent,
--- and a dash started on the floor comes back only once the runner has been in the air since (H9): a floor-only
--- chain gets one dash. Wall touches are airborne by definition, so in practice this gates the landing path only.
+-- Rule 15: dash and double jump come back on landing and on a wall touch. A dash in progress keeps its charge spent.
 local function refresh(s: State)
 	s.airJumps = Config.AIR_JUMPS
-	if s.dashTime <= 0 and s.airSinceDash then s.dashes = 1 end
+	if s.dashTime <= 0 then s.dashes = 1 end
 end
 
 -- Falling onto a floor that the remaining buffer will reach: hold the press for the landing instead of spending
@@ -112,7 +110,6 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	else
 		s.grounded = false
 		s.coyote = math.max(0, s.coyote - dt)
-		s.airSinceDash = true -- H9: any airborne frame lets the next landing give the dash back
 	end
 	local wl, wr = c.wallLeft, c.wallRight
 	local touchL = wl ~= nil and wl <= Config.TOUCH_DIST
@@ -133,7 +130,7 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		s.dashTime = Config.DASH_TIME
 		s.dashDir = dir
 		s.dashCooldown = Config.DASH_COOLDOWN
-		s.airSinceDash = not s.grounded -- H9: an air dash is already airborne; a floor dash must leave the floor
+		s.dashFloor = s.grounded -- H10: a dash started on the floor ends at run speed, not the air dash's end speed
 		s.vx = dir * Config.DASH_SPEED
 		s.vy = 0
 		s.jumpHold = 0
@@ -166,7 +163,10 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		s.dashTime -= dt
 		s.vx = s.dashDir * Config.DASH_SPEED
 		s.vy = 0
-		if s.dashTime <= 0 then s.vx = s.dashDir * Config.DASH_END_SPEED end
+		if s.dashTime <= 0 then
+			-- H10: a floor chain gains only the bursts; an air dash keeps 80 (a jump out of either keeps 120, rule 16)
+			s.vx = s.dashDir * (if s.dashFloor then Config.DASH_END_SPEED_FLOOR else Config.DASH_END_SPEED)
+		end
 	else
 		local mult = if s.grounded then 1 else Config.AIR_MULT
 		local top = Config.RUN_SPEED * (input.speedMult or 1) -- the chaser ramp (Tag.chaserBoost, rule 4)

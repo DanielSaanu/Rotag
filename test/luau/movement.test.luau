@@ -158,100 +158,94 @@ do -- dash: fast, flat, then eases to the end speed; dash into jump keeps the sp
 	frames(FLOOR, s, 8)
 	assert(s.vx < Config.DASH_SPEED and s.vx > 0, "eases off after the dash")
 
-	-- H6: the cooldown outlasts the refresh. Ground dash, tap hop, land with the charge back (H9: the hop was air)
-	-- inside the cooldown: the press on landing does not start; it does once the cooldown ends.
+	-- H6: the cooldown outlasts the landing refresh, so a grounded runner cannot chain dashes at will. Two
+	-- presses 0.3 s apart on the ground: the charge is back (rule 15) but the second does not start.
+	assert(Config.DASH_COOLDOWN > 0.3 + DT, "the case needs a cooldown longer than 0.3 s")
 	s = standing(FLOOR, 0)
 	tick(FLOOR, s, input({ dash = true }))
-	frames(FLOOR, s, 9) -- the dash is over
-	tick(FLOOR, s, input({ jump = true }))
-	local t = 10 * DT
-	for _ = 1, 120 do
-		t += DT
-		if tick(FLOOR, s).landed then break end
-	end
-	assert(s.grounded and t < Config.DASH_COOLDOWN - 2 * DT, ("the tap hop lands inside the cooldown, at %.2f s"):format(t))
-	tick(FLOOR, s)
-	assert(s.dashes == 1, "landing from the hop gives the charge back")
+	frames(FLOOR, s, math.floor(0.3 / DT + 0.5) - 1)
+	assert(s.dashes == 1, "the charge is back on the ground")
 	ev = tick(FLOOR, s, input({ dash = true }))
-	assert(not ev.dash, "still cooling down: no second dash")
-	frames(FLOOR, s, math.ceil((Config.DASH_COOLDOWN - t) / DT))
+	assert(not ev.dash, "0.3 s later on the ground: no second dash")
+	frames(FLOOR, s, math.ceil((Config.DASH_COOLDOWN - 0.3) / DT))
 	ev = tick(FLOOR, s, input({ dash = true }))
 	assert(ev.dash, "after the cooldown it dashes again")
+	-- Mashing for 3 s: one dash per cooldown, never more.
+	s = standing(FLOOR, 0)
+	local dashes = 0
+	for _ = 1, math.floor(3 / DT) do
+		if tick(FLOOR, s, input({ dash = true })).dash then dashes += 1 end
+	end
+	assert(dashes == math.ceil(3 / Config.DASH_COOLDOWN), "one dash per cooldown when mashed, got " .. dashes)
 end
 
-do -- H9: a dash started on the floor comes back only after the runner has left the floor since
-	-- (1) two ground dashes with no air between: the second never starts, however long the wait.
-	local s = standing(FLOOR, 0)
-	local ev
-	assert(tick(FLOOR, s, input({ dash = true })).dash, "the first ground dash")
-	local again = false
-	for _ = 1, math.floor(5 / DT) do
-		if tick(FLOOR, s, input({ dash = true })).dash then again = true end
-	end
-	assert(not again and s.dashes == 0 and s.grounded, "5 s on the floor: no second dash")
-
-	-- (2) ground dash -> jump -> land -> dash.
-	tick(FLOOR, s, input({ jump = true }))
-	local landed = false
-	for _ = 1, 120 do
-		if tick(FLOOR, s).landed then landed = true break end
-	end
-	assert(landed, "lands")
-	tick(FLOOR, s)
-	assert(s.dashes == 1, "landing from the air gives the dash back")
-	s = standing(FLOOR, 0) -- and the same in one rhythm: dash, jump out of it, land, dash once the cooldown allows
-	tick(FLOOR, s, input({ dash = true, moveX = 1 }))
-	frames(FLOOR, s, 3, input({ moveX = 1 }))
-	tick(FLOOR, s, input({ jump = true, moveX = 1 }))
-	local dashed = false
-	for _ = 1, math.floor(2 / DT) do
-		if tick(FLOOR, s, input({ moveX = 1, dash = s.grounded })).dash then dashed = true break end
-	end
-	assert(dashed, "dash -> jump -> land -> dash")
-
-	-- (3) mashing Shift while running for 3 s: one dash, then run speed. The reviewer's ask: pin the speed, not
-	-- the count. After the first dash's burst (over by 1 s: 0.15 s dash, 80 -> 45 bleeds in 0.18 s) the average
-	-- must sit within 10% of RUN_SPEED; and the whole 3 s gains at most one dash over plain running.
-	local function run3(mash)
-		local r = standing(FLOOR, -150)
-		local n, x1 = 0, 0
-		for i = 1, math.floor(3 / DT) do
-			if tick(FLOOR, r, input({ moveX = 1, dash = mash })).dash then n += 1 end
-			if i == math.floor(1 / DT) then x1 = r.x end
+do -- H10: a dash started on the floor ends at run speed; an air dash ends at the end speed (Danzo's option 1)
+	-- Run until the frame the dash ends and read vx there, before running or friction touches it.
+	local function dashEnd(world, s, moveX)
+		assert(tick(world, s, input({ dash = true, moveX = moveX })).dash, "the dash starts")
+		for _ = 1, 60 do
+			tick(world, s, input({ moveX = moveX }))
+			if s.dashTime <= 0 then return s.vx end
 		end
-		return n, r.x - x1, r.x
+		error("the dash never ended")
 	end
-	local n, late, mashX = run3(true)
-	local _, runLate, runX = run3(false)
-	local lateAvg = late / 2
-	print(("H9 mash: %d dash, %.1f studs/s over 1-3 s (run %.1f), 3 s gain over running %.1f studs"):format(
-		n, lateAvg, runLate / 2, mashX - runX))
-	assert(n == 1, "mashing on the floor: exactly one dash, got " .. n)
-	assert(math.abs(lateAvg - Config.RUN_SPEED) <= 0.1 * Config.RUN_SPEED,
-		("mash speed after the burst %.1f is not within 10%% of the run %.1f"):format(lateAvg, Config.RUN_SPEED))
-	local oneDash = (Config.DASH_SPEED - Config.RUN_SPEED) * Config.DASH_TIME
-		+ (Config.DASH_END_SPEED ^ 2 - Config.RUN_SPEED ^ 2) / (2 * Config.RUN_REDUCE)
-	assert(mashX - runX <= oneDash + 1, ("3 s of mashing gains %.1f studs over running, more than one dash (%.1f)"):format(
-		mashX - runX, oneDash))
-
-	-- An air dash starts airborne, so H9 leaves it as it was: dash and wall-kick on the same frame, charge back.
-	local wall = { { 10, -100, 12, 100 } }
-	s = Movement.new(10 - HW - REACH * 0.5, 20)
-	ev = Movement.step(s, input({ dash = true, jump = true, moveX = 1 }), probe(wall, s), DT)
-	assert(ev.dash and ev.jump == "wall" and s.dashes == 1, "an air dash kicked off a wall the same frame comes back")
-
-	-- Corner case: a floor dash off a ledge. The dash is flat with gravity off, so it cannot land mid-dash; it is
-	-- airborne past the edge, falls once the dash ends, and the landing gives the charge back.
+	local s = standing(FLOOR, 0)
+	local v = dashEnd(FLOOR, s, 1)
+	assert(near(v, Config.DASH_END_SPEED_FLOOR) and Config.DASH_END_SPEED_FLOOR == Config.RUN_SPEED,
+		"a floor dash ends at run speed, got " .. v)
+	tick(FLOOR, s, input({ moveX = 1 }))
+	assert(s.grounded and s.dashes == 1, "the next frame the floor refresh has the charge back (rule 15, as before H9)")
+	s = standing(FLOOR, 0)
+	v = dashEnd(FLOOR, s, -1)
+	assert(near(v, -Config.RUN_SPEED), "the same facing left, got " .. v)
+	s = Movement.new(0, 40)
+	v = dashEnd(FLOOR, s, 1)
+	assert(not s.grounded and near(v, Config.DASH_END_SPEED), "an air dash ends at the end speed, got " .. v)
+	-- A floor dash off a ledge: flat with gravity off, it is airborne past the edge when it ends, but it STARTED on
+	-- the floor (DESIGN §3 rule 15's amendment says "started"), so it ends at run speed too. Then it falls, and the
+	-- landing gives the charge back.
 	local step = { { -200, -10, 0, 0 }, { 0, -10, 200, -1 } } -- a 1-stud drop at x = 0
 	s = standing(step, -1)
-	tick(step, s, input({ dash = true, moveX = 1 }))
-	local airMidDash, back = false, false
+	v = dashEnd(step, s, 1)
+	assert(not s.grounded and near(v, Config.RUN_SPEED), "a ledge dash started on the floor ends at run speed, got " .. v)
+	local back = false
 	for _ = 1, 60 do
 		tick(step, s, input({ moveX = 1 }))
-		if s.dashTime > 0 and not s.grounded then airMidDash = true end
 		if s.grounded and s.dashes == 1 then back = true break end
 	end
-	assert(airMidDash and back, "a floor dash that leaves the floor comes back on the landing after it")
+	assert(back, "the landing after a ledge dash gives the charge back")
+
+	-- Dash and wall-kick on the same frame in the air: the kick refunds the dash (rule 15, unchanged).
+	local wall = { { 10, -100, 12, 100 } }
+	s = Movement.new(10 - HW - REACH * 0.5, 20)
+	local ev = Movement.step(s, input({ dash = true, jump = true, moveX = 1 }), probe(wall, s), DT)
+	assert(ev.dash and ev.jump == "wall" and s.dashes == 1, "an air dash kicked off a wall the same frame comes back")
+
+	-- A MEASUREMENT, not a target (-> S11): mashing Shift while running, from rest, for five cooldowns (4 s at 0.8,
+	-- a whole number of dash cycles so the window edge does not flatter the chain) against plain running. Each floor dash
+	-- now gains only its burst, (DASH_SPEED - RUN_SPEED) x DASH_TIME studs, so the chain is still faster than a run,
+	-- by an amount the cooldown alone sets. How much faster is Danzo's call (raise DASH_COOLDOWN to slow it); the
+	-- numbers are pinned so the next change to the cooldown or the dash shows up here as a diff, not silently.
+	local MASH_RATIO = 1.325 -- measured 2026-10-11 at DASH_COOLDOWN 0.8 (H10)
+	local T = 5 * Config.DASH_COOLDOWN
+	local function runFor(mash)
+		local r = standing(FLOOR, -150)
+		local n = 0
+		for _ = 1, math.floor(T / DT + 0.5) do
+			if tick(FLOOR, r, input({ moveX = 1, dash = mash })).dash then n += 1 end
+		end
+		return n, r.x + 150
+	end
+	local n, mashD = runFor(true)
+	local _, runD = runFor(false)
+	local burst = (Config.DASH_SPEED - Config.RUN_SPEED) * Config.DASH_TIME
+	print(("H10 mash: %d dashes in %.1f s, %.2f studs/s against a run of %.2f (x%.3f); %.2f studs gained, %.2f per dash (burst %.2f)"):format(
+		n, T, mashD / T, runD / T, mashD / runD, mashD - runD, (mashD - runD) / n, burst))
+	assert(n == 5, "one dash per cooldown when mashed, got " .. n)
+	assert(math.abs((mashD - runD) / n - burst) <= 0.5,
+		("each floor dash gains only its burst (%.2f studs), got %.2f"):format(burst, (mashD - runD) / n))
+	assert(math.abs(mashD / runD - MASH_RATIO) <= 0.005,
+		("mash/run ratio moved: %.3f, pinned %.3f. If the change was meant, re-pin it and tell Danzo"):format(mashD / runD, MASH_RATIO))
 end
 
 do -- the ceiling ends the rise
