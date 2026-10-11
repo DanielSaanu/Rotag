@@ -18,6 +18,8 @@
       Detail: `docs/systems/tag.md`. Danzo to Play and judge the 1.5 s freeze, the 3 s start wait and the chaser ramp.
 - [ ] **Tag Play feedback (H6, 2026-10-11, heavy agent on it):** Danzo could tag the box once only; frozen at round start and
       had to re-press a key to move; Shift dash can be spammed for a big speed gain. Fixes land in `docs/systems/tag.md`.
+- [ ] **Fuse pass bonus +5 → +2 (Danzo, 2026-10-11, "for now"):** `Config.FUSE_PASS_BONUS`; routed through the H6 agent
+      since it holds `Config.lua`. DESIGN §2 carries the trial note. Judge in Play; the HUD pop follows the knob.
 - [ ] **QA loop for the tag:** goals in `docs/qa/tag.md`. Runs after H6, so the reviewer is not told what Danzo found.
       Studio is the reviewer's while it runs: Danzo should not Play during the loop.
 - [ ] **Next build: second player.** Each screen draws only its own runner; the other player is invisible. Then the
