@@ -5,15 +5,20 @@ local Config = {}
 
 Config.PLAYERS_PER_MATCH = 4
 Config.FUSE_START = 45            -- seconds on the first "it"
-Config.FUSE_PASS_BONUS = 5        -- seconds added on every tag (remaining + 5)
+Config.FUSE_PASS_BONUS = 2        -- seconds added on every tag (remaining + this). Danzo's trial 2026-10-11, DESIGN §2 says +5
+-- A pass never lifts the fuse above the fuse this life started with (Tag.freshFuse: 45, then 35, 25). Danzo 2026-10-11.
 Config.TAG_FREEZE = 1.5           -- seconds the new holder is frozen: no tag-backs (rule 1)
 -- The tag (docs/systems/tag.md). Feel numbers are Danzo's to tune in Play; the tests pin the rules, not the feel.
 Config.FUSE_SHRINK = 10           -- each elimination: the next fresh fuse is this much shorter (45, 35, 25) (§2)
 Config.FUSE_MIN = 15              -- a fresh fuse never starts below this
-Config.START_FREEZE = 3           -- the first "it" waits this long at round start while the others scatter
+Config.START_FREEZE = 1           -- the first "it" waits this long at round start while the others scatter (H6: was 3;
+                                  -- the HUD counts it down to GO). Danzo's to tune
 Config.TAG_REACH = 0.5            -- studs past touching boxes that still count as a tag (the hand)
 Config.TAG_GRACE = 1.5            -- extra studs the SERVER allows on top of TAG_REACH (lag, interpolation)
-Config.TAG_REWIND_MAX = 0.3       -- seconds the server looks back for the overlap, at most (rule 6)
+Config.TAG_VIEW_DELAY = 0.4      -- seconds, on top of ping, the target may be older than the claimant in the server's
+                                  -- history (H6, tag.md §2: measured 0.18 s per hop in Studio; two clients = two hops)
+Config.TAG_REWIND_MAX = 0.5       -- that allowance at most, whatever the ping: lagging buys no more (rule 6; H6: was 0.3)
+Config.TAG_CONFIRM_WAIT = 0.35    -- seconds the server keeps a claim open for the claimant's body to catch up (H6)
 Config.TAG_CLAIM_GAP = 0.1        -- a client's claims closer together than this are dropped unread
 Config.RAMP_DELAY = 5             -- rule 4: seconds into a chase before "it" starts to speed up
 Config.RAMP_TIME = 15             -- seconds from no boost to the full boost
@@ -49,7 +54,8 @@ Config.WALL_SLIDE_MAX = 10        -- fall speed cap while pushing into a wall
 Config.DASH_SPEED = 120
 Config.DASH_TIME = 0.15
 Config.DASH_END_SPEED = 80
-Config.DASH_COOLDOWN = 0.2
+Config.DASH_COOLDOWN = 0.8        -- seconds from one dash to the next, even with the charge back (H6: 0.2 let
+                                  -- a grounded runner chain dashes at ~110 studs/s). Danzo's to tune
 Config.TOUCH_WINDOW_SCALE = 1.25  -- coyote and buffer are this much wider on touch (rule 23)
 Config.STICK_DEADZONE = 0.3       -- stick |x| under this is no run; over it is a full run (diagonals run full speed)
 

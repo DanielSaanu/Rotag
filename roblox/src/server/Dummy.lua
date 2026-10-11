@@ -22,6 +22,8 @@ function Dummy.new(tagName: string)
 	root.Size = Vector3.new(Config.RUNNER_WIDTH, Config.RUNNER_HEIGHT, Config.RUNNER_DEPTH)
 	root.Anchored = true
 	root.CanCollide = false -- players pass through it, as they pass through each other's sprites
+	root.CanQuery = false -- and their wall probes ignore it (H6: it was a moving wall that stopped a chaser dead
+	-- behind it, refreshed their dash on contact, and made a run-through impossible)
 	root.Color = Color3.fromRGB(255, 170, 60)
 	root.Material = Enum.Material.Neon
 	root.Transparency = 0.35

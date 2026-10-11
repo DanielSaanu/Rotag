@@ -62,3 +62,9 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
   remotes `TagClaim`/`TagVerdict`/`MatchState`. Play (old `rojo serve`, remotes missing, warned): round, elimination,
   rotation and the dummy's tag (`TAG -1000 -> player, fuse 48.8s`) seen; client side not yet. → `docs/systems/tag.md`,
   N4, N5, T8.
+- 2026-10-11 · `claude/friendly-hawking-74891i`: H6 (heavy): Danzo's first tag Play. Tag once = bug: server saw the
+  player's body ~0.18 s late (measured) and judged claims on arrival, same frame; now a 0.35 s open window pairing the
+  claimant with target samples up to ping + 0.4 s older (cap 0.5), and the dummy is `CanQuery = false` (was a wall).
+  `START_FREEZE` 3 -> 1 with a GO countdown; `DASH_COOLDOWN` 0.2 -> 0.8; from Danzo: `FUSE_PASS_BONUS` 5 -> 2 (trial),
+  fuse capped at the life's fresh fuse, IT marker = red glowing triangle (neon wedges). Play: 3/3 run-through tags.
+  → `docs/systems/tag.md`, `docs/systems/movement.md`, N5 corrected, N6, A5, T9.

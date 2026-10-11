@@ -157,6 +157,26 @@ do -- dash: fast, flat, then eases to the end speed; dash into jump keeps the sp
 	assert(not ev.dash, "dash cooldown")
 	frames(FLOOR, s, 8)
 	assert(s.vx < Config.DASH_SPEED and s.vx > 0, "eases off after the dash")
+
+	-- H6: the cooldown outlasts the landing refresh, so a grounded runner cannot chain dashes for speed. Two
+	-- presses 0.3 s apart on the ground: the charge is back (rule 15) but the second does not start.
+	assert(Config.DASH_COOLDOWN > 0.3 + DT, "the case needs a cooldown longer than 0.3 s")
+	s = standing(FLOOR, 0)
+	tick(FLOOR, s, input({ dash = true }))
+	frames(FLOOR, s, math.floor(0.3 / DT + 0.5) - 1)
+	assert(s.dashes == 1, "the charge is back on the ground")
+	ev = tick(FLOOR, s, input({ dash = true }))
+	assert(not ev.dash, "0.3 s later on the ground: no second dash")
+	frames(FLOOR, s, math.ceil((Config.DASH_COOLDOWN - 0.3) / DT))
+	ev = tick(FLOOR, s, input({ dash = true }))
+	assert(ev.dash, "after the cooldown it dashes again")
+	-- Mashing for 3 s: one dash per cooldown, never more.
+	s = standing(FLOOR, 0)
+	local dashes = 0
+	for _ = 1, math.floor(3 / DT) do
+		if tick(FLOOR, s, input({ dash = true })).dash then dashes += 1 end
+	end
+	assert(dashes == math.ceil(3 / Config.DASH_COOLDOWN), "one dash per cooldown when mashed, got " .. dashes)
 end
 
 do -- the ceiling ends the rise

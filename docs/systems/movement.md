@@ -92,7 +92,7 @@ Celeste's numbers, mapped at **0.5 studs per Celeste pixel** (its 8 px tile = ou
 | Double jump | 1, same speed and hold | |
 | Wall jump | within 3 px (0.75 studs), kicks 65 studs/s away; the stick reads "away" for 0.16 s | |
 | Wall slide | fall capped at 10 studs/s while pushing into a wall | |
-| Dash | horizontal, 120 studs/s for 0.15 s (18 studs), no gravity, ends at 80; 0.2 s cooldown | |
+| Dash | horizontal, 120 studs/s for 0.15 s (18 studs), no gravity, ends at 80; 0.8 s cooldown (H6, was 0.2) | `DASH_COOLDOWN` is Danzo's knob |
 | Stick | digital past a 0.3 deadzone | a diagonal thumb runs full speed (rule 24) |
 
 **Measured** (the pure rules, 60 fps): a tap hops 3.5 studs (0.9 tiles); a full hold 14.25 studs (3.6 tiles), apex
@@ -103,6 +103,21 @@ are set against these.
 
 **Refresh on contact (rule 15):** landing and touching a wall give back the double jump and the dash. A wall jump
 counts as a wall touch. A dash in progress keeps its charge spent.
+
+**Dash cooldown (H6, 2026-10-11).** Danzo in Play: "you can just spam it for major speed increase". Cause: the charge
+comes back on every landing (rule 15) and the cooldown was 0.2 s, only 0.05 s past the dash itself, so a grounded
+runner could dash again 0.2 s after the last one: ~120 for 0.15 s plus the 80 end speed, about 110 studs/s on
+average against a 45 run. **Mechanism kept, number raised:** `DASH_COOLDOWN` 0.2 -> **0.8 s**, counted from the dash
+start, and it gates the dash even when the charge is back. Rule 15 is untouched (the charge still returns on contact;
+it just cannot be spent until the cooldown ends) and so is rule 16 (a jump out of a dash keeps its speed). Mashed,
+that is one dash per 0.8 s: on paper ~62 studs/s average with the 80 bleeding to 45, against 110 before. Why not
+"the charge only returns after leaving the ground": that changes rule 15 and punishes the dash-jump-land rhythm
+parkour wants; a time gate is one knob. **0.8 is a guess, Danzo's to tune** (0.6 feels snappier, 1.0 makes the dash
+a decision). Tested: two ground presses 0.3 s apart start one dash, the second starts after the cooldown, and 3 s of
+mashing gives exactly `ceil(3 / DASH_COOLDOWN)` dashes (`movement.test.luau`; removing the cooldown check or
+restoring 0.2 fails it). The air-dash pose test now uses a fresh airborne runner, because its ground dash a moment
+earlier is still cooling down. Studio: dash starts 0.9 s or more apart while mashing (the MCP's key timing is too
+loose for a rate, → T9).
 
 **Keep speed (rule 16):** a jump ends a dash and does not touch `vx`, so dash-into-jump carries 120 (plus the jump
 boost) into the air, bleeding only at the over-speed rate while held. A double jump does the same. A wall kick
@@ -178,7 +193,14 @@ camera scripts reset them on spawn.
 ## 5. Controls
 
 - **Run:** Roblox's `PlayerModule` `GetMoveVector().X`: A/D, arrows, WASD, a gamepad stick and the touch joystick all
-  arrive the same way. Fallback if the module is missing: `Humanoid.MoveDirection.X` (warned in Output).
+  arrive the same way. Fallback if the module is missing: `Humanoid.MoveDirection.X` (warned in Output). **In this
+  Studio the fallback is the path in use** (H6): `PlayerScripts` holds no `PlayerModule` (only `RbxCharacterSounds`
+  and our `Client`), yet `Humanoid.MoveDirection` follows the keys, so the engine drives it. Checked in Play: a key
+  pressed during a freeze and held resumes the run on the first frame after GO, no re-press (tag.md §3).
+- **Studio focus (H6):** right after Play starts the game window can lose keyboard focus (`WindowFocusReleased` fired
+  at Play start in a probe, and keys sent in the first seconds were not seen by `UserInputService` at all). The best
+  explanation of Danzo's "click and release" (not confirmed: the MCP injects keys, it cannot reproduce focus): click
+  into the game view once after pressing Play.
 - **Jump:** Space, gamepad A, the touch JUMP button. **Dash:** Left or Right Shift, gamepad X, the touch DASH button.
   Bound at High priority with `Sink`, so Space never reaches Roblox's jump and Shift never toggles shift-lock (the
   server also turns `EnableMouseLockOption` off).
@@ -245,7 +267,7 @@ pulled in by a `--!include movement_world.luau` first line that `test/luau/run.j
 own file, `movement_sprites.test.luau`, on the same helpers (split 2026-10-10). Covered: run and stop times, the digital stick, coyote (keyboard and the wider touch
 window), the buffer (on time, too early, landing-aware), variable jump and half gravity, double jump and its limit,
 refresh on landing and on a wall touch, wall jump reach, the force window and the bank, three wall jumps up a
-chimney, dash, cooldown, dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick (the
+chimney, dash, cooldown (and the H6 spam case), dash-into-jump and dash-into-double-jump speed, the ceiling bonk, and the sprite pick (the
 eight run frames in order, one cycle per `RUN_CYCLE` studs whatever the frame count, the air poses by `vy`, the wall
 slide, the dash: §3).
 `test/luau/sidecam.test.luau` pins the view height, settling, the lead and its cap, and frame-rate independence.

@@ -88,24 +88,49 @@ function Tag.canClaim(r: Round, claimant: number, target: number, now: number): 
 	return true, nil
 end
 
--- Lag-fair confirm (rule 6, tag.md §2). `a` and `b` are the two runners' recent positions AS THE SERVER SAW THEM,
--- sampled on the same server frames: { {t, x, y}, ... } oldest first. Paired from the newest end; a pair from two
--- different frames is skipped. Confirm if at any sampled time within `rewind` seconds before `now` the boxes touch
--- within TAG_GRACE.
+-- Lag-fair confirm (rule 6, tag.md §2). `a` (the claimant) and `b` (the target) are recent positions AS THE SERVER
+-- SAW THEM, one sample per server frame: { {t, x, y}, ... } oldest first. True if some claimant sample `sa` and target
+-- sample `sb` with from <= sb.t <= sa.t <= to and sa.t - sb.t <= lag touch within TAG_GRACE. `lag` = 0 pairs only
+-- samples of the same frame. A target sample NEWER than the claimant's is never paired: no screen shows the future.
+-- Why the target may be older (H6, measured in Studio): the server sees the claimant's own body ~0.18 s late, and
+-- the claimant saw the target late too, so "touching on the tagger's screen" is the claimant's sample against an
+-- older target sample, not the same frame.
 export type Sample = { t: number, x: number, y: number }
-function Tag.confirm(a: { Sample }, b: { Sample }, now: number, rewind: number): boolean
-	local from = now - math.clamp(rewind, 0, Config.TAG_REWIND_MAX)
-	for k = 0, math.min(#a, #b) - 1 do
-		local sa, sb = a[#a - k], b[#b - k]
+function Tag.touchedBetween(a: { Sample }, b: { Sample }, from: number, to: number, lag: number): boolean
+	for i = #a, 1, -1 do
+		local sa = a[i]
 		if sa.t < from then break end
-		if sa.t == sb.t and Tag.overlaps(sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE) then return true end
+		if sa.t <= to then
+			for j = #b, 1, -1 do
+				local sb = b[j]
+				if sb.t < from or sb.t < sa.t - lag then break end
+				if sb.t <= sa.t and Tag.overlaps(sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE) then return true end
+			end
+		end
 	end
 	return false
 end
 
+-- A same-frame touch within `rewind` seconds before `now` (capped at TAG_REWIND_MAX). The server's own dummy uses it
+-- with rewind 0: its position is the server's truth, so it gets no allowance.
+function Tag.confirm(a: { Sample }, b: { Sample }, now: number, rewind: number): boolean
+	return Tag.touchedBetween(a, b, now - math.clamp(rewind, 0, Config.TAG_REWIND_MAX), now, 0)
+end
+
+-- How a claim that ARRIVED at `at` is judged (H6, tag.md §2): returns from, deadline, lag for touchedBetween.
+-- `rewind` is the claimant's ping + TAG_VIEW_DELAY, capped at TAG_REWIND_MAX so lagging buys no more: the target may
+-- be up to that much older than the claimant's sample, and no older than `at` minus it. Forward, the claim stays open
+-- TAG_CONFIRM_WAIT, because the claimant's body reaches the server after its claim does; the server confirms on the
+-- first frame the touch shows up and drops the claim at the deadline.
+function Tag.claimWindow(at: number, rewind: number): (number, number, number)
+	local k = math.clamp(rewind, 0, Config.TAG_REWIND_MAX)
+	return at - k, at + Config.TAG_CONFIRM_WAIT, k
+end
+
 -- A confirmed tag: remaining + FUSE_PASS_BONUS goes to `to`, who is frozen for TAG_FREEZE. Call canClaim first.
+-- Capped at the fuse this life started with (Danzo 2026-10-11): passes alone never lengthen a round past it.
 function Tag.pass(r: Round, to: number, now: number): number
-	local fuse = Tag.fuseLeft(r, now) + Config.FUSE_PASS_BONUS
+	local fuse = math.min(Tag.fuseLeft(r, now) + Config.FUSE_PASS_BONUS, Tag.freshFuse(r.eliminations))
 	r.it = to
 	r.fuse = fuse
 	r.since = now

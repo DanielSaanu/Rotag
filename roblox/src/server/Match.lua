@@ -12,8 +12,8 @@ local Dummy = require(script.Parent:WaitForChild("Dummy"))
 
 local Match = {}
 
-local HISTORY = 30 -- server frames of positions kept per runner (~0.5 s): only the transport for Tag.confirm (→ S1)
-local INTERP = 0.1 -- seconds added to the claimant's ping for Roblox's replication interpolation
+local HISTORY = 60 -- server frames of positions kept per runner (~1 s at 60 Hz): covers a claim's whole window,
+-- TAG_REWIND_MAX before it and TAG_CONFIRM_WAIT after it (0.85 s); only the transport for Tag.touchedBetween (→ S1)
 local RESYNC = 1 -- seconds between state messages when nothing changed (late joiners, drift)
 
 local remotes = ReplicatedStorage:FindFirstChild("Remotes")
@@ -29,6 +29,8 @@ local order: { number } = {} -- every runner id in join order: the rotation (rul
 local roots: { [number]: BasePart } = {}
 local history: { [number]: { Tag.Sample } } = {}
 local lastClaim: { [number]: number } = {}
+-- Claims the server has not decided yet, one per claimant: { target, from, deadline, lag } (Tag.claimWindow).
+local pending: { [number]: { target: number, from: number, deadline: number, lag: number } } = {}
 local round: Tag.Round? = nil
 local roundNo, nextRoundAt = 0, 0
 local lastStarter: number? = nil
@@ -85,41 +87,78 @@ local function startRound(now: number)
 	roundNo += 1
 	lastStarter = starter
 	round = Tag.newRound(ids, starter, now)
+	table.clear(pending)
 	log(("round %d: %d runner(s), %s is it with %ds"):format(roundNo, #ids, tostring(starter), Config.FUSE_START))
 	dirty = true
 end
 
--- A confirmed tag, from a client's claim or the dummy's own check. Rules first, then positions.
-local function tryTag(claimant: number, target: number, now: number, rewind: number, quiet: boolean?): boolean
-	local r = round
-	if not r then return false end
-	local ok, why = Tag.canClaim(r, claimant, target, now)
-	if not ok then
-		if not quiet then log(("claim %s -> %s dropped: %s"):format(tostring(claimant), tostring(target), why)) end
-		return false
-	end
-	local ha, hb = history[claimant], history[target]
-	if not (ha and hb and Tag.confirm(ha, hb, now, rewind)) then
-		if quiet then return false end
-		log(("claim %s -> %s dropped: no overlap in the server's last %.2fs"):format(
-			tostring(claimant), tostring(target), math.min(rewind, Config.TAG_REWIND_MAX)))
-		return false
-	end
+-- A confirmed tag: hand the fuse over and tell everyone.
+local function pass(r: Tag.Round, claimant: number, target: number, now: number)
 	local fuse = Tag.pass(r, target, now)
 	log(("TAG %s -> %s, fuse %.1fs"):format(tostring(claimant), tostring(target), fuse))
 	if verdictRemote then verdictRemote:FireAllClients({ from = claimant, to = target, fuse = fuse }) end
 	dirty = true
+end
+
+-- Judge one claim over the server's own history (Tag.touchedBetween). Rules first (again: the round may have moved
+-- on since the claim arrived), then positions. Returns true once decided (tagged, or refused by the rules).
+local function judge(claimant: number, target: number, from: number, to: number, lag: number, now: number): boolean
+	local r = round
+	if not r then return true end
+	local ok, why = Tag.canClaim(r, claimant, target, now)
+	if not ok then
+		log(("claim %s -> %s dropped: %s"):format(tostring(claimant), tostring(target), tostring(why)))
+		return true
+	end
+	local ha, hb = history[claimant], history[target]
+	if not (ha and hb and Tag.touchedBetween(ha, hb, from, to, lag)) then return false end
+	pass(r, claimant, target, now)
 	return true
 end
 
+-- For the Studio log only: the closest the boxes came (x gap, y gap) over the pairs Tag.touchedBetween looks at.
+local function closest(a: { Tag.Sample }, b: { Tag.Sample }, from: number, to: number, lag: number): (number, number)
+	local bx, by = math.huge, math.huge
+	for _, sa in a do
+		for _, sb in b do
+			if sb.t >= from and sa.t <= to and sb.t <= sa.t and sa.t - sb.t <= lag and math.abs(sa.x - sb.x) < bx then
+				bx, by = math.abs(sa.x - sb.x), math.abs(sa.y - sb.y)
+			end
+		end
+	end
+	return bx, by
+end
+
+-- Every frame: pending claims are judged again as the claimant's late-arriving positions land (H6: in Studio the
+-- server sees a client-owned body ~0.15 s after the claim about it arrives, ~7 studs behind at run speed).
+local function judgePending(now: number)
+	for claimant, p in pending do
+		if judge(claimant, p.target, p.from, math.min(now, p.deadline), p.lag, now) then
+			pending[claimant] = nil
+		elseif now >= p.deadline then
+			pending[claimant] = nil
+			local gx, gy = closest(history[claimant] or {}, history[p.target] or {}, p.from, p.deadline, p.lag)
+			log(("claim %s -> %s dropped: no overlap, target up to %.2fs older, until %.2fs after it (closest: %.1f, %.1f"
+				.. " studs apart)"):format(tostring(claimant), tostring(p.target), p.lag, Config.TAG_CONFIRM_WAIT, gx, gy))
+		end
+	end
+end
+
 -- Client -> server. The payload is ONE number, the target's runner id; everything else is the server's own state.
+-- A newer claim replaces the claimant's pending one: the old window up to now has already been checked every frame.
 local function onClaim(player: Player, target: any)
 	local now = os.clock()
 	if now - (lastClaim[player.UserId] or -math.huge) < Config.TAG_CLAIM_GAP then return end
 	lastClaim[player.UserId] = now
 	if type(target) ~= "number" or target ~= target or target % 1 ~= 0 then return end
 	local ok, ping = pcall(function() return player:GetNetworkPing() end)
-	tryTag(player.UserId, target, now, (if ok and type(ping) == "number" then ping else 0) + INTERP)
+	local from, deadline, lag = Tag.claimWindow(now, (if ok and type(ping) == "number" then ping else 0)
+		+ Config.TAG_VIEW_DELAY)
+	if judge(player.UserId, target, from, now, lag, now) then
+		pending[player.UserId] = nil
+	else
+		pending[player.UserId] = { target = target, from = from, deadline = deadline, lag = lag }
+	end
 end
 
 local function sample(now: number)
@@ -156,9 +195,13 @@ local function step(dt: number)
 	end
 	sample(now)
 	if r and not r.over then
-		if r.it == Dummy.ID then -- the dummy is the server's own runner: it claims for itself, with no rewind
+		judgePending(now)
+		if r.it == Dummy.ID then -- the dummy is the server's own runner: it claims for itself, this frame only
 			for _, id in r.order do
-				if id ~= Dummy.ID and r.alive[id] and tryTag(Dummy.ID, id, now, 0, true) then break end
+				if id ~= Dummy.ID and r.alive[id] and Tag.canClaim(r, Dummy.ID, id, now) then
+					local ha, hb = history[Dummy.ID], history[id]
+					if ha and hb and Tag.confirm(ha, hb, now, 0) then pass(r, Dummy.ID, id, now) break end
+				end
 			end
 		end
 		local out = Tag.tick(r, now)
@@ -204,7 +247,7 @@ function Match.start(tagName: string)
 		local id = player.UserId
 		local i = table.find(order, id)
 		if i then table.remove(order, i) end
-		roots[id], history[id], lastClaim[id] = nil, nil, nil
+		roots[id], history[id], lastClaim[id], pending[id] = nil, nil, nil, nil
 		if round then Tag.leave(round, id, os.clock()) dirty = true end
 	end)
 	RunService.Heartbeat:Connect(step)

@@ -52,6 +52,8 @@ Moves should hand speed off to each other:
 - On a tag, the **remaining time + 5 s** passes to the new holder. Example: tagging someone with 20 s left hands them 25 s.
   *Trial, Danzo 2026-10-11:* the bonus is **+2 s** for now (`Config.FUSE_PASS_BONUS`), after the first solo Play. If it
   stays, this line changes to +2; the rule (remaining + bonus) does not.
+  *Cap, Danzo 2026-10-11:* a pass never lifts the fuse above the fuse that life started with (45, then 35, 25 after
+  eliminations), so quick passes cannot stretch a round (`Tag.pass`, [tag.md](systems/tag.md) §5).
 - If the fuse hits 0, the holder is **eliminated**.
 - The fuse shrinks across the match, so tension rises. Even weak players always get a chance to fight back.
 

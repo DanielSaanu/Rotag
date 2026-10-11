@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (N4, N5, T8; T7 widened)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (H6: N5 corrected, N6, A5, T9)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -50,6 +50,12 @@ setting a threshold, list each rule that caps or zeroes that speed (a wall-slide
 walk-off that starts at 0) and decide which pose each one should show; a cap that lands inside the band needs its own
 flag, set where the cap is applied and checked before the bands. Test each clamp by name. *(2026-10-10, handoff H3:
 the wall slide's 10 studs/s sat inside the 20 apex band and would have shown the hang pose for the whole slide.)*
+
+**A5 — In this side-on world, a world marker is a part (or a SurfaceGui on a part), not a BillboardGui.** The H5
+"IT" BillboardGui sat inside the HUD's ScreenGui, and a GUI container nested in another never draws; moved out to
+PlayerGui and adorned to a part, a test BillboardGui still showed nothing in a Studio capture, while the neon wedges and
+the runner's SurfaceGui did. Build markers the way the runner is drawn, and LOOK at a capture before calling one done.
+*(2026-10-11, handoff H6, the IT triangle.)*
 
 ## S — Shared Luau
 
@@ -111,6 +117,17 @@ trust in the positions.** Record every body on the same server frames, pair samp
 by the claimant's ping plus interpolation but never past a fixed cap (else lagging buys reach). And write down where
 the positions come from: bodies with client network ownership report their own positions, so the real fix for a
 teleporting cheat is a server movement check, not a tighter tag check. *(2026-10-11, handoff H5, `Tag.confirm`.)*
+**Corrected by H6 (same day):** "pair samples only from the same frame" was wrong for client claims, see N6. Same-frame
+pairing is right only when neither side's samples arrive late (the server checking its own dummy).
+
+**N6 — Measure the replication delays before writing a lag-fair check, and design for the claim arriving FIRST.**
+Measured in Studio (one process, `os.clock` shared by client and server): a client-owned body reaches the server's
+`Position` ~0.18 s after the client moved it, while a RemoteEvent fired at the same moment arrives almost at once; a
+server-anchored part reaches the client within a frame. So "touching on the tagger's screen" is never one server frame
+of both bodies: the server must (a) keep the claim open a short wait for the claimant's own late samples, and (b) pair
+each claimant sample with the target's samples up to a capped allowance OLDER (never newer). A runner trailing a
+target at a touch never touches it in any single server frame. Log the closest approach on every drop, so the next
+mismatch is a number, not a guess. *(2026-10-11, handoff H6, `Tag.touchedBetween`, `Tag.claimWindow`.)*
 
 ## T — Tooling
 
@@ -147,6 +164,14 @@ heredocs for short text with no backslashes. *(2026-10-10, `claude/friendly-hawk
 **T8 — Studio's local test players have NEGATIVE UserIds (-1, -2, ...).** Any made-up id (a dummy runner, a bot, a
 placeholder) must sit outside that range and outside real ids: the Studio dummy is -1000. Never key "is this a real
 player" on `UserId > 0`. *(2026-10-11, handoff H5.)*
+
+**T9 — Driving Play through the Studio MCP: keys are slow and the first one can be lost; log on a Heartbeat.** Each
+`user_keyboard_input` or `execute_luau` call costs ~1-2 s of round trip, so "press while frozen for 1.5 s" cannot be
+timed from outside; a key sent in the first seconds after Play starts was swallowed twice (`IsKeyDown` false), and a
+list of `keyPress` steps spread over ~0.5 s each. Start a Heartbeat logger in the client first (`_G` table, one row per
+frame), send the whole key script in ONE call, then read the log. To hit a short window, lengthen it in `Config`
+for the test and put it back before the tests run. Remove anything solid the harness adds (→ T5): a server-moved part
+is a wall to the client's probes unless `CanQuery = false`. *(2026-10-11, handoff H6.)*
 
 ## G — Git and generated files
 
