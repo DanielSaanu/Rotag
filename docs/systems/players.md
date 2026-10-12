@@ -78,8 +78,11 @@ script) was drawn by `Others` on the client and its sprite logged every frame:
   change is held over for up to 0.1 s (`HOLD`) and its time joins the next real move; only 0.1 s with no change at
   all means standing still. A move out of rest uses that frame's time alone, or a jump from standing read as the apex.
   After the fix the dash showed as one unbroken pose in the log, the run cycle came in order both ways. One-frame
-  slips remain at some pose edges with the stepped stand-in (a client-owned body is interpolated by Roblox and should
-  be smoother; not yet seen with two real clients).
+  slips remain at some pose edges with the stepped stand-in. **Confirmed 2026-10-12:** the steps were the ANCHORED
+  stand-in (a server CFrame write replicates with no smoothing: Danzo saw it "very choppy"). The same stand-in as an
+  unanchored, server-owned body driven by velocity moved on every render frame (180 of 180 over 3 s, median 0.78
+  studs) and Danzo judged it as smooth as his own runner. A real client-owned runner is interpolated the same way.
+  Script: `tools/studio-standin.luau`.
 - **A short server move read as a dash** (a 6-stud jump in one frame). Any step faster than 2 x `DASH_SPEED` is now a
   teleport: speed restarts at 0. Same for a jump over 20 studs (a respawn or a fall-out reset).
 
@@ -136,7 +139,9 @@ was over before it was seen (H6, H8). Now:
   `TestService.NumberOfPlayers = 2` and starting Play still gave one player (set back to 0). So no two-client run yet.
 - **What ran:** `npm test`, `lint:luau`, the new tests; solo Play with the dummy; the stand-in runner (`RunnerId` -2,
   server-moved) drawn and logged on the client; the collision-group block and its `Default` control; the arrows.
-- **Danzo's two-player test** (Studio, Test tab → Clients and Servers → 2 players → Start), what to look for:
+- **Checked by Danzo solo (2026-10-12)** against the physics stand-in: 1 (drawn, animated, smooth), 2 (pass-through,
+  no stop or wall-kick) and 3 (the edge arrow). The stand-in is not in the match roster, so it cannot be tagged.
+- **Danzo's two-player test** (Studio, Test tab → Clients and Servers → 2 players → Start), still to see: 4 and 5.
   1. Each window shows the other runner as the drawn character (not invisible), running, jumping, dashing and facing
      the right way, with no flicker between poses.
   2. Run through each other: no stop, no shove, no wall-kick off the other body; "it" too.
@@ -147,8 +152,9 @@ was over before it was seen (H6, H8). Now:
 
 ## 7. Notes for H12 (the movement remote and the two-client delay)
 
-- `RemotePose` already turns a replicated position stream into speeds; the server's speed check can use the same
-  "step over the time it took, holding unchanged frames" idea (positions can land in steps).
+- **Done (H12, 2026-10-12):** no movement remote; the server's speed check is a per-axis distance budget over its own
+  samples, so held frames refill and stepped positions pass ([trust.md](trust.md)). `RemotePose`'s per-step speed
+  would not do on the server: its copy catches up at ~2x dash speed after a stop (trust.md §3).
 - With two real clients the target on the tagger's screen is two hops old; measure it with the same Heartbeat logger
   as H6 (both clients and the server in one Studio process share `os.clock`).
 

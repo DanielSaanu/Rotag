@@ -30,6 +30,8 @@ to (`roblox/default.project.json`).
   the Studio dummy runner. Before any tag, fuse, round or remote change.
 - [`docs/systems/players.md`](docs/systems/players.md): more than one runner: other runners drawn on every screen, pass-through
   collision, off-screen arrows, round-ready. Before any multiplayer, collision or HUD-arrow change.
+- [`docs/systems/trust.md`](docs/systems/trust.md): movement trust: why there is no movement remote, the server's speed
+  check on each runner, what a violation does, what it cannot catch. Before any remote, anti-cheat or movement-speed change.
 - [`docs/systems/art-pipeline.md`](docs/systems/art-pipeline.md): the node pipeline (draw, compose, pack, upload).
 - [`docs/ROBLOX_SETUP.md`](docs/ROBLOX_SETUP.md): installing Rojo, connecting Studio, the Open Cloud key, uploading,
   the decal-vs-image gotcha. Setup or toolchain problems.
@@ -55,6 +57,7 @@ to (`roblox/default.project.json`).
 - `test/`: node tests (`core` = renderer and packer, `structure` = line ceiling and shared/ purity) and `test/luau/*.test.luau`.
   A Luau test may start with `--!include <file>` to inline a helper file beside it (`movement_world.luau`).
 - `tools/luau-check.js`: Luau lint. `tools/luau/` holds the gitignored binaries. `tools/runner-rig.js`: the runner's poses as
-  joints; writes `sprites/runner_*.svg`. Edit it, not the SVGs.
+  joints; writes `sprites/runner_*.svg`. Edit it, not the SVGs. `tools/studio-standin.luau`: a second runner for solo
+  Play, pasted into the Studio MCP on the server (players.md §6).
 - `.claude/agents/heavy.md`, `.claude/skills/qa-loop/`: the heavy escalation agent and the QA loop skill.
 - `exports/`, `cache/`: generated output. Not committed.

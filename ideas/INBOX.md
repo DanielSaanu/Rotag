@@ -12,7 +12,9 @@
 - **Tag played by Danzo (2026-10-11):** "pretty good": dash good, freeze works. Phone preset still untested.
 - **Player 2 built (2026-10-11, H11):** other runners drawn from their replicated position, pass-through collision group,
   off-screen arrows, round waits for every client to draw (5 s cap). Not yet seen with two real clients: Danzo's test
-  below. Detail: `docs/systems/players.md`. Next: H12, the movement remote with a server speed check.
+  below. Detail: `docs/systems/players.md`.
+- **Movement trust built (2026-10-12, H12):** no movement remote; the server checks each runner's speed and snaps a
+  cheating body back; teleports under ~45 studs still pass. Detail: `docs/systems/trust.md`.
 
 ## To do
 
@@ -30,17 +32,21 @@
       other reading, decide by where it ENDS, would keep 80 off a ledge. Say if the ledge case feels wrong.
 - [x] **QA loop for the tag (2026-10-11): 7 → 8/10,** target met in round 2. Summary and Danzo's Play checklist:
       `docs/qa/tag-summary.md`. H7 (honest pop, leave gap) and H8 (spread round starts, spectating) came out of it.
-- [ ] **Danzo confirms: collision between players = pass-through for everyone** (recommended 2026-10-11; chase games do it,
-      one plane cannot be walked around, the tag needs overlap). Head-bounce (rule 15) parked as an optional later mechanic.
+- [x] **Collision between players = pass-through for everyone.** Confirmed by Danzo 2026-10-12 against a solid stand-in
+      runner in Play (no stop, shove or wall-kick). DESIGN §2 line updated. Head-bounce (rule 15) parked.
 - [x] Player 2 (H11, 2026-10-11): `shared/RemotePose`, `client/Others`, `client/Arrows`, collision group `RotagRunners`,
       remote `Ready`. Solo-verified in Studio with a server-moved stand-in.
-- [ ] **Danzo: two-player test.** Restart `rojo serve` and reconnect (the `Ready` remote was hand-added for the test), then
-      Test tab → Clients and Servers → 2 players → Start. Look for: the other runner drawn and animated the right way with
-      no pose flicker; running through each other with no stop, shove or wall-kick; an edge arrow (red on the holder) when
-      apart; RUN!/count/GO! in both windows; whether tags at run speed look fair (H12's input).
+- [x] **Solo stand-in test (2026-10-12):** a server-driven second runner (`tools/studio-standin.luau`, run from the MCP) was
+      drawn, animated and smooth, passed through, and had its edge arrow. An ANCHORED stand-in replicated in steps and
+      looked choppy; a physics body did not. It is not in the roster, so it cannot be tagged.
+- [ ] **Danzo: real two-player test** (Test tab → Clients and Servers → 2 players → Start). Still to see: RUN!/count/GO! in
+      both windows from round 1; whether tags at run speed look fair (feeds `TAG_VIEW_DELAY`); red arrow on the holder.
+      New since H12: watch Output for `[Rotag] move:` lines. Any while playing honestly = a false snap-back; tell
+      Claude (the knob is `Config.MOVE_BURST_TIME`, or `MOVE_SNAP_BACK = false`).
 - [ ] Proposals from the H11 agent, Danzo's call: HUD "waiting for players" while round 1 is held (it reads "round over"
-      today); give the dummy the runner sprite so solo Play exercises the remote-drawing path (one line in `client/Others`). Each screen draws only its own runner; the other player is invisible. Then the
-      movement remote with a server speed check (the stated limit of the tag check, `docs/systems/tag.md` §2).
+      today); give the dummy the runner sprite so solo Play exercises the remote-drawing path (one line in `client/Others`).
+- [x] Movement trust (H12, 2026-10-12): server speed check, snap-back, untrusted samples for the tag; no remote.
+      `docs/systems/trust.md`.
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
 - [x] Movement tests split (2026-10-10): `movement_world.luau` helpers, `movement.test.luau`, `movement_sprites.test.luau`.
 - [x] Danzo (2026-10-11): `rojo serve` restarted and Studio reconnected; `Remotes.SheetIds` now comes from the project file.
