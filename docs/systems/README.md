@@ -58,10 +58,12 @@ rule above. The first client → server event sets these for every remote a clie
   A refused claim gets no reply; a Studio-only log line says why.
 - Full reasoning, the rewind and its cap, and the limit of trusting client-owned bodies: [tag.md](tag.md) §2.
 
-Movement is client-owned physics on the player's own character ([movement.md](movement.md) §1): no remote yet.
+Movement is client-owned physics on the player's own character ([movement.md](movement.md) §1), and **has no remote by
+decision (H12)**: the server checks the body Roblox already replicates with a speed budget (`shared/MoveCheck`,
+`server/MoveGuard`) and snaps a runner back on a violation. Why no remote, the rule, its limit: [trust.md](trust.md).
 
-Planned by the design, to be named when built: a movement event (client → server, rate-limited, with a server speed
-check; it is also what makes the tag's positions trustworthy, [tag.md](tag.md) §2), a notice event.
+Planned by the design, to be named when built: a notice event. (An input remote for server replay is the step after the
+speed check, if a live game needs it: [trust.md](trust.md) §8.)
 
 ## Systems
 
@@ -73,6 +75,7 @@ One file each. Read only the one your task touches.
 | The art pipeline (node) | [art-pipeline.md](art-pipeline.md) | `bin/warehouse.js`, `src/*.js` |
 | Movement and feel (the body, the rules, camera, controls, juice) | [movement.md](movement.md) | `shared/Movement`, `shared/SideCam`, `client/Body`, `client/Controls`, `client/Look`, `client/SideCamera`, `server/Runners` |
 | Tag, the fuse, elimination | [tag.md](tag.md) | `shared/Tag`, `server/Match`, `server/Dummy`, `client/Tagging`, `client/Hud` |
+| Movement trust: the server's speed check, snap-back, untrusted samples (H12) | [trust.md](trust.md) | `shared/MoveCheck`, `server/MoveGuard`, `Tag.touchedBetween` |
 | Players: other runners drawn, pass-through collision, off-screen arrows, round-ready (H11) | [players.md](players.md) | `shared/RemotePose`, `SideCam.edgeArrow`, `Tag.readyToStart`, `client/Others`, `client/Arrows`, `server/Runners` |
 | Ghosts | *(not built; DESIGN §6.1 is open)* | |
 | Crates and abilities | *(not built; DESIGN §6.2 is open)* | |

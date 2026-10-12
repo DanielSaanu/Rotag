@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-11
+**Created:** 2026-10-09 · **Last updated:** 2026-10-12
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -27,9 +27,16 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-_None._
+(none)
 
 ## Resolved
+
+### H12 — Movement trust: the movement remote with a server speed check — 2026-10-12 14:21 — RESOLVED
+- **Resolved 2026-10-12:** no movement remote (the server checks the replicated body); `shared/MoveCheck` budgets
+  distance per axis at `DASH_SPEED`/`JUMP_SPEED`/`MAX_FALL` with 0.2 s of slack; on a violation `server/MoveGuard` marks
+  samples untrusted (`Tag.touchedBetween` skips them for the claimant), warns, and rebuilds the body at its last
+  full-budget spot. Seen in Studio: honest runs quiet; a +60 client teleport and a ~150 studs/s push caught and snapped
+  back; a 37.5-stud teleport onto the dummy still tagged (the stated limit). → `docs/systems/trust.md`; learnings N10.
 
 ### H11 — Player 2: other runners drawn on every screen, pass-through collision, off-screen arrows, round-ready — 2026-10-11 — RESOLVED
 - **Resolved 2026-10-11:** runners pass through each other via the `RotagRunners` collision group, probes cast as it

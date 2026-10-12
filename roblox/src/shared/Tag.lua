@@ -106,13 +106,14 @@ end
 -- samples of the same frame. A target sample NEWER than the claimant's is never paired: no screen shows the future.
 -- Why the target may be older (H6, measured in Studio): the server sees the claimant's own body ~0.18 s late, and
 -- the claimant saw the target late too, so "touching on the tagger's screen" is the claimant's sample against an
--- older target sample, not the same frame.
-export type Sample = { t: number, x: number, y: number }
+-- older target sample, not the same frame. A claimant sample marked `untrusted` (H12: recorded while the server's speed
+-- check, shared/MoveCheck, held that runner suspect) is never used; a target's is (the tagger did nothing wrong).
+export type Sample = { t: number, x: number, y: number, untrusted: boolean? }
 function Tag.touchedBetween(a: { Sample }, b: { Sample }, from: number, to: number, lag: number): boolean
 	for i = #a, 1, -1 do
 		local sa = a[i]
 		if sa.t < from then break end
-		if sa.t <= to then
+		if sa.t <= to and not sa.untrusted then
 			for j = #b, 1, -1 do
 				local sb = b[j]
 				if sb.t < from or sb.t < sa.t - lag then break end

@@ -11,6 +11,7 @@ local Tag = require(Shared:WaitForChild("Tag"))
 local Dummy = require(script.Parent:WaitForChild("Dummy"))
 local Runners = require(script.Parent:WaitForChild("Runners"))
 local Arena = require(script.Parent:WaitForChild("Arena"))
+local MoveGuard = require(script.Parent:WaitForChild("MoveGuard"))
 
 local Match = {}
 
@@ -217,7 +218,9 @@ local function sample(now: number)
 			local h = history[id] or {}
 			history[id] = h
 			local p = root.Position
-			table.insert(h, { t = now, x = p.X, y = p.Y })
+			local s: Tag.Sample = { t = now, x = p.X, y = p.Y }
+			MoveGuard.observe(id, root, s) -- the speed check (H12, trust.md): may mark s untrusted for a claim
+			table.insert(h, s)
 			if #h > HISTORY then table.remove(h, 1) end
 		end
 	end
@@ -300,6 +303,7 @@ function Match.start(tagName: string)
 		local i = table.find(order, id)
 		if i then table.remove(order, i) end
 		roots[id], history[id], lastClaim[id], pending[id], ready[id] = nil, nil, nil, nil, nil
+		MoveGuard.forget(id)
 		local r = round
 		if r and not r.over then
 			local now = os.clock()

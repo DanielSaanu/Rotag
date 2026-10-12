@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-11 (H11: N9, T10, T11)
+**Created:** 2026-10-09 · **Last updated:** 2026-10-12 (H12: N10)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -154,6 +154,14 @@ RemoteEvent lands ~0.18 s before the body it describes (N6), so a relayed pose w
 Derive the pose from the replicated position on each screen (pure, tested against a real `Movement` run), and expect
 that stream to land in STEPS (held 2-3 frames, then jumping): hold an unchanged frame over to the next move instead of
 reading it as a stop, and treat a step faster than any move as a teleport. *(2026-10-11, handoff H11, `RemotePose`.)*
+
+**N10 — Check a client-owned body's speed as a distance budget over time, never per step, and measure what the server's
+copy does to a teleport.** The server's copy is interpolated: after a stop it catches up at ~2x dash speed for a few
+frames, and it smooths a client teleport into ~0.2 s of fast steps, so a per-step limit flags honest players and
+"the sample before the violation" is already most of the way through a teleport. Budget each axis (refill at the
+fastest legal speed from the move rules' own caps, up to a measured slack, spend the distance moved), snap back to the
+last sample with every budget FULL, and pin in a test the size of teleport that still passes. Any new faster move
+raises the rates in the same change. *(2026-10-12, handoff H12, `shared/MoveCheck`.)*
 
 ## T — Tooling
 

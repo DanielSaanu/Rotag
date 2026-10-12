@@ -81,8 +81,10 @@ does exactly that (rewind 0).
 
 **The honest limit.** Runner bodies are client-owned physics (`SetNetworkOwner(player)`, [movement.md](movement.md) §2),
 so the positions the server checks come from each player's own client. A cheating client that teleports onto a target
-passes any position check. That is a movement-trust problem, not a tag problem: the planned movement event (README
-"Planned") with a server speed check closes it. The tag check is no weaker than movement trust, and every other gate
+passes any position check. That is a movement-trust problem, not a tag problem. **H12 (2026-10-12):** the server now
+runs a speed check on every player's body (no remote; [trust.md](trust.md)); a claimant sample recorded while that
+runner is suspect is marked `untrusted` and never confirms a claim, and the body is snapped back. A teleport under
+~45 studs still passes (the server's copy smooths it; seen in Studio, trust.md §3). Every other gate
 (who, when, frozen, rate, rewind cap) is server-side today. The freeze, the hit-stop and the chaser boost are applied
 by the client to its own body, so a cheat can ignore them; the server still refuses a frozen holder's claims.
 
@@ -265,7 +267,7 @@ run logged `claim 8061215879 -> -1000 dropped: no overlap in the server's last 0
 
 ## Expansion: deficits at scale
 
-- **Position trust** is movement trust (§2): the first real fix is the movement event with a server speed check.
+- **Position trust** is movement trust (§2): the speed check is built ([trust.md](trust.md), H12); the next rung is input replay (trust.md §8).
 - **History cost:** 60 samples per runner, a table each (H6: was 30, to cover the claim window). Four runners: 240
   small tables, trivial. An open claim scans up to 60 x 60 sample pairs a frame for at most 0.35 s. If runner counts
   grow, store x/y in flat ring arrays and walk the target with a moving start index.

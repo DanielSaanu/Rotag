@@ -235,4 +235,16 @@ do -- round-ready (H11, players.md §5): wait for every present player's Ready, 
 	assert(Config.READY_TIMEOUT > 0 and Config.READY_TIMEOUT <= 10, "a short timeout (H11: ~5 s)")
 end
 
+do -- H12 (trust.md §4): a claimant sample the speed check marked untrusted never confirms a tag; a target's still does
+	local touching = { t = 1, x = 0, y = 0 }
+	local target = { { t = 1, x = 0.5, y = 0 } }
+	assert(Tag.touchedBetween({ touching }, target, 0, 2, 0), "control: a trusted touch confirms")
+	local cheat = { t = 1, x = 0, y = 0, untrusted = true }
+	assert(not Tag.touchedBetween({ cheat }, target, 0, 2, 0.5), "an untrusted claimant sample does not")
+	assert(Tag.touchedBetween({ { t = 0.9, x = 0, y = 0 }, cheat }, { { t = 0.9, x = 0.5, y = 0 } }, 0, 2, 0),
+		"its trusted samples still count")
+	assert(Tag.touchedBetween({ touching }, { { t = 1, x = 0.5, y = 0, untrusted = true } }, 0, 2, 0),
+		"an untrusted TARGET can still be tagged (the tagger did nothing wrong)")
+end
+
 print("tag ok")

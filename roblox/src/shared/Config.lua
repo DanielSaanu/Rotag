@@ -29,6 +29,12 @@ Config.ROUND_GAP = 4             -- seconds between one round ending and the nex
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
 Config.READY_TIMEOUT = 5          -- seconds a due round waits for every present client's Ready (H11, players.md §5)
+-- Movement trust (H12, docs/systems/trust.md): the server's speed check on each player's client-owned body.
+Config.MOVE_BURST_TIME = 0.2      -- slack per axis, in seconds of that axis's top speed (24 studs across at DASH_SPEED);
+                                  -- the worst seen in Studio was 8.6 studs (the server's copy catching up after a stop)
+Config.MOVE_CLEAR_TIME = 1        -- clean seconds after a violation before that runner's samples count for a tag again
+Config.MOVE_SNAP_BACK = true      -- a violation rebuilds the body at its last trusted spot (false: untrusted only)
+Config.MOVE_SNAP_GAP = 0.5        -- seconds between two snap-backs of one runner (a cheat looping cannot spin the server)
 
 Config.COYOTE_TIME = 0.1          -- rule 14
 Config.JUMP_BUFFER = 0.08
