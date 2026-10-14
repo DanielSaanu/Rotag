@@ -173,7 +173,8 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	if state.over then
 		fuseLabel.Text = ""
 		statusLabel.Text = if state.winner == me then "you win the round!"
-			elseif state.winner then (Hud.nameOf(state.winner) .. " wins the round") else "round over"
+			elseif state.winner then (Hud.nameOf(state.winner) .. " wins the round")
+			elseif state.held then "waiting for players" else "round over"
 		placeMarker(nil, 0)
 		return
 	end

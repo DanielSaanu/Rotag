@@ -31,7 +31,7 @@
 - [x] Dash chains, Danzo's **option 1** (H10, 2026-10-11, replacing H9 the same day): a floor dash ends at run speed
       (`Config.DASH_END_SPEED_FLOOR`); refresh on contact back to normal. Seen in Play. Measured: a floor chain is x1.325
       a run at `DASH_COOLDOWN` 0.8 (about +25% at 1.0, +21% at 1.2). The cooldown is Danzo's knob if he wants it slower.
-- [ ] Danzo, optional: a floor dash that runs off a ledge ends at run speed (the rule reads "started on the floor"). The
+- [x] Decided by Danzo (2026-10-14): leave the dash as it is. A floor dash that runs off a ledge ends at run speed (the rule reads "started on the floor"). The
       other reading, decide by where it ENDS, would keep 80 off a ledge. Say if the ledge case feels wrong.
 - [x] **QA loop for the tag (2026-10-11): 7 → 8/10,** target met in round 2. Summary and Danzo's Play checklist:
       `docs/qa/tag-summary.md`. H7 (honest pop, leave gap) and H8 (spread round starts, spectating) came out of it.
@@ -65,8 +65,8 @@
 - [ ] Danzo's call (H13): the tag still tests the REAL position, so at speed the drawn sprite trails it by 4.5 studs
       (run) to 12 (dash); a chaser can touch the sprite a moment before the tag fires. Testing the drawn spot instead
       means +0.1 s on `TAG_VIEW_DELAY`/`TAG_REWIND_MAX` (looser fairness). Say if tags feel early or late.
-- [ ] Proposals from the H11 agent, Danzo's call: HUD "waiting for players" while round 1 is held (it reads "round over"
-      today); give the dummy the runner sprite so solo Play exercises the remote-drawing path (one line in `client/Others`).
+- [x] H11 proposals, done 2026-10-14: HUD says "waiting for players" while a round is held (`MatchState.held`); the Studio
+      dummy wears the runner sprite through the fallback drawing path (`client/Others`).
 - [x] Movement trust (H12, 2026-10-12): server speed check, snap-back, untrusted samples for the tag; no remote.
       `docs/systems/trust.md`.
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.

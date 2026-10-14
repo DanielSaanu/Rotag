@@ -4,7 +4,8 @@
 -- relays over Remotes.Snapshot, read Config.SNAPSHOT_DELAY behind its newest point (shared/Snapshot). The sprite,
 -- facing and juice ride the same snapshots, so nothing is inferred. A runner with no stream (the Studio stand-in,
 -- a client that stopped sending) falls back to H13's path: its replicated root through the draw trail, posed by
--- shared/RemotePose. Cosmetic only: nothing here is sent anywhere or decides anything. The dummy keeps its orange box.
+-- shared/RemotePose. Cosmetic only: nothing here is sent anywhere or decides anything. The Studio dummy (-1000, no
+-- stream) is drawn the same way through the fallback path, so solo Play exercises it (Danzo, 2026-10-14).
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -46,10 +47,11 @@ end
 local function add(model: Instance)
 	if not model:IsA("Model") or drawn[model] then return end
 	local id = model:GetAttribute("RunnerId")
-	if type(id) ~= "number" or id < -999 then return end -- the Studio dummy (-1000) keeps its box
+	if type(id) ~= "number" then return end -- the Studio dummy (-1000) is drawn too: its box is hidden below
 	if player and model == player.Character then return end -- our own runner: Client.client.lua draws it
 	local root = model:WaitForChild("HumanoidRootPart", 5)
 	if not (root and root:IsA("BasePart") and model.Parent) or drawn[model] then return end
+	if id <= -1000 then root.Transparency = 1 end -- the dummy's orange box: the sprite replaces it (client-side only)
 	if player and model == player.Character then return end
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude

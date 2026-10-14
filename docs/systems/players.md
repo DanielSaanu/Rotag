@@ -135,8 +135,8 @@ dash) on 258 of 280 frames (92%). The misses are the 1-2 frame edges of each pos
 mutation-checked: deleting it fails a named test (slide flag, teleport by distance and by speed, dash band, landing,
 the run clock, the hold, the start-from-rest time).
 
-**The Studio dummy stays an orange box** (Danzo's call, default box): `Others` skips ids below -999. Giving it a
-sprite is one line there.
+**The Studio dummy wears the runner sprite since 2026-10-14** (Danzo: "reskin the dummy cuz why not"; before that it stayed an orange box): `Others` draws it through the fallback
+path (trail + `RemotePose`, no stream) and hides its box client-side, so solo Play exercises the other-runner drawing.
 
 **Streaming.** The place has `StreamingEnabled`. A far runner could be streamed out on a phone, and then neither the
 tag claim (`Tagging.claim` walks the tagged models) nor its arrow would see it. Runner models are now

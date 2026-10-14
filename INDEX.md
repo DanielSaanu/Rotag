@@ -37,6 +37,7 @@ to (`roblox/default.project.json`).
 - [`docs/systems/art-pipeline.md`](docs/systems/art-pipeline.md): the node pipeline (draw, compose, pack, upload).
 - [`docs/ROBLOX_SETUP.md`](docs/ROBLOX_SETUP.md): installing Rojo, connecting Studio, the Open Cloud key, uploading,
   the decal-vs-image gotcha. Setup or toolchain problems.
+- [`docs/briefs/`](docs/briefs/runner-v2.md): prompts Danzo pastes into the design command (`runner-v2.md`: the runner, pass 2). Before an art pass.
 - [`docs/qa/`](docs/qa/): QA goals files and `*-summary.md` per PR. Read the summary for the area you touch; never `archive/`.
 
 ## Game code (Luau, synced by Rojo)

@@ -81,6 +81,7 @@ local function snapshot(now: number)
 		alive = alive,
 		spectating = spectating,
 		over = r == nil or r.over,
+		held = r == nil, -- the next round is due but not started (waiting for clients to draw, players.md §5)
 		winner = r and r.winner,
 	}
 end
@@ -366,7 +367,7 @@ function Match.start(tagName: string)
 		end
 	end)
 	RunService.Heartbeat:Connect(step)
-	if useDummy then print("[Rotag] Studio: a dummy runner (orange box) joins the round; Config.STUDIO_DUMMY") end
+	if useDummy then print("[Rotag] Studio: a dummy runner (drawn with the runner sprite, no stream) joins the round; Config.STUDIO_DUMMY") end
 end
 
 return Match
