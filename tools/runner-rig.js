@@ -118,23 +118,53 @@ function segPath(all, i) {
   const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
   return `M ${pt(p1)} C ${pt(c1)} ${pt(c2)} ${pt(p2)}`;
 }
-// The scarf: narrow at the neck, FLARING to the tail (Danzo: "wider at the bottom"), each segment its own width so
-// the flare is real; an outline pass then a fill pass, round caps blending the joins; a thin white edge on top.
-const SCARF_W = [5, 6.5, 8, 9.5, 11];
+// The scarf: a ribbon narrow at the neck FLARING to the tail (5 -> 11 px), drawn segment by segment so the flare is
+// real, with a TATTERED tip: the last point splits into two forks of different lengths. Outline pass, fill pass, a
+// thin white edge on top. The SHAPE of the ribbon comes from `ribbon` below (follow-through, a travelling wave).
+const SCARF_W0 = 5, SCARF_W1 = 11;
 function scarf(neck, pts, accent) {
   const all = [neck, ...pts];
   const n = all.length;
+  const widthAt = (i) => SCARF_W0 + (SCARF_W1 - SCARF_W0) * (i / Math.max(1, n - 2));
+  // the tattered tip: two forks continuing the last segment's direction, splayed apart
+  const last = all[n - 1], prev = all[n - 2];
+  const dl = [last[0] - prev[0], last[1] - prev[1]];
+  const len = Math.hypot(dl[0], dl[1]) || 1;
+  const u = [dl[0] / len, dl[1] / len];
+  const forkA = add(last, rot([u[0] * 9, u[1] * 9], 30)), forkB = add(last, rot([u[0] * 7, u[1] * 7], -26));
+  const forks = [[last, forkA, 6], [last, forkB, 4.5]];
   let s = '';
   for (let i = 0; i < n - 1; i++) {
-    const w = SCARF_W[Math.min(i, SCARF_W.length - 1)];
-    s += `<path d="${segPath(all, i)}" fill="none" stroke="${C.ink}" stroke-width="${w + 2 * P.edge}" stroke-linecap="round"/>`;
+    s += `<path d="${segPath(all, i)}" fill="none" stroke="${C.ink}" stroke-width="${widthAt(i) + 2 * P.edge}" stroke-linecap="round"/>`;
   }
+  for (const [a, b, w] of forks) s += `<polyline points="${pt(a)} ${pt(b)}" fill="none" stroke="${C.ink}" stroke-width="${w + 2 * P.edge}" stroke-linecap="round"/>`;
   for (let i = 0; i < n - 1; i++) {
-    const w = SCARF_W[Math.min(i, SCARF_W.length - 1)];
-    s += `<path d="${segPath(all, i)}" fill="none" stroke="${accent}" stroke-width="${w}" stroke-linecap="round"/>`;
+    s += `<path d="${segPath(all, i)}" fill="none" stroke="${accent}" stroke-width="${widthAt(i)}" stroke-linecap="round"/>`;
   }
+  for (const [a, b, w] of forks) s += `<polyline points="${pt(a)} ${pt(b)}" fill="none" stroke="${accent}" stroke-width="${w}" stroke-linecap="round"/>`;
   s += `<path d="${smoothPath(all)}" fill="none" stroke="${C.white}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>`;
   return s;
+}
+
+// Follow-through for cloth (the drag hierarchy: each segment lags the one before it; the Spine "wave principle": an
+// S curve that TRAVELS from root to tip, never a standing wave; light fabric with large drag at the distal end).
+// `ribbon(angle, phase, opts)` returns scarf points relative to the neck: N segments of L px streaming along `angle`
+// (180 = straight back, 90 = down, 270 = up), with (1) a travelling wave whose amplitude grows as t^2 toward the
+// tail and whose crest moves one quarter wavelength per run frame, (2) the root's own bounce arriving at each segment
+// LATER down the ribbon (lagBounce), (3) gravity sag, (4) a slower second wave so the tail never repeats exactly.
+function ribbon(angle, phase, o = {}) {
+  const N = o.N ?? 7, L = o.L ?? 9, amp = o.amp ?? 12, sag = o.sag ?? 4, lag = o.lag ?? 0.07, bounce = o.bounce ?? 0;
+  const d = rot([1, 0], angle), nrm = rot([1, 0], angle + 90);
+  const pts = [];
+  for (let i = 1; i <= N; i++) {
+    const t = i / N;
+    const along = i * L * (0.985 - 0.06 * t * t); // the far end hangs a little short of taut as it waves
+    const wave = amp * t * t * Math.sin(2 * Math.PI * 2 * phase - 0.95 * i) + 0.35 * amp * t * Math.sin(2 * Math.PI * phase - 0.6 * i + 1.1);
+    const lagBounce = bounce * (Math.cos(4 * Math.PI * (phase - i * lag)) - Math.cos(4 * Math.PI * phase));
+    const across = wave + lagBounce;
+    pts.push([-3 + d[0] * along + nrm[0] * across, 0 + d[1] * along + nrm[1] * across + sag * t * t]);
+  }
+  return pts;
 }
 
 // ---------- the figure from a pose description ----------
@@ -176,7 +206,7 @@ function figure(pose, accent = C.neon, joints = null) {
 const STRIDE_F = 36, STRIDE_B = 30, STANCE = 0.38, LEAN = 29, HIP_Y = GROUND - (P.thigh + P.shin) + 7; // 73
 const KICK = 36;   // how high the heel comes up behind (px): close to the backside
 function runPose(phase) { // phase 0..1 over one step (near foot's cycle); the far foot is half a cycle away
-  const bounce = 4 * Math.cos(phase * 2 * Math.PI); // lowest at contact, highest in flight
+  const bounce = 4 * Math.cos(phase * 4 * Math.PI); // one bounce per STEP (two per cycle): lowest at each contact
   const hip = [64 - 2, HIP_Y + bounce];
   // Foot path (the ankle): on the ground from contact (ph 0) to push-off (STANCE), the heel lifting over the last
   // third of stance so the toe stays down; then a low, long swing. The foot ANGLE follows the shin: toe up at heel
@@ -216,10 +246,9 @@ function runPose(phase) { // phase 0..1 over one step (near foot's cycle); the f
   // forward fist chin-high in front (24, 0), back fist behind and low (-18, 10), hanging by the belly between (4, 18)
   const handAt = (sw) => add(shoulderW, [4 - 21 * sw, 18 - (sw < 0 ? 18 : 8) * Math.abs(sw)]);
   const handNear = handAt(s), handFar = handAt(-s);
-  // The scarf is WILD, not a neat trail (Danzo): a ~62 px ribbon whose wave grows toward the tail, so the neck end
-  // barely moves and the tail whips up and down by ~16 px, with a second, faster ripple on top.
-  const w1 = Math.sin(phase * 4 * Math.PI), w2 = Math.cos(phase * 4 * Math.PI), w3 = Math.sin(phase * 8 * Math.PI);
-  const sc = [[-11, 2 + 2 * w1], [-23, 3 + 7 * w2], [-36, -3 + 11 * w1 + 3 * w3], [-49, 6 - 14 * w2], [-62, -4 + 16 * w1 - 4 * w3]];
+  // The scarf streams straight back with follow-through: the run's bounce arrives late down the ribbon and a
+  // travelling S-wave grows toward the flared, tattered tail (Danzo: "flowy", "almost wild").
+  const sc = ribbon(180, phase, { amp: 16, sag: 3, bounce: 4, lag: 0.07 });
   return { hip, lean: LEAN, headTilt: 4, feet: { near, far }, footDir: { near: footDir(phase, hipNearW, near), far: footDir((phase + 0.5) % 1, hipFarW, far) },
     hands: { near: handNear, far: handFar }, handDir: { near: s > 0 ? 200 : 20, far: s > 0 ? 20 : 200 }, scarf: sc };
 }
@@ -230,22 +259,22 @@ for (let i = 0; i < 8; i++) poses[`run_${i}`] = runPose(i / 8);
 // head and the back arm sweeps down and back (elbows below the hands, so 'down'); at the apex the arms level out for
 // balance; on the fall both fists go up beside the head with the elbows out and below them.
 poses.idle = { hip: [62, 73], lean: 2, headTilt: 0, feet: { near: [69, GROUND], far: [56, GROUND] }, footDir: { near: 0, far: 0 },
-  hands: { near: [70, 85], far: [54, 85] }, handDir: { near: 80, far: 100 }, scarf: [[-9, 8], [-15, 20], [-11, 33], [-19, 45], [-13, 56]] };
+  hands: { near: [70, 85], far: [54, 85] }, handDir: { near: 80, far: 100 }, scarf: ribbon(96, 0.15, { amp: 6, sag: 0, L: 8.5 }) };
 poses.jump_rise = { hip: [62, 62], lean: 14, headTilt: -6, feet: { near: [80, 94], far: [44, 104] }, footDir: { near: -30, far: 50 },
   hands: { near: [92, 24], far: [42, 66] }, handDir: { near: 290, far: 110 }, armBendNear: 'down', armBendFar: 'down',
-  scarf: [[-8, 8], [-18, 20], [-14, 34], [-28, 46], [-22, 60]] };
+  scarf: ribbon(118, 0.3, { amp: 10, sag: 2 }) }; // follow-through: the body rose, the scarf is still down and back
 poses.jump_apex = { hip: [64, 70], lean: 6, headTilt: 0, feet: { near: [76, 96], far: [56, 100] }, footDir: { near: -20, far: 30 },
   hands: { near: [88, 50], far: [44, 54] }, handDir: { near: 0, far: 180 }, armBendNear: 'down', armBendFar: 'down',
-  scarf: [[-12, 3], [-26, -6], [-38, 8], [-52, -8], [-64, 6]] };
+  scarf: ribbon(172, 0.55, { amp: 12, sag: 2 }) }; // floating out level at the top of the arc
 poses.fall = { hip: [62, 66], lean: -4, headTilt: -4, feet: { near: [72, 110], far: [52, 108] }, footDir: { near: -10, far: -10 },
   hands: { near: [84, 26], far: [40, 30] }, handDir: { near: 280, far: 260 }, armBendNear: 'down', armBendFar: 'down',
-  scarf: [[-8, -8], [-18, -18], [-10, -32], [-24, -44], [-14, -58]] };
+  scarf: ribbon(218, 0.8, { amp: 11, sag: 0 }) }; // falling: the scarf streams up and back, clear of the head
 // Dash: a dive. Both arms swept straight back along the body (streamlined, like a sprinter's lean into the tape),
 // fists behind the hips, elbows barely bent; the old "fists punched ahead" folded the arms into a knot at this lean.
 poses.dash = { hip: [56, 86], lean: 46, headTilt: 4, feet: { near: [22, 108], far: [14, 98] }, footDir: { near: -16, far: -26 },
   hands: { near: [58, 78], far: [50, 90] }, handDir: { near: 200, far: 200 }, bendNear: -1, bendFar: -1,
   armBendNear: 'up', armBendFar: 'down',
-  scarf: [[-12, -4], [-26, 6], [-40, -10], [-54, 8], [-66, -6]] };
+  scarf: ribbon(178, 0.4, { amp: 15, sag: 0, L: 9.5 }) }; // the dash: a hard stream back, the tail cracking like a whip
 
 function svg(inner, w = SIZE, h = SIZE, extra = '') {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" shape-rendering="geometricPrecision">${extra}${inner}</svg>`;
