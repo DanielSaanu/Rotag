@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local Others = require(script.Parent:WaitForChild("Others")) -- the IT marker sits on the DRAWN runner (H13)
 
 local Hud = {}
 
@@ -191,7 +192,7 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		statusLabel.Text = ""
 	end
 	local holder = if state.it then rootOf(state.it) else nil
-	placeMarker(holder and holder.Position, 0.5 + 0.5 * math.sin(now * MARKER_PULSE * 2 * math.pi))
+	placeMarker(holder and Others.positionOf(holder), 0.5 + 0.5 * math.sin(now * MARKER_PULSE * 2 * math.pi))
 end
 
 return Hud

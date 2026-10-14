@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-12
+**Created:** 2026-10-09 · **Last updated:** 2026-10-14
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -30,6 +30,79 @@ Resolution (added by the heavy agent under the same entry):
 (none)
 
 ## Resolved
+
+### H14 — The snapshot stream: other runners drawn from a 20-30 Hz unreliable remote, not physics replication — 2026-10-14 20:30 — RESOLVED
+- **Trigger:** 3 (a new remote; what the server trusts and records for the tag) and 1 (replaces H12's "no movement
+  remote" decision in `docs/systems/trust.md` §2; DESIGN §3 rule 6 unchanged).
+- **Doc:** `docs/systems/netcode.md` §3-§5 (the research and the recipe), `docs/systems/trust.md` §2, `docs/systems/tag.md`
+  §2, `docs/systems/players.md` §3, `docs/systems/README.md` (remotes table).
+- **Observed:** two Studio clients on one PC, Studio frame cap 240 (so no rig throttle), H13's adaptive trail on: the other
+  runner is smooth but "I press the button to jump or move and it takes a second to register on the other player's
+  screen, enough that it's quite jarring" (Danzo, 2026-10-14). Tags also land before contact on the victim's screen.
+  There is no network on one PC: the delay is the physics-replication path itself (client-owned body → server ~0.18 s
+  (N6), relay, arrival smoothing on the second hop, plus the 0.1-0.3 s trail).
+- **Evidence:** H13 runs 1-6 in `docs/handoffs.md`; `docs/systems/netcode.md` §2 confirmed note and §3; the forum and
+  Gaffer sources listed there; `client/Body.lua:80-82` (CFrame teleport each frame), `client/Others.lua` and
+  `shared/RemotePose.lua` (the current draw path), `server/Match.lua sample()` and `server/MoveGuard.lua` (the server's
+  record and speed check read the replicated body today).
+- **Routine session's read:** build netcode.md §4 as written: the owning client sends a snapshot (x, y, vx, vy, facing,
+  state bits, and a client sequence or time) at a fixed 20-30 Hz on Heartbeat over an `UnreliableRemoteEvent` declared in
+  `default.project.json` under `ReplicatedStorage.Remotes`; the server stamps it with its clock, rate-limits it, feeds
+  it to the SAME `MoveCheck` budget (so the trust rule and its numbers do not change), records it as the runner's
+  sample for `Tag.touchedBetween`, and relays it to the other clients (one relay per tick, or per sender); receivers keep
+  a short buffer and draw 2-3 snapshots behind, interpolating between the bracketing pair (linear at 30 Hz; the sent
+  velocity is there if Hermite is needed), falling back to the replicated body only until the first snapshot arrives.
+  The physics body stays (walls, floors, the server's copy, the ownership guard). `RemotePose`'s pose derivation can
+  read the snapshot's velocity and state directly instead of inferring them from position deltas. A guess on numbers:
+  30 Hz, buffer 2 snapshots (~67 ms), snap on a jump > 20 studs as the trail does today. Second step, after it works:
+  DESIGN rule 6's catch-up: on a verdict, the tagger's drawn sprite lunges to the victim's drawn spot over ~0.1 s
+  before the IT swap, no new art needed (a positional lunge of the existing sprite).
+- **Decision needed:** build it (Danzo, 2026-10-14: "send a fable agent to make it work whichever way is best"). The
+  agent decides the rate, buffer, payload packing and what the server still reads from the physics body, and records
+  each in netcode.md with its fairness cost stated plainly. Hard limits: no trust number loosened; the server never
+  trusts a client timestamp for the tag record (it stamps on arrival); the new remote is rate-limited and size-checked
+  like `TagClaim`; the remotes table in `docs/systems/README.md` and `default.project.json` stay in step; nothing moves
+  in the Rojo tree; shared/ stays pure and tested; the line ceiling holds.
+- **Blocked routine work:** the two-player test and everything after it in `ideas/INBOX.md`.
+
+Resolution (the Fable session, 2026-10-14):
+- **Built 2026-10-14:** `Remotes.Snapshot` (UnreliableRemoteEvent) + `shared/Snapshot` (wire, ring, limiter, buffer; 13 tests,
+  mutation-checked) + `server/Snapshots` (limit, stamp, grace after a rebuild, batch relay) + the client sender and
+  `Others` drawing 0.08 s behind the stream, the claim testing the drawn spot, rule 6's lunge (`TAG_LUNGE_TIME`). No
+  trust number changed. Tree: two new ModuleScripts and the remote, nothing moved. Not yet seen in Studio.
+  → `docs/systems/netcode.md` §8, trust.md §2, tag.md §2, players.md §3, README remotes; learnings N12, T12.
+
+Resolution (added by the routine session after Danzo's Play):
+- **Resolved 2026-10-14 (run 7, two Studio clients, cap 240):** Danzo: "suddenly there is almost no latency and the
+  animations are super smooth". Routine session drove Player2 from the Studio MCP (keyboard input + screen capture of
+  Player1's window): 27-29 snapshots/s each way, starved ~0%, tags both ways, 0 hand-backs, 0 move warnings. One fix
+  after the build: the relay's number keys arrive as strings (→ N13), `tonumber` on receipt in `client/Others.lua`.
+  → `docs/systems/netcode.md` §8, `trust.md` §2, `tag.md` §2, `players.md` §3, README remotes table; learnings N12, N13, T12.
+
+### H13 — Two real clients: positions out of sync, no tag between players, dummy untaggable after a tag — 2026-10-14 15:40 — RESOLVED
+- **Tags fixed 2026-10-14:** the cause was client-owned bodies losing their network owner with two real clients (server copy
+  stuck at the spawn); `server/MoveGuard` re-asserts ownership every frame (seen: tags land between players and on the
+  dummy; why the engine drops it is unknown, the `body:` count will confirm). Choppy other runner: drawn 0.1 s behind
+  through a smoothed trail (`Config.OTHERS_DRAW_DELAY`; claim still on the root), feel check is Danzo's.
+  → `docs/systems/trust.md` §9, `docs/systems/players.md` §3; learnings N11.
+- **Run 4 (2026-10-14):** with the 0.1 s trail, "better slightly but still nowhere near as smooth". Reopened for the
+  choppiness only (the tag cause stands). Delay now adapts (0.1 to 0.3 s); sender loop-rate and arrival logs added.
+  Suspect: Studio throttles the unfocused test window (unverified). Settled by Danzo's focus experiment plus the
+  `client: own loop` and `others:` lines. → `docs/systems/players.md` §3.
+
+Resolution (added by the routine session after Danzo's Play):
+- **Resolved 2026-10-14:** three causes, three fixes: (1) client-owned bodies lost their network owner with two real
+  clients → `server/MoveGuard` re-asserts ownership every frame (N11); (2) the one-PC rig renders unfocused windows at
+  25% of the frame cap → Studio `FramerateCap` 240 (T12); (3) the physics-replication path itself (~0.4 s to another
+  screen) → H14's snapshot stream (N12). → `docs/systems/trust.md` §9, `players.md` §3, `netcode.md`.
+
+- **Run 5 (routine, 2026-10-14):** adaptive trail "still choppy"; tagged before touched on the victim's screen. Danzo
+  asked for research instead of a fourth patch: `docs/systems/netcode.md`. Policy: the handoff has bounced back
+  three times; the Fable question goes to Danzo. Decision pending: test on two real devices / Studio 240 cap first,
+  then the snapshot stream (§4) and rule 6's catch-up (§5).
+- **Run 6 (routine, 2026-10-14):** Studio cap 240 → "smooth animation"; the rig was the choppiness. Remaining:
+  ~1 s input-to-other-screen delay on one PC = the physics replication path (netcode.md §2 confirmed note, §3).
+  Decision put to Danzo: build the snapshot stream (§4), on Fable (this session) or the heavy agent.
 
 ### H12 — Movement trust: the movement remote with a server speed check — 2026-10-12 14:21 — RESOLVED
 - **Resolved 2026-10-12:** no movement remote (the server checks the replicated body); `shared/MoveCheck` budgets

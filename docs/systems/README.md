@@ -31,6 +31,7 @@ code. Add a row here in the same commit as the declaration. Never rename one: bo
 | `TagVerdict` | server → all, on each confirmed tag | `{ from: number, to: number, fuse: number, gained: number }`: fuse = the new holder's seconds, min(remaining + `FUSE_PASS_BONUS`, the life's fresh fuse); gained = what the pass really added (H7) | `server/Match.lua` fires; `client/Tagging.lua` (hit-stop) and `client/Hud.lua` (the "+N" pop, from `gained`) |
 | `Ready` | client → server, once per client session, after its runner's first draw | none: only the sender is read; a repeat changes nothing (H11) | `client/Client.client.lua` fires; `server/Match.lua` holds a due round until every present player is ready or `Config.READY_TIMEOUT` (5 s) has passed ([players.md](players.md) §5) |
 | `MatchState` | server → all on every change and at least once a second; → one client on join | `{ round, it: number?, fuse, frozenFor, chaseFor, alive: { number }, spectating: { number }, over: boolean, winner: number? }` (`spectating`, H8: present but joined after the round began): durations in seconds, no timestamps | `server/Match.lua` fires; `client/Tagging.lua` holds it, `client/Hud.lua` draws it |
+| `Snapshot` (`UnreliableRemoteEvent`, H14) | client → server 30/s (`Config.SNAPSHOT_RATE`); server → all once per Heartbeat | up: one 13-byte `buffer` (`shared/Snapshot.pack`: seq, x, y, vx, vy, sprite, facing/dash flags, juice events); down: `{ [runner id] = { t: server stamp, b: that buffer } }` | `client/Client.client.lua` fires; `server/Snapshots.lua` limits, stamps, relays, feeds `Match.sample`; `client/Others.lua` draws from it ([netcode.md](netcode.md) §8) |
 
 **`SheetIds` (H4, 2026-10-10).** Uploads are Decals; the server resolves the Image id at boot and this carries it to
 each client, so `setid` by hand is no longer needed for the runner to show. The rules it sets for every
@@ -58,9 +59,14 @@ rule above. The first client → server event sets these for every remote a clie
   A refused claim gets no reply; a Studio-only log line says why.
 - Full reasoning, the rewind and its cap, and the limit of trusting client-owned bodies: [tag.md](tag.md) §2.
 
-Movement is client-owned physics on the player's own character ([movement.md](movement.md) §1), and **has no remote by
-decision (H12)**: the server checks the body Roblox already replicates with a speed budget (`shared/MoveCheck`,
-`server/MoveGuard`) and snaps a runner back on a violation. Why no remote, the rule, its limit: [trust.md](trust.md).
+**`Snapshot` (H14, 2026-10-14).** The one `UnreliableRemoteEvent`: no resends, no ordering, so a lost packet is simply
+skipped and a late one dropped (the sequence number). Client → server it follows every `TagClaim` rule: the sender is
+the `Player`, the payload is exactly one 13-byte buffer or it is dropped unread, rate-limited per player (45/s), and
+the server stamps it with its OWN clock. Server → clients it is one batch per Heartbeat; clients check the shape and
+skip their own id. Movement is still client-owned physics on the player's own character ([movement.md](movement.md)
+§1); the server checks the stream (and the body when the stream is stale) with the H12 speed budget
+(`shared/MoveCheck`, `server/MoveGuard`) and snaps a runner back on a violation. Why the stream replaced reading the
+replicated body, what it costs: [netcode.md](netcode.md) §8; the rule and its limit: [trust.md](trust.md).
 
 Planned by the design, to be named when built: a notice event. (An input remote for server replay is the step after the
 speed check, if a live game needs it: [trust.md](trust.md) §8.)

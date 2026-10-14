@@ -163,6 +163,31 @@ fastest legal speed from the move rules' own caps, up to a measured slack, spend
 last sample with every budget FULL, and pin in a test the size of teleport that still passes. Any new faster move
 raises the rates in the same change. *(2026-10-12, handoff H12, `shared/MoveCheck`.)*
 
+**N11 — Never assume a client keeps the network ownership you gave it: re-assert it every frame, and count the hand-backs.**
+Solo Play never showed it, but with two real clients (Studio, server + 2 clients) each player's body stopped following
+its owner. The server's copy sat at the round-start spot, every other screen drew it there, and no claim could land.
+A check once a second fixed the stuck bodies but not the tags: ownership kept lapsing between checks. Checking every
+frame (`GetNetworkOwner`, then `SetNetworkOwner` back and a rate-limited warning with a count) made tags land. Why the
+engine drops it is still unknown, so keep the count in the log and read it after any multi-client run. Any check that
+judges a client-owned body's position (speed, tag) is only as good as that ownership. *(2026-10-14, handoff H13,
+`server/MoveGuard`.)*
+
+**N12 — Never carry a script-driven body's motion on Roblox's physics replication: send your own snapshots over an
+`UnreliableRemoteEvent` and draw a short, fixed delay behind.** The engine's replication smooths incoming motion on the
+assumption that physics produced it; a body teleported by CFrame every frame arrives ~0.18 s late at the server and
+~0.4 s late on another screen, and no drawing-side trick recovers that (H13 tried a fixed trail, then an adaptive one:
+"still choppy", "a second" of input delay). The known recipe (every custom-character game on the forum, Gaffer's
+snapshot interpolation): the owner sends position + velocity + pose + the one-shot events at a fixed 20-30 Hz, the
+server stamps on arrival (never a client clock), bounds it with the same speed budget it had, relays, and receivers
+interpolate between the two snapshots around now minus 2-3 intervals; hold at the newest, never extrapolate. Keep the
+physics body for collisions and the server's copy. *(handoff H14, `docs/systems/netcode.md`, 2026-10-14.)*
+
+**N13 — A dictionary with number keys arrives through a remote with STRING keys: `tonumber` them on receipt, or send an
+array.** (H14, 2026-10-14, `claude/friendly-hawking-74891i`.) The snapshot relay `{ [runnerId] = {...} }` reached every
+client at 53 batches/s and was dropped whole: `type(id) == "number"` failed because `-2` had become `"-2"`. Studio showed
+it in one probe (`typeof(k)` on the received batch); the symptom was only "has no stream". Shape-check what ARRIVES, not
+what you sent.
+
 ## T — Tooling
 
 **T1 — The line ceiling in `test/structure.test.js` is a design input, not a lint you notice at the end.** The 400
@@ -221,6 +246,14 @@ raycast contacts; set `RaycastParams.CollisionGroup` to the caster's group. `Can
 `CanCollide` is false, so it is not an option for a body that must hit walls. Prove it with a control: the same block
 in `Default` must stop the runner. And with `StreamingEnabled`, anything every client must always see (runner models)
 needs `ModelStreamingMode = Persistent`. *(2026-10-11, handoff H11.)*
+
+**T12 — Studio renders an unfocused window at 25% of its frame cap, so a one-PC multi-client test throttles the other
+player.** Test → Clients and Servers gives one window focus; the other player's client runs at ~15 fps, its body is sent
+in 15 Hz steps and (with the loop's `MAX_DT` clamp) moves slower in game time. The other runner looks choppy and tags
+look early, and none of it is the game. Before tuning any netcode on one PC, set `FramerateCap` to 240 in
+`%LOCALAPPDATA%\Roblox\GlobalBasicSettings_13_Studio.xml` with Studio closed (the property is RobloxScript-only, so a
+script cannot set it): unfocused windows then run at 60 and the choppiness vanished (H13 run 6). Feel still needs two
+real devices. *(H13, `docs/systems/netcode.md` §2, 2026-10-14.)*
 
 ## G — Git and generated files
 

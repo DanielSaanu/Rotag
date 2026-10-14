@@ -48,6 +48,10 @@ function Tagging.speedMult(): number
 	return Tag.chaserBoost(state.chaseFor + since())
 end
 
+-- Where another runner is on THIS screen: set by Tagging.start (client/Others.positionOf, H14: the snapshot stream's
+-- spot, ~0.1 s old, not the replicated root, ~0.4 s old). The server judges the claim on the same stream.
+local positionOf: (BasePart) -> Vector3 = function(root) return root.Position end
+
 -- Every frame while the local runner is it: tag the first other live runner whose box touches ours on THIS screen.
 function Tagging.claim(x: number, y: number)
 	if not (claimRemote and state) or state.over or state.it ~= me or Tagging.frozen() then return end
@@ -56,7 +60,7 @@ function Tagging.claim(x: number, y: number)
 		local id = model:GetAttribute("RunnerId")
 		local root = model:FindFirstChild("HumanoidRootPart")
 		if type(id) == "number" and id ~= me and Tagging.isAlive(id) and root and root:IsA("BasePart") then
-			local p = root.Position
+			local p = positionOf(root)
 			if Tag.overlaps(x, y, p.X, p.Y, 0) then
 				lastClaimAt = os.clock()
 				claimRemote:FireServer(id)
@@ -66,9 +70,11 @@ function Tagging.claim(x: number, y: number)
 	end
 end
 
--- onState(state) after every MatchState; onVerdict(v) after every TagVerdict {from, to, fuse, gained}.
-function Tagging.start(player: Player, onState: (any) -> (), onVerdict: (any) -> ())
+-- onState(state) after every MatchState; onVerdict(v) after every TagVerdict {from, to, fuse, gained};
+-- where(root) = where that runner is drawn on this screen (H14).
+function Tagging.start(player: Player, onState: (any) -> (), onVerdict: (any) -> (), where: ((BasePart) -> Vector3)?)
 	me = player.UserId
+	if where then positionOf = where end
 	task.spawn(function()
 		local remotes = ReplicatedStorage:WaitForChild("Remotes", WAIT)
 		local function find(name: string): RemoteEvent?

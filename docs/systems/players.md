@@ -45,7 +45,16 @@ RotagRunners`, the group registered, `CollisionGroupsAreCollidable(RotagRunners,
   is NOT built: with pass-through it would be an explicit check (a falling runner's feet crossing another's head),
   not physics. Note for later; a design question for Danzo when it comes up.
 
-## 3. Decision 2: other runners are drawn from their replicated position (option a, no remote)
+## 3. Decision 2: other runners are drawn from their replicated position (option a, no remote) — superseded by H14
+
+**Since 2026-10-14 (H14, [netcode.md](netcode.md) §8) other runners are drawn from the snapshot stream:** each client
+sends its own state 30 times a second over `Remotes.Snapshot`, the server relays it, and `client/Others` draws each
+runner `Config.SNAPSHOT_DELAY` behind its newest snapshot, sliding between the two around that moment, with the sprite
+and juice carried in the snapshot (nothing inferred). Option (b) below was rejected in H11 because a pose packet would
+run ahead of the replicated body; H14 sends position AND pose in one packet, so they cannot drift. Everything below is
+now the FALLBACK for a runner with no stream (the Studio stand-in `tools/studio-standin.luau`, a client that stopped
+sending): the replicated root through the trail, posed by `RemotePose`. The trail knobs (`OTHERS_DRAW_DELAY*`) only
+apply to that path.
 
 Each client builds `Look` only for its own character, and `Look` is client-made (never replicated), so another
 player was an invisible box. `client/Others.lua` gives every other runner model (tag `RotagRunner`, `RunnerId` ≥
@@ -83,6 +92,40 @@ script) was drawn by `Others` on the client and its sprite logged every frame:
   unanchored, server-owned body driven by velocity moved on every render frame (180 of 180 over 3 s, median 0.78
   studs) and Danzo judged it as smooth as his own runner. A real client-owned runner is interpolated the same way.
   Script: `tools/studio-standin.luau`.
+- **The draw trail (H13, 2026-10-14).** With two real clients, the other runner was drawn "very choppy": a client-owned
+  body reaches the other screen through two hops (owner → server → this client), and it lands in steps. Now `Others`
+  draws each other runner `Config.OTHERS_DRAW_DELAY` (0.1 s) behind its replicated root, sliding between the positions
+  that arrived (`RemotePose.newTrail` / `push` / `drawAt`, pure, tested and mutation-checked). A hold the delay covers
+  is smoothed over. A change after a longer hold is a start from rest and leaves the old spot at once (no creep). A jump
+  over 20 studs snaps. The sprite plane of another runner is anchored and placed by `Look:place` (`Look.new(..., true)`)
+  instead of welded, and the pose, the probes and the IT marker (`Others.positionOf`) all use the drawn spot.
+  **The tag claim still tests the replicated root**, not the drawing, so the server's window and every trust number
+  are unchanged. **The cost:** at speed the sprite trails the root by the delay (4.5 studs at run speed, 12 in a dash).
+  So a tagger closing from behind touches the sprite a little before the claim fires, and a runner moving away can be
+  tagged a moment before its sprite looks touched. Making the claim test the drawn spot instead would add the delay to
+  the target's age, which means raising `TAG_VIEW_DELAY`/`TAG_REWIND_MAX` by it. That is a fairness decision for Danzo,
+  not made. Arrows still point at the raw root (off-screen, the difference does not show). Not yet seen in Studio.
+  Diagnose with the client line `others: <name> moved on <m> of <n> frames, longest hold <h> frames, biggest step <s>`.
+  A longest hold of more than ~6 frames at 60 fps is more than the 0.1 s delay hides: raise the knob, or suspect the link.
+- **Run 4 (2026-10-14): "better slightly but still nowhere near as smooth as my own runner".** Two changes:
+  - **The delay adapts.** The trail tracks the longest recent gap between two arrivals of a moving body (a peak that
+    decays with a 3 s e-fold) and draws `x 1.25` that far behind. The floor is `OTHERS_DRAW_DELAY` (0.1), the cap is
+    `OTHERS_DRAW_DELAY_MAX` (0.3). It changes by at most 0.25 s per second, so the sprite slows or speeds a little
+    rather than jumping. A gap over the cap is a rest and is not counted. Tested: a sender arriving 8 times a second is
+    drawn moving on every frame once adapted, a good link brings it back to the floor, a rest doesn't raise it, it never
+    passes the cap; each rule mutation-checked. On a real device with frame-paced arrivals it stays at 0.1.
+  - **Why not extrapolate (dead reckoning):** drawing ahead along the last speed overshoots on every stop and turn
+    (4.5 studs at run speed for 0.1 s), then snaps back. The sprite would slide past and return each time it stopped.
+    A delay never shows a place the runner wasn't. Extrapolation is the fallback only if the cap's 0.3 s behind feels
+    too far.
+  - **Suspect: Studio's unfocused window.** One PC runs both test clients and only one window has focus. The runner's
+    loop is `RunService.PreSimulation` (`Client.client.lua`), one step per frame, and its body reaches everyone else at
+    that rate. If Studio throttles the unfocused window, that runner steps on every other screen: a test-rig artefact
+    two real devices would not have. Whether Studio throttles it is **not verified**; the logs settle it. Each client now
+    prints `client: own loop <p> physics steps/s, <r> frames/s, longest frame <ms> ms` every 5 s. The `others:` line adds
+    arrivals/s, the mean hold and how far behind the drawing is. Sender stepping: arrivals/s close to the sender's own
+    loop rate, mean hold close to the longest. Link jitter: arrivals close to this screen's frame rate, small mean hold.
+    Also: below 20 frames/s the sender's `MAX_DT` clamp slows its runner in game time too.
 - **A short server move read as a dash** (a 6-stud jump in one frame). Any step faster than 2 x `DASH_SPEED` is now a
   teleport: speed restarts at 0. Same for a jump over 20 studs (a respawn or a fall-out reset).
 
@@ -147,6 +190,8 @@ was over before it was seen (H6, H8). Now:
   2. Run through each other: no stop, no shove, no wall-kick off the other body; "it" too.
   3. Run apart: an arrow at the screen edge points at the other one; red on the holder's.
   4. Round 1: the RUN!/count/GO! is seen in both windows from the start.
+  **First run, 2026-10-14 (H13):** each window drew the other runner at its round-start spot and no tag landed; see
+  [trust.md](trust.md) §9 for the read and the ownership guard.
   5. Tags between the two feel fair at run speed (that is H12's measurement of `TAG_VIEW_DELAY`; note any that look
      too far or that missed).
 
@@ -166,6 +211,8 @@ was over before it was seen (H6, H8). Now:
 | `RemotePose` `VEL_SETTLE` / `HOLD` | 0.03 s / 0.1 s | speed smoothing / longest replication hold before "standing" |
 | `RemotePose` dash band | 100 studs/s | midway between `DASH_SPEED` and `DASH_END_SPEED` |
 | `RemotePose` teleport | 20 studs, or 2 x `DASH_SPEED` | a respawn or server move, not a run |
+| `Config.OTHERS_DRAW_DELAY` | 0.1 s | the least another runner is drawn behind its replicated root (H13); the trail adapts upward |
+| `Config.OTHERS_DRAW_DELAY_MAX` | 0.3 s | the most; a sender stepping slower than this still shows |
 | `Arrows` margin / inset | 2 / 3.5 studs | no arrow while half the sprite shows / arrow distance from the edge |
 
 ## Expansion: deficits at scale

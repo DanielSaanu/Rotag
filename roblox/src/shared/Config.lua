@@ -29,6 +29,20 @@ Config.ROUND_GAP = 4             -- seconds between one round ending and the nex
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
 Config.READY_TIMEOUT = 5          -- seconds a due round waits for every present client's Ready (H11, players.md §5)
+Config.OTHERS_DRAW_DELAY = 0.1    -- H13: other runners are drawn this far behind their replicated position, sliding
+-- between the positions that arrived, so a body that lands in steps draws smoothly (players.md §3). 0 = raw. Cosmetic:
+-- the tag claim tests the replicated root, not the drawing. Danzo's knob: higher is smoother and further behind.
+-- It is the FLOOR: the trail raises it toward the longest recent arrival gap (x 1.25), up to the cap below (H13 run 4).
+Config.OTHERS_DRAW_DELAY_MAX = 0.3 -- the most another runner is ever drawn behind; a sender stepping slower than this shows
+-- The snapshot stream (H14, docs/systems/netcode.md §8): each client sends its runner's state over Remotes.Snapshot
+-- (an UnreliableRemoteEvent); the server relays it and judges tags on it; other screens draw it. The trail above is
+-- now only the fallback for a runner with no stream (the Studio stand-in, a client that stopped sending).
+Config.SNAPSHOT_RATE = 30         -- snapshots a second per client; the server lets 1.5 x this through per sender
+Config.SNAPSHOT_DELAY = 0.08      -- seconds other runners are drawn behind their newest snapshot (~2.4 snapshots at 30 Hz:
+                                  -- room for one lost packet). Danzo's knob: lower is fresher, higher survives worse links
+Config.SNAPSHOT_STALE = 0.5       -- no snapshot for this long: the server and the other screens fall back to the body
+Config.TAG_LUNGE_TIME = 0.1       -- rule 6's catch-up: seconds the tagger's drawn sprite takes to reach the victim on a
+                                  -- verdict, then as long again to ease back to its stream (0 = off). Cosmetic
 -- Movement trust (H12, docs/systems/trust.md): the server's speed check on each player's client-owned body.
 Config.MOVE_BURST_TIME = 0.2      -- slack per axis, in seconds of that axis's top speed (24 studs across at DASH_SPEED);
                                   -- the worst seen in Studio was 8.6 studs (the server's copy catching up after a stop)

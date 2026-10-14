@@ -6,7 +6,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Config = require(Shared:WaitForChild("Config"))
 local Movement = require(Shared:WaitForChild("Movement"))
+local Snapshot = require(Shared:WaitForChild("Snapshot"))
 local Sprites = require(Shared:WaitForChild("Sprites"))
 local Body = require(script.Parent:WaitForChild("Body"))
 local Controls = require(script.Parent:WaitForChild("Controls"))
@@ -23,6 +25,13 @@ local FELL_OUT = -60 -- below the floor by this much: back to where this body sp
 local REMOTES_WAIT = 10 -- seconds to wait for the Remotes folder and Remotes.Ready
 
 local current = nil -- { character, humanoid, root, body, look, state, spawnX, spawnY, pending }
+
+-- H13 run 4, Studio only: this client's own loop rate, the rate its body reaches everyone else. One Studio PC runs
+-- every test client as a window, and only one has focus: if an unfocused window's line shows far fewer steps a second
+-- than the focused one, its runner steps on every other screen because of the test rig, not the game.
+local LOOP_LOG = 5
+local loop = { steps = 0, frames = 0, worst = 0, since = os.clock() }
+local studio = RunService:IsStudio()
 
 local function teardown()
 	if not current then return end
@@ -54,6 +63,7 @@ local function setup(character: Model)
 		spawnX = p.X,
 		spawnY = p.Y,
 		pending = {},
+		toSend = {}, -- juice events since the last snapshot went out (H14)
 	}
 	Controls.read(humanoid) -- drop any press made before the body existed
 	SideCamera.reset(p.X, p.Y)
@@ -62,6 +72,7 @@ end
 
 -- Before physics: the move rules.
 RunService.PreSimulation:Connect(function(dt: number)
+	if studio then loop.steps += 1 end
 	local c = current
 	if not c or not c.root.Parent then return end
 	dt = math.min(dt, MAX_DT)
@@ -86,12 +97,43 @@ RunService.PreSimulation:Connect(function(dt: number)
 	input.speedMult = Tagging.speedMult()
 	local ev = Movement.step(s, input, contacts, dt)
 	-- Physics can run more than once between two draws: keep every event until the sprite has reacted to it.
-	local p = c.pending
-	if ev.landed then p.landed = math.max(p.landed or 0, ev.landed) end
-	p.jump = ev.jump or p.jump
-	p.dash = ev.dash or p.dash
+	for _, p in { c.pending, c.toSend } do
+		if ev.landed then p.landed = math.max(p.landed or 0, ev.landed) end
+		p.jump = ev.jump or p.jump
+		p.dash = ev.dash or p.dash
+	end
 	c.body:apply(s.x, s.y, s.vx, s.vy)
 	Tagging.claim(s.x, s.y)
+end)
+
+-- The snapshot stream (H14, docs/systems/netcode.md §8): after physics, Config.SNAPSHOT_RATE times a second, our
+-- runner's state goes to the server over Remotes.Snapshot (unreliable: a lost one is simply skipped), with the juice
+-- events since the last one. The server stamps, bounds and relays it; every other screen draws us from it.
+local snapRemote: UnreliableRemoteEvent? = nil
+local SEND_GAP = 1 / Config.SNAPSHOT_RATE
+local lastSend, seq = -math.huge, 0
+RunService.Heartbeat:Connect(function()
+	local c = current
+	if not (c and c.root.Parent and snapRemote) then return end
+	local now = os.clock()
+	if now - lastSend < SEND_GAP then return end
+	lastSend = now
+	seq = (seq + 1) % 65536
+	local s, e = c.state, c.toSend
+	c.toSend = {}
+	snapRemote:FireServer(Snapshot.pack({ seq = seq, x = s.x, y = s.y, vx = s.vx, vy = s.vy,
+		sprite = Movement.spriteFor(s), facing = s.facing, dashing = s.dashTime > 0,
+		jump = e.jump, dash = e.dash == true, landed = e.landed }))
+end)
+task.spawn(function()
+	local remotes = ReplicatedStorage:WaitForChild("Remotes", REMOTES_WAIT)
+	local r = remotes and remotes:WaitForChild("Snapshot", REMOTES_WAIT)
+	if r and r:IsA("UnreliableRemoteEvent") then
+		snapRemote = r
+		Others.listen(r)
+	else
+		warn("[Rotag] no Remotes.Snapshot (restart rojo serve); other screens draw this runner from its body")
+	end
 end)
 
 -- Round-ready (H11, docs/systems/players.md §5): tell the server once, after our runner's first draw, that this
@@ -113,7 +155,16 @@ end
 
 -- Before drawing: camera, then our sprite, then everyone else's sprite and the off-screen arrows (H11).
 RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, function(dt: number)
-	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
+	if studio then
+		loop.frames += 1
+		loop.worst = math.max(loop.worst, dt)
+		local span = os.clock() - loop.since
+		if span >= LOOP_LOG then
+			print(("[Rotag] client: own loop %.0f physics steps/s, %.0f frames/s, longest frame %.0f ms"):format(
+				loop.steps / span, loop.frames / span, loop.worst * 1000))
+			loop.steps, loop.frames, loop.worst, loop.since = 0, 0, 0, os.clock()
+		end
+	end
 	local c = current
 	if c and c.root.Parent then
 		local pos = c.root.Position
@@ -124,6 +175,8 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		if not readySent then sendReady() end
 	end
 	Others.draw(dt)
+	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
+	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	Arrows.update(Tagging.me(), Tagging.state())
 end)
 
@@ -173,7 +226,12 @@ Controls.start(player)
 Hud.start(player)
 Arrows.start(player, Hud.nameOf)
 Others.start(player)
-Tagging.start(player, function() end, function(v) Hud.pass(v, player.UserId) end)
+-- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
+-- where Others draws each runner (the snapshot stream), as the server judges it.
+Tagging.start(player, function() end, function(v)
+	Hud.pass(v, player.UserId)
+	Others.lunge(v.from, v.to)
+end, Others.positionOf)
 player.CharacterAdded:Connect(setup)
 player.CharacterRemoving:Connect(function(character)
 	if current and current.character == character then teardown() end

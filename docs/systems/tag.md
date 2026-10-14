@@ -43,7 +43,10 @@ which target it names. Nothing else.** In order:
    an integer is dropped.
 2. **Who may claim** (`Tag.canClaim`): the round is running; the claimant IS the holder; the claimant is not frozen;
    the target is alive in this round and is not the claimant; the fuse is not out.
-3. **Positions are the server's own.** `Match` records every runner's position each server frame (the last ~1 s,
+3. **Positions are the server's own record.** Since H14 ([netcode.md](netcode.md) §8) a player's position each server
+   frame is its newest `Remotes.Snapshot` (stamped by the server on arrival, bounded by `MoveCheck`), the body only
+   when that stream is stale; the claim on the holder's screen tests the same stream's drawn spot. The rest of this
+   rule is unchanged. `Match` records every runner's position each server frame (the last ~1 s,
    same timestamps for everyone). Allowance `k` = the claimant's `GetNetworkPing()` + `TAG_VIEW_DELAY` (0.4 s),
    **capped at `TAG_REWIND_MAX` (0.5 s)** so lagging buys no more (`Tag.claimWindow`). `Tag.touchedBetween` accepts
    if some claimant sample and some target sample touch within reach + `TAG_GRACE` (1.5 studs), with the target

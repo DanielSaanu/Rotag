@@ -152,4 +152,90 @@ do -- against the truth: a scripted run, jump, dash and wall slide; how often th
 	assert(share >= 0.92, "measured 258 of 280 (92%) on 2026-10-11; at least 92% of frames, got " .. share)
 end
 
+do -- the draw trail (H13): a body that lands in steps is drawn moving on every frame, a stop ends on the spot,
+	-- a start from rest does not creep, a teleport snaps
+	local F = 1 / 60
+	assert(Config.OTHERS_DRAW_DELAY > 0 and Config.OTHERS_DRAW_DELAY <= 0.25, "draw delay is a small positive knob")
+	-- 60 studs/s arriving every third frame as a 3-stud jump (the stepped replication seen in Studio)
+	local tr = RemotePose.newTrail(0, 0, 0)
+	local x, prevT, lastDrawn = 0, 0, 0
+	local still, minStep, maxStep = 0, math.huge, 0
+	for i = 1, 120 do
+		local t = i * F
+		if i % 3 == 0 then x += 3 end
+		RemotePose.push(tr, t, x, 0, prevT)
+		prevT = t
+		local dx = RemotePose.drawAt(tr, t)
+		if t > Config.OTHERS_DRAW_DELAY + 0.1 and i <= 117 then
+			local step = dx - lastDrawn
+			if step == 0 then still += 1 end
+			minStep, maxStep = math.min(minStep, step), math.max(maxStep, step)
+		end
+		lastDrawn = dx
+	end
+	assert(still == 0, "drawn moves on every frame through the steps, held " .. still)
+	assert(minStep > 0.5 and maxStep < 1.5, ("drawn steps near 1 stud a frame, got %.2f-%.2f"):format(minStep, maxStep))
+	-- a stop: the drawing ends exactly where the body stopped
+	local ex = RemotePose.drawAt(tr, 10)
+	assert(ex == x, "a stop ends on the last spot, got " .. ex)
+	-- a start after a long rest: no creep across the rest, then full speed
+	local rest = RemotePose.newTrail(0, 0, 0)
+	local t0 = 2
+	RemotePose.push(rest, t0, 1, 0, t0 - F)
+	assert(RemotePose.drawAt(rest, t0 - F + Config.OTHERS_DRAW_DELAY - 0.001) == 0, "still at rest until the start")
+	assert(RemotePose.drawAt(rest, t0 + Config.OTHERS_DRAW_DELAY) == 1, "the first step is drawn in one frame, not 2 s")
+	-- a teleport (respawn, round start) snaps at once
+	local tp = RemotePose.newTrail(0, 0, 0)
+	RemotePose.push(tp, 0.5, 50, 0, 0.5 - F)
+	assert(RemotePose.drawAt(tp, 0.5) == 50, "a teleport is drawn at once")
+end
+
+do -- the adaptive delay (H13 run 4): a sender that steps slowly (8 arrivals a second, a throttled window) is still
+	-- drawn moving on every frame once the delay has grown; a good link brings it back to the floor; a rest never
+	-- raises it; it never passes the cap
+	local F = 1 / 60
+	local base, cap = Config.OTHERS_DRAW_DELAY, Config.OTHERS_DRAW_DELAY_MAX
+	assert(cap > base and cap <= 0.5, "the cap sits above the floor and stays small")
+	local tr = RemotePose.newTrail(0, 0, 0)
+	local x, prevT, lastDrawn, still, maxStep = 0, 0, 0, 0, 0
+	for i = 1, 6 * 60 do -- 6 s at 45 studs/s, arriving every 7.5 frames (0.125 s)
+		local t = i * F
+		local due = math.floor(t * 8) / 8
+		x = due * 45
+		RemotePose.push(tr, t, x, 0, prevT)
+		prevT = t
+		local dx = RemotePose.drawAt(tr, t)
+		if t > 3 then
+			if dx == lastDrawn then still += 1 end
+			maxStep = math.max(maxStep, dx - lastDrawn)
+		end
+		lastDrawn = dx
+	end
+	assert(tr.delay > 0.125 and tr.delay <= cap, ("the delay grew past the 0.125 s gap: %.3f"):format(tr.delay))
+	assert(still == 0, "a slow sender is drawn moving on every frame once adapted, held " .. still)
+	assert(maxStep < 45 * F * 1.6, ("no jumps once adapted, biggest %.2f studs"):format(maxStep))
+	-- the link improves: arrivals on every frame for 10 s
+	for i = 1, 10 * 60 do
+		local t = prevT + F
+		x += 45 * F
+		RemotePose.push(tr, t, x, 0, prevT)
+		prevT = t
+	end
+	assert(math.abs(tr.delay - base) < 0.01, ("back to the floor on a good link: %.3f"):format(tr.delay))
+	-- a rest of 2 s and then a start: not counted as a gap
+	local t = prevT + 2
+	RemotePose.push(tr, t, x + 1, 0, t - F)
+	for i = 1, 60 do RemotePose.push(tr, t + i * F, x + 1, 0, t + (i - 1) * F) end
+	assert(math.abs(tr.delay - base) < 0.01, "a rest does not raise the delay")
+	-- a sender stepping every 0.28 s: the delay stops at the cap
+	local slow = RemotePose.newTrail(0, 0, 0)
+	prevT = 0
+	for i = 1, 10 * 60 do
+		local tt = i * F
+		RemotePose.push(slow, tt, math.floor(tt / 0.28) * 2.8, 0, prevT) -- gaps under the cap, x 1.25 over it
+		prevT = tt
+	end
+	assert(slow.delay <= cap + 1e-9, ("never past the cap: %.3f"):format(slow.delay))
+end
+
 print("remote_pose ok")

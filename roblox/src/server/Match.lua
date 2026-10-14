@@ -12,6 +12,7 @@ local Dummy = require(script.Parent:WaitForChild("Dummy"))
 local Runners = require(script.Parent:WaitForChild("Runners"))
 local Arena = require(script.Parent:WaitForChild("Arena"))
 local MoveGuard = require(script.Parent:WaitForChild("MoveGuard"))
+local Snapshots = require(script.Parent:WaitForChild("Snapshots"))
 
 local Match = {}
 
@@ -26,6 +27,10 @@ local function remote(name: string): RemoteEvent?
 	warn(("[Rotag] ReplicatedStorage.Remotes.%s is missing (restart rojo serve to sync default.project.json);"
 		.. " the tag runs without it"):format(name))
 	return nil
+end
+local function unreliable(name: string): UnreliableRemoteEvent?
+	local r = remotes and remotes:FindFirstChild(name)
+	return if r and r:IsA("UnreliableRemoteEvent") then r else nil -- server/Snapshots warns
 end
 
 local order: { number } = {} -- every runner id in join order: the rotation (rule 5)
@@ -180,6 +185,29 @@ local function closest(a: { Tag.Sample }, b: { Tag.Sample }, from: number, to: n
 	return bx, by
 end
 
+-- For the Studio log only (H13, tag.md §2): the YOUNGEST target age at which the boxes did overlap for this claim,
+-- over every target sample in the history, whatever the allowance. The age of a pair is how far the target sample is
+-- behind the claimant's sample or the claim's arrival `at`, whichever is more (touchedBetween needs both inside lag).
+-- nil: no overlap at any age the history holds (~1 s). Also how many claimant samples in the window were untrusted.
+local function neededAge(a: { Tag.Sample }, b: { Tag.Sample }, from: number, to: number, at: number): (number?, number)
+	local best, untrusted = nil, 0
+	for _, sa in a do
+		if sa.t >= from and sa.t <= to then
+			if sa.untrusted then
+				untrusted += 1
+			else
+				for _, sb in b do
+					if sb.t <= sa.t and Tag.overlaps(sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE) then
+						local age = math.max(sa.t - sb.t, at - sb.t)
+						if best == nil or age < best then best = age end
+					end
+				end
+			end
+		end
+	end
+	return best, untrusted
+end
+
 -- Every frame: pending claims are judged again as the claimant's late-arriving positions land (H6: in Studio the
 -- server sees a client-owned body ~0.15 s after the claim about it arrives, ~7 studs behind at run speed).
 local function judgePending(now: number)
@@ -188,9 +216,13 @@ local function judgePending(now: number)
 			pending[claimant] = nil
 		elseif now >= p.deadline then
 			pending[claimant] = nil
-			local gx, gy = closest(history[claimant] or {}, history[p.target] or {}, p.from, p.deadline, p.lag)
+			local ha, hb = history[claimant] or {}, history[p.target] or {}
+			local gx, gy = closest(ha, hb, p.from, p.deadline, p.lag)
+			local need, bad = neededAge(ha, hb, p.from, p.deadline, p.from + p.lag)
 			log(("claim %s -> %s dropped: no overlap, target up to %.2fs older, until %.2fs after it (closest: %.1f, %.1f"
-				.. " studs apart)"):format(tostring(claimant), tostring(p.target), p.lag, Config.TAG_CONFIRM_WAIT, gx, gy))
+				.. " studs apart); %s; %d claimant sample(s) untrusted"):format(tostring(claimant), tostring(p.target), p.lag,
+				Config.TAG_CONFIRM_WAIT, gx, gy, if need then ("overlap WAS there with the target %.2fs old"):format(need)
+					else "no overlap at any target age in the history", bad))
 		end
 	end
 end
@@ -205,6 +237,13 @@ local function onClaim(player: Player, target: any)
 	local ok, ping = pcall(function() return player:GetNetworkPing() end)
 	local from, deadline, lag = Tag.claimWindow(now, (if ok and type(ping) == "number" then ping else 0)
 		+ Config.TAG_VIEW_DELAY)
+	-- H13: one line per new claim (a repeat against the same target while one is open is not logged), so a run with
+	-- no claim lines at all says the client never saw an overlap, not that the server refused one.
+	local open = pending[player.UserId]
+	if not (open and open.target == target) then
+		log(("claim %s -> %s received, ping %.0f ms, target may be up to %.2fs older"):format(tostring(player.UserId),
+			tostring(target), (if ok and type(ping) == "number" then ping else 0) * 1000, lag))
+	end
 	if judge(player.UserId, target, from, now, lag, now) then
 		pending[player.UserId] = nil
 	else
@@ -212,13 +251,19 @@ local function onClaim(player: Player, target: any)
 	end
 end
 
+-- H14: a player's position is its newest snapshot (server/Snapshots, netcode.md §8); the body only when none has come
+-- for SNAPSHOT_STALE, or the server just rebuilt it. The dummy is the server's own body. Same history, same MoveCheck.
 local function sample(now: number)
 	for id, root in roots do
 		if root.Parent then
 			local h = history[id] or {}
 			history[id] = h
-			local p = root.Position
-			local s: Tag.Sample = { t = now, x = p.X, y = p.Y }
+			local x, y = Snapshots.positionOf(id, now)
+			if not (x and y) then
+				local p = root.Position
+				x, y = p.X, p.Y
+			end
+			local s: Tag.Sample = { t = now, x = x, y = y }
 			MoveGuard.observe(id, root, s) -- the speed check (H12, trust.md): may mark s untrusted for a claim
 			table.insert(h, s)
 			if #h > HISTORY then table.remove(h, 1) end
@@ -275,6 +320,7 @@ function Match.start(tagName: string)
 	stateRemote, verdictRemote, claimRemote = remote("MatchState"), remote("TagVerdict"), remote("TagClaim")
 	readyRemote = remote("Ready")
 	if readyRemote then readyRemote.OnServerEvent:Connect(onReady) end
+	Snapshots.start(unreliable("Snapshot"))
 	-- Server -> client events: the server never listens (→ N3).
 	if stateRemote then stateRemote.OnServerEvent:Connect(function() end) end
 	if verdictRemote then verdictRemote.OnServerEvent:Connect(function() end) end
@@ -286,6 +332,8 @@ function Match.start(tagName: string)
 		if type(id) == "number" and root and root:IsA("BasePart") then
 			roots[id] = root
 			history[id] = {}
+			local p = root.Position
+			Snapshots.bodyBuilt(id, p.X, p.Y, os.clock()) -- in-flight snapshots about the old body are dropped
 		end
 	end)
 	local function onPlayer(player: Player)

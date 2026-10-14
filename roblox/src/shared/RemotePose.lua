@@ -82,4 +82,64 @@ function RemotePose.step(p: Pose, x: number, y: number, ground: number?, wall: b
 	return Movement.spriteFor(p :: any), ev
 end
 
+-- The draw trail (H13, players.md §3): where to DRAW another runner, a fixed Config.OTHERS_DRAW_DELAY behind the
+-- positions that arrived, sliding between them. A replicated body can hold for a few frames and then jump; drawn
+-- through the trail it moves on every frame. Times are the receiving screen's clock at arrival. Pure, tested.
+export type Trail = { points: { { t: number, x: number, y: number } }, delay: number, peak: number }
+
+local KEEP = 1 -- seconds of points kept behind the newest
+-- H13 run 4: a fixed 0.1 s hid holds of a few frames but not a sender that steps slowly (a throttled window, a slow
+-- phone). The delay now ADAPTS: it tracks the longest recent gap between two arrivals of a MOVING body (a decaying
+-- peak) with a margin, between Config.OTHERS_DRAW_DELAY and Config.OTHERS_DRAW_DELAY_MAX, and changes no faster than
+-- DELAY_RATE so the drawing slows or speeds a little instead of jumping. A gap over the cap is a rest, not counted.
+local PEAK_DECAY = 3 -- seconds per e-fold: a better link brings the delay back down within a few seconds
+local MARGIN = 1.25 -- delay = the peak gap times this, so the newest point is usually already there
+local DELAY_RATE = 0.25 -- seconds of delay change per second at most
+
+function RemotePose.newTrail(t: number, x: number, y: number): Trail
+	return { points = { { t = t, x = x, y = y } }, delay = Config.OTHERS_DRAW_DELAY, peak = 0 }
+end
+
+-- The root was read at (x, y) at time t; `prevT` is the previous render frame's time. Call every frame (it also
+-- steers the delay); only a change is stored. A change after a hold longer than HOLD (or the delay, if longer: a hold
+-- the delay covers is smoothed over) is a start from rest: the old spot is re-stamped at prevT first, so the drawing
+-- leaves it now instead of creeping across the whole hold. A teleport restarts the trail.
+function RemotePose.push(trail: Trail, t: number, x: number, y: number, prevT: number)
+	local dt = math.max(0, t - prevT)
+	trail.peak *= math.exp(-dt / PEAK_DECAY)
+	local want = math.clamp(trail.peak * MARGIN, Config.OTHERS_DRAW_DELAY, Config.OTHERS_DRAW_DELAY_MAX)
+	trail.delay += math.clamp(want - trail.delay, -DELAY_RATE * dt, DELAY_RATE * dt)
+	local pts = trail.points
+	local last = pts[#pts]
+	if x == last.x and y == last.y then return end
+	if math.abs(x - last.x) > TELEPORT or math.abs(y - last.y) > TELEPORT then
+		trail.points = { { t = t, x = x, y = y } }
+		return
+	end
+	local gap = t - last.t
+	if gap <= Config.OTHERS_DRAW_DELAY_MAX then trail.peak = math.max(trail.peak, gap) end
+	if gap > math.max(HOLD, trail.delay) and prevT > last.t then table.insert(pts, { t = prevT, x = last.x, y = last.y }) end
+	table.insert(pts, { t = t, x = x, y = y })
+	while #pts > 2 and pts[2].t < t - KEEP do table.remove(pts, 1) end
+end
+
+-- Where to draw at time `now`: the trail at now - trail.delay, between the two points around it; held at the newest
+-- point once that is passed (a real stop, or a hold longer than the delay), and at the oldest before it begins.
+function RemotePose.drawAt(trail: Trail, now: number): (number, number)
+	local pts = trail.points
+	local t = now - trail.delay
+	local newest = pts[#pts]
+	if t >= newest.t then return newest.x, newest.y end
+	if t <= pts[1].t then return pts[1].x, pts[1].y end
+	for i = #pts - 1, 1, -1 do
+		local a = pts[i]
+		if a.t <= t then
+			local b = pts[i + 1]
+			local k = (t - a.t) / (b.t - a.t)
+			return a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k
+		end
+	end
+	return pts[1].x, pts[1].y
+end
+
 return RemotePose

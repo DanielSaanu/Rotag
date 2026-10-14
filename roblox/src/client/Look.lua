@@ -36,10 +36,13 @@ local LEAN_MAX = 14 -- degrees at Config.RUN_SPEED
 local LEAN_DASH = 22 -- degrees at Config.DASH_SPEED and beyond
 local LEAN_SETTLE = 0.06 -- seconds per e-fold: the lean follows speed with a little lag, never snaps
 
-function Look.new(character: Model, root: BasePart)
+-- `free` (H13, client/Others): the plane is NOT welded to the root but anchored and moved by Look:place every frame,
+-- so another runner can be drawn at a smoothed spot instead of its stepped replicated one. Our own runner stays welded.
+function Look.new(character: Model, root: BasePart, free: boolean?)
 	local self = setmetatable({}, Look)
 	self.character = character
 	self.root = root
+	self.free = free == true
 	self.sx, self.sy = 1, 1
 	self.lean = 0
 	self.sprite, self.facing = nil, 1
@@ -64,10 +67,14 @@ function Look:_build()
 	plane.Massless = true
 	plane.CastShadow = false
 	plane.CFrame = self.root.CFrame * CFrame.new(0, 0, Config.RUNNER_DEPTH / 2 + 0.05)
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = self.root
-	weld.Part1 = plane
-	weld.Parent = plane
+	if self.free then
+		plane.Anchored = true
+	else
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = self.root
+		weld.Part1 = plane
+		weld.Parent = plane
+	end
 	local gui = Instance.new("SurfaceGui")
 	gui.Name = "RotagRunnerSprite"
 	gui.Face = Enum.NormalId.Back -- +Z, the face the camera looks at
@@ -149,6 +156,11 @@ function Look:draw(spriteName: string, facing: number, dashing: boolean, vx: num
 	local rad = math.rad(self.lean)
 	local half = BASE * self.sy / 2
 	image.Position = UDim2.fromScale(0.5 + half * math.sin(rad), FEET + half * (1 - math.cos(rad)))
+end
+
+-- A free look only: put the sprite plane's centre at (x, y) on the runner plane.
+function Look:place(x: number, y: number)
+	if self.holder then self.holder.CFrame = CFrame.new(x, y, Config.RUNNER_DEPTH / 2 + 0.05) end
 end
 
 -- The sheet ids changed after this look was built (Remotes.SheetIds landed late): re-apply on the next draw.

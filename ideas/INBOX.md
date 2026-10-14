@@ -13,6 +13,9 @@
 - **Player 2 built (2026-10-11, H11):** other runners drawn from their replicated position, pass-through collision group,
   off-screen arrows, round waits for every client to draw (5 s cap). Not yet seen with two real clients: Danzo's test
   below. Detail: `docs/systems/players.md`.
+- **Two real clients (2026-10-14, H13):** ownership of client-owned bodies was being lost in a multi-client session;
+  the server re-asserts it every frame. Other runners now drawn on a 0.1 s trail (`Config.OTHERS_DRAW_DELAY`). Why the
+  engine drops ownership is still unknown; the hand-back counts in the Server Output will say how often.
 - **Movement trust built (2026-10-12, H12):** no movement remote; the server checks each runner's speed and snaps a
   cheating body back; teleports under ~45 studs still pass. Detail: `docs/systems/trust.md`.
 
@@ -39,10 +42,29 @@
 - [x] **Solo stand-in test (2026-10-12):** a server-driven second runner (`tools/studio-standin.luau`, run from the MCP) was
       drawn, animated and smooth, passed through, and had its edge arrow. An ANCHORED stand-in replicated in steps and
       looked choppy; a physics body did not. It is not in the roster, so it cannot be tagged.
-- [ ] **Danzo: real two-player test** (Test tab → Clients and Servers → 2 players → Start). Still to see: RUN!/count/GO! in
-      both windows from round 1; whether tags at run speed look fair (feeds `TAG_VIEW_DELAY`); red arrow on the holder.
-      New since H12: watch Output for `[Rotag] move:` lines. Any while playing honestly = a false snap-back; tell
-      Claude (the knob is `Config.MOVE_BURST_TIME`, or `MOVE_SNAP_BACK = false`).
+- [x] **Real two-player test, first three runs (2026-10-14, H13):** run 1: other runner drawn at its spawn, no tags at
+      all. Cause: each client-owned body kept losing its network owner. Server now re-asserts ownership every frame
+      (`server/MoveGuard`); run 3: players tag each other. Still choppy → draw trail built (below). `docs/systems/trust.md` §9.
+- [x] **Two-player runs 4-6 (2026-10-14):** draw trail "slightly better"; Studio frame cap 240 (unfocused windows run
+      at 25% of the cap) → smooth. Remaining: ~1 s delay before a press shows on the other screen, and tags land
+      before contact on the victim's screen. Research and the fix (a snapshot stream): `docs/systems/netcode.md`.
+- [x] **Snapshot stream built (H14, 2026-10-14, Fable):** each client sends its state 30/s over `Remotes.Snapshot`; the
+      server judges tags and the speed check on it; other screens draw 0.08 s behind it; the tagger's sprite lunges to the
+      victim on a verdict. Uncommitted, not yet seen in Studio. `docs/systems/netcode.md` §8.
+- [x] **Two-player run 7 (2026-10-14, H14):** snapshot stream live. Danzo: "suddenly there is almost no latency and the
+      animations are super smooth". Claude drove Player2 from the Studio MCP (it can see the test windows, press keys and
+      capture screens). Tags land both ways; 0 hand-backs; 0 move warnings. One post-build fix: remote dictionary keys
+      arrive as strings (N13). Knobs if ever needed: `Config.SNAPSHOT_DELAY` 0.08, `SNAPSHOT_RATE` 30, `TAG_LUNGE_TIME` 0.1.
+- [ ] **Danzo:** does the tag still feel early on the victim's screen, and does the 0.1 s lunge read as a touch? Say if
+      the lunge should be longer, shorter or off.
+- [ ] **Next:** commit H13+H14 (27 files, uncommitted); then the H11 proposals and DESIGN §6.1 ghost rules.
+- [x] Danzo: two-player run 4 (restart `rojo serve` first). Feel: the other runner should glide ~0.1 s behind
+      instead of stuttering, red marker on its sprite, tags still land. Paste from the Server window any `[Rotag] body:`
+      and `[Rotag] owner:` lines (hand-back counts confirm the cause) and from each client `[Rotag] others:`. If still
+      choppy: a longest hold above ~6 frames → raise `Config.OTHERS_DRAW_DELAY`; a few huge steps → ownership still flapping.
+- [ ] Danzo's call (H13): the tag still tests the REAL position, so at speed the drawn sprite trails it by 4.5 studs
+      (run) to 12 (dash); a chaser can touch the sprite a moment before the tag fires. Testing the drawn spot instead
+      means +0.1 s on `TAG_VIEW_DELAY`/`TAG_REWIND_MAX` (looser fairness). Say if tags feel early or late.
 - [ ] Proposals from the H11 agent, Danzo's call: HUD "waiting for players" while round 1 is held (it reads "round over"
       today); give the dummy the runner sprite so solo Play exercises the remote-drawing path (one line in `client/Others`).
 - [x] Movement trust (H12, 2026-10-12): server speed check, snap-back, untrusted samples for the tag; no remote.
