@@ -57,7 +57,7 @@
       arrive as strings (N13). Knobs if ever needed: `Config.SNAPSHOT_DELAY` 0.08, `SNAPSHOT_RATE` 30, `TAG_LUNGE_TIME` 0.1.
 - [ ] **Danzo:** does the tag still feel early on the victim's screen, and does the 0.1 s lunge read as a touch? Say if
       the lunge should be longer, shorter or off.
-- [ ] **Next:** commit H13+H14 (27 files, uncommitted); then the H11 proposals and DESIGN §6.1 ghost rules.
+- [ ] **Next:** push the branch (6+ commits ahead); then DESIGN §6.1 ghost rules (heavy handoff), the phone test.
 - [x] Danzo: two-player run 4 (restart `rojo serve` first). Feel: the other runner should glide ~0.1 s behind
       instead of stuttering, red marker on its sprite, tags still land. Paste from the Server window any `[Rotag] body:`
       and `[Rotag] owner:` lines (hand-back counts confirm the cause) and from each client `[Rotag] others:`. If still
@@ -72,7 +72,9 @@
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
 - [x] Movement tests split (2026-10-10): `movement_world.luau` helpers, `movement.test.luau`, `movement_sprites.test.luau`.
 - [x] Danzo (2026-10-11): `rojo serve` restarted and Studio reconnected; `Remotes.SheetIds` now comes from the project file.
-- [ ] **Runner pass 2 on the canvas (2026-10-14):** https://claude.ai/artifact/PpUVEG3jerX89cjUbpMxgj (model sheet, the
+- [x] **Runner pass 2 shipped (2026-10-14), Danzo: "okay im satisfied".** Scarf rebuilt on cloth follow-through after
+      "too stiff". Knobs if ever needed: the run `ribbon()` call in `tools/runner-rig.js` (amp 16, lag 0.07).
+- [x] Runner pass 2 on the canvas (2026-10-14): https://claude.ai/artifact/PpUVEG3jerX89cjUbpMxgj (model sheet, the
       13 poses over pass 1, palette). Danzo's live notes already in: arm swing fixed, trailing foot angle fixed, cycle
       remade as a sprint (heel kick, knee drive, flight). Proposal rig: `tools/runner-rig-pass2.mjs`. Next: Danzo judges
       the strip; then port into `tools/runner-rig.js`, render, `roblox build`, Danzo uploads.
