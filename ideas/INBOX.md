@@ -72,7 +72,14 @@
 - [x] Join remote for the sheet id (H4, 2026-10-10): `Remotes.SheetIds`. Uploads no longer need `roblox setid`.
 - [x] Movement tests split (2026-10-10): `movement_world.luau` helpers, `movement.test.luau`, `movement_sprites.test.luau`.
 - [x] Danzo (2026-10-11): `rojo serve` restarted and Studio reconnected; `Remotes.SheetIds` now comes from the project file.
-- [ ] Runner polish pass (parked): the poses read "a bit strange" to Danzo. Candidates: longer stride, less knee bend
+- [ ] **Runner pass 2 on the canvas (2026-10-14):** https://claude.ai/artifact/PpUVEG3jerX89cjUbpMxgj (model sheet, the
+      13 poses over pass 1, palette). Danzo's live notes already in: arm swing fixed, trailing foot angle fixed, cycle
+      remade as a sprint (heel kick, knee drive, flight). Proposal rig: `tools/runner-rig-pass2.mjs`. Next: Danzo judges
+      the strip; then port into `tools/runner-rig.js`, render, `roblox build`, Danzo uploads.
+      **Ported 2026-10-14** (Danzo: "upload so i can test"): `tools/runner-rig.js` IS pass 2 now, 13 SVGs regenerated, sheet
+      built (CHANGED). Danzo: `node bin/warehouse.js roblox build --upload`, then commit `Sprites.lua` + `assets.lock.json`,
+      then Play and judge the sprint, the scarf and the dash in motion.
+- [x] Runner polish pass (superseded by pass 2 above): the poses read "a bit strange" to Danzo. Candidates: longer stride, less knee bend
       in the passing frames, a clearer forward hand. Joints live in `tools/runner-rig.js`; each pass costs an upload.
 - [ ] Decide the art theme (DESIGN §6.3: graphite, neon or glowing graphite). Resolution is settled (2026-10-10): smooth
       vector figures, not pixel art. The runner is inked graphite with a neon visor and scarf.
