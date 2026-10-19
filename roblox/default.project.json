@@ -26,6 +26,12 @@
         },
         "Snapshot": {
           "$className": "UnreliableRemoteEvent"
+        },
+        "GhostClaim": {
+          "$className": "RemoteEvent"
+        },
+        "GhostVerdict": {
+          "$className": "RemoteEvent"
         }
       }
     },

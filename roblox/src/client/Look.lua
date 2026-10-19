@@ -91,6 +91,7 @@ function Look:_build()
 	image.Position = UDim2.fromScale(0.5, FEET)
 	self.image = image
 	self.sprite = nil -- force the next draw to apply frame, flip and size
+	self.ghostMode = nil
 	print("[Rotag] runner drawn with a SurfaceGui on a part")
 end
 
@@ -161,6 +162,18 @@ end
 -- A free look only: put the sprite plane's centre at (x, y) on the runner plane.
 function Look:place(x: number, y: number)
 	if self.holder then self.holder.CFrame = CFrame.new(x, y, Config.RUNNER_DEPTH / 2 + 0.05) end
+end
+
+-- H15 (DESIGN §3 rules 37, 41): a ghost is the same sprite, pale and see-through; brighter when its spook is ready,
+-- so the holder can see which ghosts are armed. `mode` nil = alive (normal), "ready", or "cooling".
+local GHOST_TINT = Color3.fromRGB(170, 215, 255)
+local GHOST_SEE = { ready = 0.3, cooling = 0.65 } -- ImageTransparency
+function Look:ghost(mode: string?)
+	local image = self.image
+	if not image or mode == self.ghostMode then return end
+	self.ghostMode = mode
+	image.ImageColor3 = if mode then GHOST_TINT else Color3.new(1, 1, 1)
+	image.ImageTransparency = if mode then (GHOST_SEE[mode] or 0.5) else 0
 end
 
 -- The sheet ids changed after this look was built (Remotes.SheetIds landed late): re-apply on the next draw.

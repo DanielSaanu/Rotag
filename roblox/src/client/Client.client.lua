@@ -104,6 +104,7 @@ RunService.PreSimulation:Connect(function(dt: number)
 	end
 	c.body:apply(s.x, s.y, s.vx, s.vy)
 	Tagging.claim(s.x, s.y)
+	Tagging.spook(s.x, s.y) -- H15: as a ghost, a touch on the holder (docs/systems/ghosts.md)
 end)
 
 -- The snapshot stream (H14, docs/systems/netcode.md §8): after physics, Config.SNAPSHOT_RATE times a second, our
@@ -153,6 +154,12 @@ local function sendReady()
 	end)
 end
 
+-- H15: how a runner is drawn: nil alive, or a ghost "ready" to spook / "cooling" (DESIGN §3 rules 37, 41).
+local function ghostMode(id: number): string?
+	if not Tagging.ghost(id) then return nil end
+	return if Tagging.readyIn(id) > 0 then "cooling" else "ready"
+end
+
 -- Before drawing: camera, then our sprite, then everyone else's sprite and the off-screen arrows (H11).
 RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, function(dt: number)
 	if studio then
@@ -171,10 +178,11 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		SideCamera.update(pos.X, pos.Y, c.state.vx, dt)
 		c.look:react(c.pending)
 		c.pending = {}
+		c.look:ghost(ghostMode(player.UserId))
 		c.look:draw(Movement.spriteFor(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
 		if not readySent then sendReady() end
 	end
-	Others.draw(dt)
+	Others.draw(dt, ghostMode)
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
 	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	Arrows.update(Tagging.me(), Tagging.state())
@@ -231,7 +239,9 @@ Others.start(player)
 Tagging.start(player, function() end, function(v)
 	Hud.pass(v, player.UserId)
 	Others.lunge(v.from, v.to)
-end, Others.positionOf)
+end, Others.positionOf, function(v)
+	Hud.spook(v, player.UserId) -- H15: "-3s  <ghost>" where the "+2s" pops
+end)
 player.CharacterAdded:Connect(setup)
 player.CharacterRemoving:Connect(function(character)
 	if current and current.character == character then teardown() end

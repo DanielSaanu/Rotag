@@ -167,6 +167,8 @@ alive player at 30 studs/s (both below the 45 run speed, so it can be caught and
 (H6):** before, the client's wall probes hit it, so it was a moving wall that stopped a chaser dead behind it (`vx`
 sawing 0 to -42 at a 2-stud gap in the log), refreshed the dash on contact and made a run-through impossible. It never plays alone.
 Players tag it with a normal claim; as it, the server checks its overlaps itself each frame with no rewind.
+**H15:** `Config.STUDIO_DUMMIES` of them (ids -1000, -1001, ...; `server/Bots.lua`); a dummy tags only players (several
+sharing a patrol lane passed the fuse among themselves for ever), and as a ghost it chases the holder and spooks it.
 **The second path:** Studio's Test tab → Clients and Servers, 2 players: real clients, real claims, ids -1 and -2.
 
 ## 5. Decision (e): "the fuse shrinks across the match" — per elimination, 45 → 35 → 25
@@ -208,7 +210,9 @@ session structure is §6.4, still open. Per elimination also serves rule 3 (forc
   resumes with the same speed. Screen shake: not yet.
 - **Rule 6's catch-up animation: not built.** Today the verdict only moves the marker and pops "+N". It needs the art
   pass (a reach/lunge frame toward the target); recorded here so it is not forgotten (→ Q1).
-- **Eliminated runners keep running** but are out of play (untaggable, HUD says "out") until ghosts exist (DESIGN §6.1).
+- **Eliminated runners are ghosts** (H15, DESIGN §3 rules 37-41): untaggable, they spook the holder by touch (-3 s off
+  the fuse, cooldowns and a shared ward) and the marked one comes back when the fuse runs out: [ghosts.md](ghosts.md).
+  `Tag.tick(r, now, back)` and `Round.hold` are the two changes here.
 - **Gap for "then a second player":** each client draws only its own runner's sprite (`Look` is built for the local
   character). Other players' bodies are invisible on your screen; the dummy is visible only because it is a neon part.
 

@@ -1,7 +1,7 @@
 -- Off-screen arrows (DESIGN §2, locked: "each player has their own camera, with off-screen arrows pointing to the
 -- other players"; H11, docs/systems/players.md §4). One marker per other runner whose sprite is off this screen,
 -- on the screen's edge toward it: a round badge with the runner's initial and a pointer turned toward it. The holder's
--- is red; runners not in play (out, or waiting for the next round) are dim. The maths is shared/SideCam.edgeArrow
+-- is red; a ghost's is hollow and pale blue (H15, DESIGN §3 rule 41); runners waiting for the next round are dim. The maths is shared/SideCam.edgeArrow
 -- (pure, tested); this file only builds and moves the GUI. Placeholder UI, not art.
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +16,7 @@ local MARGIN = Config.STUDS_PER_TILE / 2 -- studs past the edge where half the 4
 local INSET = 3.5 -- studs in from the edge (at the 48-stud view, ~50 px on a 700 px tall screen)
 local SIZE = 34 -- px, the badge
 local RED, WHITE = Color3.fromRGB(255, 50, 40), Color3.fromRGB(245, 245, 245)
+local GHOST_BLUE = Color3.fromRGB(170, 215, 255)
 
 local gui: ScreenGui? = nil
 local markers: { [Model]: { frame: Frame, pointer: Frame, label: TextLabel } } = {}
@@ -53,6 +54,12 @@ local function build(): { frame: Frame, pointer: Frame, label: TextLabel }
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0.5, 0)
 	corner.Parent = badge
+	local ring = Instance.new("UIStroke") -- a ghost's badge is this ring alone (hollow)
+	ring.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	ring.Thickness = 3
+	ring.Color = GHOST_BLUE
+	ring.Enabled = false
+	ring.Parent = badge
 	frame.Parent = gui
 	return { frame = frame, pointer = pointer, label = badge }
 end
@@ -78,13 +85,20 @@ function Arrows.update(me: number, state: any)
 				markers[model] = m
 				local holder = state ~= nil and not state.over and state.it == id
 				local inPlay = state == nil or table.find(state.alive, id) ~= nil
-				local color = if holder then RED else WHITE
+				local ghost = false
+				if state and type(state.ghosts) == "table" then
+					for _, e in state.ghosts do if e.id == id then ghost = true end end
+				end
+				local color = if holder then RED elseif ghost then GHOST_BLUE else WHITE
 				m.label.BackgroundColor3 = color
 				m.label.Text = string.upper(string.sub(nameOf(id), 1, 1))
+				m.label.TextColor3 = if ghost then GHOST_BLUE else Color3.new(0, 0, 0)
+				local ring = m.label:FindFirstChildOfClass("UIStroke")
+				if ring then ring.Enabled = ghost end
 				local tip = m.pointer:FindFirstChildOfClass("Frame")
 				if tip then tip.BackgroundColor3 = color end
-				local fade = if inPlay then 0 else 0.6
-				m.label.BackgroundTransparency, m.label.TextTransparency = fade, fade
+				local fade = if inPlay or ghost then 0 else 0.6
+				m.label.BackgroundTransparency, m.label.TextTransparency = if ghost then 1 else fade, fade
 				if tip then tip.BackgroundTransparency = fade end
 				m.frame.Position = UDim2.fromScale(arrow.u, arrow.v)
 				m.pointer.Rotation = arrow.rotation

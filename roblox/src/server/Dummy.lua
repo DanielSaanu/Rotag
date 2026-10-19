@@ -1,7 +1,8 @@
 -- A server-driven stand-in runner so the tag can be played before a second client exists (docs/systems/tag.md §4).
 -- Studio only: Match reads RunService:IsStudio() and Config.STUDIO_DUMMY once at boot and never builds one in a live
 -- server (→ learnings N1). It is a visible anchored box the server moves along the floor; it takes part in the round
--- like a player (it can be "it", be tagged, be eliminated) under the id Dummy.ID.
+-- like a player (it can be "it", be tagged, be eliminated, play as a ghost) under the id Dummy.ID, or Dummy.ID - k
+-- for the k-th extra one (server/Bots.lua decides where each goes; H15).
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
@@ -15,9 +16,10 @@ local PATROL_SPEED = 18 -- slower than a run (45), so a player can catch it
 local CHASE_SPEED = 30 -- as "it": slower than a run, so a player can escape it
 local Y = Config.RUNNER_HEIGHT / 2 -- standing on the test map's floor (top at y = 0)
 
-function Dummy.new(tagName: string)
+function Dummy.new(tagName: string, id: number?)
+	local runnerId = id or Dummy.ID
 	local model = Instance.new("Model")
-	model.Name = "Dummy"
+	model.Name = if runnerId == Dummy.ID then "Dummy" else ("Dummy" .. tostring(Dummy.ID - runnerId + 1))
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
 	root.Size = Vector3.new(Config.RUNNER_WIDTH, Config.RUNNER_HEIGHT, Config.RUNNER_DEPTH)
@@ -28,11 +30,11 @@ function Dummy.new(tagName: string)
 	root.Color = Color3.fromRGB(255, 170, 60)
 	root.Material = Enum.Material.Neon
 	root.Transparency = 0.35
-	root.CFrame = CFrame.new((PATROL_MIN + PATROL_MAX) / 2, Y, 0)
+	root.CFrame = CFrame.new((PATROL_MIN + PATROL_MAX) / 2 + (Dummy.ID - runnerId) * 8, Y, 0)
 	root.Parent = model
 	model.PrimaryPart = root
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- like every runner (Runners.build, H11)
-	model:SetAttribute("RunnerId", Dummy.ID)
+	model:SetAttribute("RunnerId", runnerId)
 	CollectionService:AddTag(model, tagName)
 	model.Parent = workspace
 	return { model = model, root = root, dir = 1 }
@@ -43,7 +45,7 @@ function Dummy.place(d, x: number)
 	d.root.CFrame = CFrame.new(x, Y, 0)
 end
 
--- One server frame. `chaseX` is the nearest alive player's x when the dummy is it and not frozen, else nil.
+-- One server frame. `chaseX`: where to head (the nearest living player as it, the holder as a ghost), else patrol.
 function Dummy.step(d, dt: number, chaseX: number?, frozen: boolean)
 	if frozen then return end
 	local x = d.root.Position.X

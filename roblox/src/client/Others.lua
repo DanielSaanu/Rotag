@@ -103,8 +103,8 @@ local function log(model: Model, d: Drawn, now: number, st: Snapshot.Stream?)
 	end
 end
 
--- Every render frame, after the camera.
-function Others.draw(dt: number)
+-- Every render frame, after the camera. `ghostMode(id)` (H15): nil for the living, "ready"/"cooling" for a ghost.
+function Others.draw(dt: number, ghostMode: ((number) -> string?)?)
 	local now = os.clock()
 	for model, d in drawn do
 		if not d.root.Parent or (player and model == player.Character) then
@@ -139,6 +139,7 @@ function Others.draw(dt: number)
 		d.at = Vector3.new(x, y, 0)
 		byRoot[d.root] = d.at
 		d.look:place(x, y)
+		d.look:ghost(if ghostMode then ghostMode(d.id) else nil)
 		d.look:draw(sprite, facing, dashing, vx, dt)
 	end
 end

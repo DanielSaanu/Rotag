@@ -25,6 +25,13 @@ Config.RAMP_TIME = 15             -- seconds from no boost to the full boost
 Config.RAMP_MAX = 0.15            -- the full boost: +15% run speed; resets on every tag
 Config.HIT_STOP = 0.08            -- rule 21: seconds both runners hold still when a tag lands (client only)
 Config.STUDIO_DUMMY = true        -- in Studio only, a server-driven dummy runner joins the round (tag.md §4)
+Config.STUDIO_DUMMIES = 1         -- how many (ids -1000, -1001, ...); 3 = a solo 4-runner round where dummy ghosts spook
+-- Ghosts (DESIGN §3 rules 37-41, docs/systems/ghosts.md; Danzo's trial numbers 2026-10-14, H15).
+Config.SPOOK_DRAIN = 3            -- seconds a ghost's touch takes off the holder's fuse
+Config.SPOOK_COOLDOWN = 8         -- seconds one ghost waits between spooks (a new ghost starts on a full wait)
+Config.GHOST_WARD = 6             -- after ANY spook no ghost may spook for this long: the fuse burns at most
+                                  -- 1 + SPOOK_DRAIN / GHOST_WARD = 1.5x however many ghosts there are
+Config.GHOST_COMEBACKS = 1        -- comebacks per player per round; a spent ghost still spooks but takes no mark
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart

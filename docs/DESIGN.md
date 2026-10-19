@@ -1,6 +1,6 @@
 # Parkour Tag (working title): Game Design Notes
 
-_Last updated: 9 Oct 2026, brainstorm and research phase_
+_Last updated: 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
 
 This is the design contract. Code and art are judged against it. A change to §2 (locked decisions) or §3 (the
 adopted rules) is escalation trigger 1 (`CLAUDE.md`). Portable principles that are not about this game live in
@@ -10,7 +10,7 @@ adopted rules) is escalation trigger 1 (`CLAUDE.md`). Portable principles that a
 
 ## 1. Concept
 
-A **2D multiplayer parkour tag game on Roblox**. Four players race around a side-on map that is bigger than the screen, using flashy parkour movement to escape or chase. Whoever is "it" carries a **hot-potato fuse**. When it runs out, they're eliminated and come back as a **ghost** who can sabotage the living players and earn a way back in.
+A **2D multiplayer parkour tag game on Roblox**. Four players race around a side-on map that is bigger than the screen, using flashy parkour movement to escape or chase. Whoever is "it" carries a **hot-potato fuse**. When it runs out, they're eliminated and come back as a **ghost** who keeps shaping the round with placed parts and pickups; the next round is their way back.
 
 **Pillars**
 - **Movement first.** Moving should be fun on an empty screen, with moves that chain and keep momentum.
@@ -59,11 +59,14 @@ Moves should hand speed off to each other:
 - The fuse shrinks across the match, so tension rises. Even weak players always get a chance to fight back.
 
 ### Elimination: ghosts
-- Eliminated players become **ghosts** who can sabotage the living (details still open).
-- Ghosts should want their turn back, which keeps them engaged until the end.
+- Eliminated players become **ghosts** who shape the round for or against the living (rules 37-51, ghosts v2 adopted
+  2026-10-19, H16; [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md)).
+- Ghosts stay out for the round; the next round is their way back (Danzo, 2026-10-19, H16: replaces "ghosts should
+  want their turn back" and H15's comeback).
 
 ### Crates and obstacles
-- Random abilities come from **crates**.
+- Random abilities come from **crates**. *H16 (2026-10-19): the pickups are **orbs** at fixed map spots (rule 42); the crate
+  is now one of the items.*
 - Physical obstacles (breakable crates, hazards) are part of the maps.
 
 ---
@@ -141,6 +144,43 @@ Moves should hand speed off to each other:
 35. **Change the loop over time.** Roblox games lose players between sessions 2 and 5 when the loop never changes. New modifiers and modes matter more than new cosmetics.
 36. **Never lock moves or modes behind a grind or shop.** This was Vector's main complaint. Progression stays cosmetic.
 
+### Ghosts, pickups and abilities, adopted 2026-10-19 (H16, replacing H15's rules 37-41)
+
+*Danzo picked "orbs for everyone" and answered every question: no comeback; grapple for the living only; trap 1 s
+("fast paced"), rule 11 unchanged; the dash goes over traps, never through crates; hex -3 s; separate ghost orbs; plus
+ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order:
+[ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md). H15's spook-and-mark rules: [ghosts.md](systems/ghosts.md) (superseded).*
+
+37. **A ghost is a pale, see-through runner:** run, jump, double and wall jump, dash; never the grapple. It passes
+    through runners and items, collides with the map and fixtures, cannot tag or be tagged.
+38. **Ghosts stay out for the round.** No mark, no comeback. Every elimination still shrinks the next fuse.
+39. **Ghosts take ghost orbs** (their own orb type, at their own spots) and roll the ghost pool: fixture, boost pad,
+    boost grant, crate, bear trap, ice beam, and a rare hex. They place parts and aim abilities for or against anyone.
+40. **The hex is the only fuse drain:** rare, -3 s on the holder by a hex-holding ghost's touch, confirmed like a tag
+    (rule 6); after any hex a shared 6 s ward, and none while the holder is frozen.
+41. **No ganging up (rule 8):** a runner hit by a ghost's aimed ability is warded from every ghost's aimed abilities
+    for 6 s. Every held item shows over its holder's head; ghost arrows stay hollow.
+42. **Orbs:** living orbs at fixed map spots, first at 0:05, respawn 10 s; ghost orbs at separate spots, respawn
+    10 s / (1 + 0.5 x ghosts). Touch one with an empty slot and the server rolls your pool. One slot; Use fires or places it.
+43. **The living pools:** runners roll escape items (crate, trap, ice beam); the holder rolls the ice beam first (rule 10).
+44. **Holds** (crate stumble 0.7 s at half speed, no steer, jump, dash or item; ice freeze 1 s, sliding; bear trap
+    1 s or 3 presses; the tag freeze) never stop a tag, never chain (0.5 s immunity after one) and block starting an
+    item; an item started before a hold goes off. Rule 11 stands as written.
+45. **Dash i-frames:** the first 0.2 s of a dash dodges aimed abilities (ice beam, hex) and carries you over a bear
+    trap; never through a crate (jump it), never a tag.
+46. **The boost grant** (+15% run speed, 5 s) never stacks with the chaser ramp: on the holder, boost = max(ramp, grant).
+47. **Placement:** ghost parts go where the ghost stands, rotated on the grapple input, in empty space, on its
+    screen, at least 1 tile from any living runner, never in a keep-clear zone; at most 3 live fixtures per ghost.
+48. **Maps:** every exit and corridor is a keep-clear zone nothing may be placed in; every area has 2+ exits; 3-4
+    maps that differ in layout (§6.8).
+49. **Toggle (rule 13):** "vanilla" turns orbs off; ghosts then hold a hex every 20 s and nothing else.
+50. **Ignition (rule 2):** from `IGNITE_AT` (trial 10 s) left on the fuse the holder is visibly ignited, growing as it
+    burns, drawn by every client from the replicated fuse; elimination plays a burn-out. Ignitions and burn-outs are
+    the first cosmetic slot (§6.5).
+51. **End-phase speed (rule 3):** only in the end phase (the final two living, or a round past `END_PHASE_AFTER`),
+    every living runner's top speed is multiplied by `END_PHASE_SPEED` (trial 1.1), alongside rule 3's map shrink;
+    the ramp and the grant apply on top. Never during a normal fuse.
+
 ---
 
 ## 4. Reference games: what to take from each
@@ -175,21 +215,24 @@ No 2D, side-on parkour tag game has made it big on Roblox. The few 2D projects o
 
 ## 6. Open questions (next steps, in order)
 
-1. **Ghost rules.** What they can do, cooldowns, and how they earn a respawn. Leading idea: the Crawl model, where the ghost whose sabotage gets the fuse holder eliminated respawns.
-2. **Crate ability list.** Draft ideas:
-   - Ink Splat: slippery floor
-   - Sketch Wall: quick barrier
-   - Eraser Blink: short teleport
-   - Decoy Doodle: fake copy runs the other way
-   - Graphite Hook+: longer grapple for 10 s
+1. ~~**Ghost rules.**~~ **Resolved 2026-10-14 (H15), superseded 2026-10-19 (H16, rules 37-51):** H15's rules 37-41 were: ghosts spook "it" by touch (-3 s, 8 s
+   cooldown, a shared 6 s ward); the latest spooker holds the mark and swaps back in if the fuse runs out, once per
+   player per round. Detail: [ghosts.md](systems/ghosts.md). (Kept as item 1 so "§6.2" and later citations still
+   resolve; the open list now starts at 3.)
+2. ~~**Crate ability list.**~~ **Resolved 2026-10-19 (H16):** rules 39-49: crate, bear trap, ice beam (living and
+   ghosts), hex, boost grant, boost pad, fixture (ghosts); the grapple stays a kit move. Old drafts: Sketch Wall became
+   the fixture; Ink Splat dropped (a slip the victim's client applies); Eraser Blink dropped (a teleport fights the
+   speed check); Decoy Doodle and Graphite Hook+ parked.
 3. **Art direction.** Pure pencil/graphite, Tron-style neon, or **glowing graphite**: pencil sketches with glowing trails.
    *Partly answered 2026-10-10 (Danzo):* characters are smooth, high-resolution 2D figures (vector art, 128 px per
    tile), not pixel art, so they read as drawn figures living in a 3D stage. The theme (graphite vs neon) is still open;
    the current runner is inked graphite with one neon accent (visor, scarf), which fits any of the three.
 4. **Match structure.** Best of 3 or 5, and how scoring works.
-5. **Monetisation.** Cosmetics only: trails, skins, tag effects, emotes, fuse/bomb skins. Plus possibly a VIP or private servers. Kid-friendly and fair.
+5. **Monetisation.** Cosmetics only: trails, skins, tag effects, emotes, fuse/bomb skins, ignitions and burn-outs (rule 50). Plus possibly a VIP or private servers. Kid-friendly and fair.
 6. **Name.**
 7. **Bots.** Scope for a basic bot that chases, flees and uses abilities.
+8. **Maps** (H16). 3-4 from the start, differing in layout (rule 48): Tower (vertical), Yard (open), Warren (maze),
+   Rooftops (gaps); feels in [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md) §6. Open: which first, and size.
 
 ---
 

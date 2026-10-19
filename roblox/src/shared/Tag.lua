@@ -17,6 +17,8 @@ export type Round = {
 	frozenUntil: number,      -- the holder can neither move nor tag before this, and the fuse waits (rule 1)
 	chaseFrom: number,        -- when the current chase began (the ramp clock, rule 4) = the end of the freeze
 	eliminations: number,
+	hold: number,             -- +1 every time the fuse changes hands (pass, elimination, leave): a ghost's mark is
+	                          -- on one hold only (shared/Ghost.lua, DESIGN §3 rule 39)
 	winner: number?,
 	over: boolean,
 }
@@ -61,7 +63,7 @@ function Tag.newRound(order: { number }, starter: number, now: number): Round
 	local frozenUntil = now + Config.START_FREEZE
 	return {
 		order = table.clone(order), alive = alive, it = starter, fuse = Config.FUSE_START, since = now,
-		frozenUntil = frozenUntil, chaseFrom = frozenUntil, eliminations = 0, winner = nil, over = false,
+		frozenUntil = frozenUntil, chaseFrom = frozenUntil, eliminations = 0, hold = 0, winner = nil, over = false,
 	}
 end
 
@@ -148,6 +150,7 @@ function Tag.pass(r: Round, to: number, now: number): (number, number)
 	local left = Tag.fuseLeft(r, now)
 	local fuse = math.min(left + Config.FUSE_PASS_BONUS, Tag.freshFuse(r.eliminations))
 	r.it = to
+	r.hold += 1
 	r.fuse = fuse
 	r.since = now
 	r.frozenUntil = now + Config.TAG_FREEZE
@@ -158,19 +161,24 @@ end
 -- Advance the round. Returns the id eliminated this call, if the fuse ran out. The next holder is the next alive
 -- runner after the eliminated one in join order (rotation, rule 5) with a fresh, shorter fuse; the round ends when
 -- one runner is left (or none, in a round that started with one).
-function Tag.tick(r: Round, now: number): number?
+-- `back` (DESIGN §3 rule 39, shared/Ghost.tick decides it): a ghost that comes back to life in the same moment. It is
+-- never the new holder (the holder is picked before it revives), and the round goes on: the count of the living holds.
+function Tag.tick(r: Round, now: number, back: number?): number?
 	local it = r.it
 	if r.over or it == nil or Tag.fuseLeft(r, now) > 0 then return nil end
 	r.alive[it] = false
 	r.eliminations += 1
+	r.hold += 1
 	local left = Tag.aliveCount(r)
-	if left <= 1 then
+	local comeback = back ~= nil and back ~= it and r.alive[back] == false and left >= 1
+	if left <= 1 and not comeback then
 		r.over = true
 		r.it = nil
 		r.winner = if left == 1 then Tag.nextStarter(r.order, r.alive, it) else nil
 		return it
 	end
 	r.it = Tag.nextStarter(r.order, r.alive, it)
+	if comeback and back ~= nil then r.alive[back] = true end
 	r.fuse = Tag.freshFuse(r.eliminations)
 	r.since = now
 	r.frozenUntil = now + Config.TAG_FREEZE
@@ -193,6 +201,7 @@ function Tag.leave(r: Round, id: number, now: number)
 		r.fuse = Tag.fuseLeft(r, now)
 		r.since = now
 		r.it = Tag.nextStarter(r.order, r.alive, id)
+		r.hold += 1
 		r.frozenUntil = now + Config.TAG_FREEZE
 		r.chaseFrom = r.frozenUntil
 		if r.it == nil then r.over = true end

@@ -7,7 +7,7 @@
 - **Runner art:** smooth 128 px vector figure, 8-frame procedural sprint with lean, jump rise/apex/fall, dash, plus a
   speed-driven tilt on the client. Danzo (2026-10-10): "the poses are a bit strange still but it's fine". A polish pass
   is parked below. Design sheet: https://claude.ai/artifact/JrDw2hzBgJ5o4J9abXcNgb
-- **Not done, in order (DESIGN §6):** ghost rules, the crate ability list, art theme, match structure, monetisation,
+- **Not done, in order (DESIGN §6):** the crate ability list, art theme, match structure, monetisation,
   the name, bots.
 - **Tag played by Danzo (2026-10-11):** "pretty good": dash good, freeze works. Phone preset still untested.
 - **Player 2 built (2026-10-11, H11):** other runners drawn from their replicated position, pass-through collision group,
@@ -18,6 +18,12 @@
   engine drops ownership is still unknown; the hand-back counts in the Server Output will say how often.
 - **Movement trust built (2026-10-12, H12):** no movement remote; the server checks each runner's speed and snaps a
   cheating body back; teleports under ~45 studs still pass. Detail: `docs/systems/trust.md`.
+- **Ghosts built (2026-10-14, H15):** eliminated runners spook "it" by touch and can earn one comeback a round (DESIGN §3
+  rules 37-41). Waiting on a `rojo serve` restart and Danzo's two-player test below. Detail: `docs/systems/ghosts.md`.
+- **Ghosts v2 decided (2026-10-19, H16+H17):** no comeback; orbs for everyone (separate ghost orbs); items crate, trap,
+  ice beam, grapple (living kit), boost pad, boost grant, ghost Tetris fixtures, rare hex -3 s; ignition; end-phase speed.
+  DESIGN §3 rules 37-51, §6.2 resolved, §6.8 maps. Spec + build order: `docs/systems/ghosts-v2-proposal.md`. Controls
+  table (provisional): `docs/systems/controls.md`. Nothing built yet.
 
 ## To do
 
@@ -55,9 +61,26 @@
       animations are super smooth". Claude drove Player2 from the Studio MCP (it can see the test windows, press keys and
       capture screens). Tags land both ways; 0 hand-backs; 0 move warnings. One post-build fix: remote dictionary keys
       arrive as strings (N13). Knobs if ever needed: `Config.SNAPSHOT_DELAY` 0.08, `SNAPSHOT_RATE` 30, `TAG_LUNGE_TIME` 0.1.
-- [ ] **Danzo:** does the tag still feel early on the victim's screen, and does the 0.1 s lunge read as a touch? Say if
-      the lunge should be longer, shorter or off.
-- [ ] **Next:** push the branch (6+ commits ahead); then DESIGN §6.1 ghost rules (heavy handoff), the phone test.
+- [x] Danzo (2026-10-19): "the tag speed is great". Lunge stays at 0.1 s.
+- [x] **Ghost rules decided and built (H15, 2026-10-14):** Danzo picked "recommended". A ghost spooks "it" by touch (-3 s
+      off the fuse; 8 s cooldown each, a shared 6 s ward, never while frozen); the latest spooker holds the mark and comes
+      back where it stands if the fuse runs out, once per player per round. DESIGN §3 rules 37-41; `docs/systems/ghosts.md`.
+      Dummy ghosts seen spooking and coming back in Studio; a player's own spook is NOT yet seen (needs the remotes below).
+- [x] **Two-player ghost test done (2026-10-19), Danzo: "the ghost is good too".** Worry about four players: see
+      "Ghosts v2" under Ideas. Original ask kept for the record:
+      **Danzo: two-player ghost test.** First stop `rojo serve`, start it again, reconnect Studio (two new remotes,
+      → T6): `ReplicatedStorage.Remotes` must list `GhostClaim` and `GhostVerdict`. Then Test → Clients and Servers, 2
+      players (cap 240). With the dummy that is 3 runners, so the first player to burn out becomes the ghost. As the
+      ghost, chase "it" and touch it. **Feel:** does -3s land as a real hit; is 8 s / 6 s the right rhythm or too slow;
+      does being a ghost keep you busy; as "it", can you see the ghost coming (pale blue, brighter when its spook is
+      ready, halo turns blue while you are safe); is the comeback fair and readable ("<name> is back!"). Knobs:
+      `Config.SPOOK_DRAIN`, `SPOOK_COOLDOWN`, `GHOST_WARD`. **Paste from the Server window:** every `[Rotag] ghost:` line
+      (`spook ... received`, `SPOOK ...`, `spook ... dropped: <why>`), every `... is BACK (the mark)` line, and any
+      warning naming `GhostClaim` or `GhostVerdict`. Solo alternative: `Config.STUDIO_DUMMIES = 3` gives a 4-runner round.
+- [ ] **Next (2026-10-19):** commit the H15 ghost work as tested; then build ghosts v2 in the PR order of
+      `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
+      4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
+      (heavy guess 150 s, not in DESIGN).
 - [x] Danzo: two-player run 4 (restart `rojo serve` first). Feel: the other runner should glide ~0.1 s behind
       instead of stuttering, red marker on its sprite, tags still land. Paste from the Server window any `[Rotag] body:`
       and `[Rotag] owner:` lines (hand-back counts confirm the cause) and from each client `[Rotag] others:`. If still
@@ -90,3 +113,70 @@
 ## Ideas
 
 *(Danzo writes here from the UI's ideas pad; Claude reads it every session.)*
+
+### Ghosts v2 (Danzo, 2026-10-19, thinking aloud in chat, "all rough ideas and im still mulling over most of it")
+
+Worry: with four players the ghost loop collapses. Every ghost spooks once, the fuse loses ~6 s in total, and that is
+the whole ghost interaction. The touch-for-the-mark comeback (rules 39-40) is the part that feels thin.
+
+- **Drop the comeback.** Ghosts do not get back into the game. Rules 39-40 go.
+- **Keep the fuse drain, but make it rare** and aimed only at the tagger: a specific "tagger-harming" ability.
+- **Ghosts place things.** One or two abilities that drop real parts into the map, as they please, to hinder OR help the
+  tagger and the runners: traps, walls, slows; or boosts and helpful walls. Both ways.
+- **How often, three candidates:** (a) a timer; (b) once per round; (c) more often as the end phase builds (screen
+  shrinking etc.) to pressure two good survivors; or (d) ghosts must pick up lucky blocks too.
+- **Living players get abilities as well**, but only from lucky blocks / orbs (= DESIGN §6.2, the crate list). Ghosts
+  keep a few specific ones (1-2) aimed at the tagger / runners: the drain as the rare harm, a boost grant as the help.
+- **Maps.** Always planned: 3-4 maps from the start, each with its own feel (more maze-like, more open, lots of places to
+  jump to or move between). Ghost-placed parts are a map thing, so this comes with it.
+
+Touches DESIGN §3 rules 37-41 and §6.2 (and adds a maps question to §6): escalation trigger 1 once Danzo says go.
+
+#### Abilities (Danzo, 2026-10-19, same chat, still rough)
+
+Most of these are "same as in SpeedRunners". Who gets what: **crates, traps and ice: players AND ghosts. Grapple:
+players only. Permanent fixtures: ghosts only.** Living players earn theirs from lucky blocks / orbs.
+
+- **Bear trap.** Whoever steps in it is pinned in place, max 2 s (first said 3, dropped to 2). The trapped player taps the
+  trap on screen 3 times to pry free, which should be very quick: a minor inconvenience. A slow tapper is freed by the
+  timer anyway.
+- **Crate.** A non-permanent part. Run into it and you stumble / roll / skid in the direction you were moving, then
+  carry on. Point: for a second you are slower, so you do not catch the player right in front of you. During the
+  stumble: no direction change, no jump, no dash. An ability started BEFORE the stumble still goes off; you cannot
+  start one until you are back to normal.
+- **Ice / freeze beam.** Shoots out in front, SpeedRunners mechanics.
+- **Grappling hook.** SpeedRunners. Players only.
+- **Boost pads.** SpeedRunners.
+- **Boost grant** (ghost help ability). Danzo: "cant be given to the tagger, actually u decide on the fairness" of
+  whether the tagger may receive it. Claude's lean, accepted by Danzo (2026-10-19): anyone may take it, but it never
+  stacks on the chaser ramp (a boosted tagger reaches the ramp top sooner, never faster than it). H16 checks the numbers.
+- **Dash i-frames.** The dash dodges ABILITIES, never a tag. Elden Ring style: a short active window, so a mistimed dash
+  dodges the first half of an ice beam and still gets hit by the rest.
+- **Ghost fixtures.** Permanent parts that add to the map: a wall or a block. Could literally be Tetris pieces, placed
+  anywhere there is space, hovering allowed. Guard: a piece big enough to block an entrance entirely is too big to fit
+  in a hallway or a one-entrance area. (Stacking: Danzo chose a MAP rule, 2026-10-19, "flexible, whatever u think is best"; H16 picks it.)
+- **Later mode:** a pure knock-out race, like SpeedRunners.
+- **Trap release on keyboard:** key mash or mouse clicks, same count as the 3 touch taps (Danzo, 2026-10-19).
+- **Controls layout (Danzo, 2026-10-19):** Claude decides the optimal keyboard and controller layout, after research on
+  what QWERTY keys and pad buttons these games usually use. Handoff H17.
+
+Danzo said **propose** (2026-10-19): H16 (ghosts v2 + abilities + maps) and H17 (controls) opened in `docs/handoffs.md`.
+
+**Danzo's answers so far (2026-10-19), on the H16 proposal (`docs/systems/ghosts-v2-proposal.md`):**
+- Ruleset **1, "orbs for everyone"**: picked.
+- Dash i-frames (Q5): the dash goes OVER bear traps, never THROUGH crates. So the dodge covers aimed abilities and traps,
+  not crates.
+- Q2 drop the "way back in" lines in §1/§2: **yes**. Q3 grapple: **living only**, a kit move. Q4 trap: **1 s cap** ("I want
+  it to be fast paced"), 3 presses still free you sooner. Q6 Hex: **-3 s**. Q7 orbs: **separate ghost orbs**.
+- Ignition: **in**, drawn by every client from the replicated fuse (everyone sees it). End-phase speed: **end phase
+  only** (the final two or a long round, with the map shrink).
+- H17 controls: Danzo "unsure". Provisional default = the table as proposed (W / ↑ grapple, mouse binds on, pry with 3 taps
+  anywhere), to be judged by hand once built. Remappable anyway.
+
+**New ideas (Danzo, 2026-10-19, thinking aloud, "tell me if im bugging or onto something"):**
+- **Ignition.** As the fuse gets low, "it" is visibly ignited: a cool animation change before the explosion / fade-away
+  when the holder burns out. Later a paid or spin-for slot: death animations, skins, ignitions (feeds DESIGN §6.5).
+- **End-phase speed.** As the timer nears 0, max speed goes up for a high-octane finish. Or only for rounds that run
+  long, together with the map shrink (DESIGN §3 rule 3). "idk". Note: rule 4 already ramps "it" (+15% after 5 s, over
+  15 s, `Config.RAMP_*`); this would be a raise for everyone, not just the holder.
+

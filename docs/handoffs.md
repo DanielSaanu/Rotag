@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-14
+**Created:** 2026-10-09 · **Last updated:** 2026-10-19 (H16, H17 resolved)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -27,9 +27,26 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-(none)
+_None._
 
 ## Resolved
+
+### H17 — Keyboard and controller layout, researched — 2026-10-19 10:19 — RESOLVED
+- **Resolved 2026-10-19 (heavy):** Danzo "unsure", so the researched table is the PROVISIONAL default (WASD: Space jump,
+  Shift dash, W grapple, E use, mouse on; arrows: Z/X/C/V; pad A/X/RT/RB; 4 touch buttons; pry 3 taps anywhere), judged
+  by hand once built, remappable. Build is PR 3. → `docs/systems/controls.md`.
+
+### H16 — Ghosts v2 and the ability list: no comeback, placeable parts, pickups, maps — 2026-10-19 10:19 — RESOLVED
+- **Resolved 2026-10-19 (heavy):** Danzo picked "orbs for everyone" with changes (trap 1 s, dash over traps not crates,
+  hex -3 s, separate ghost orbs, + ignition and end-phase speed); written into DESIGN §1, §2, §3 rules 37-51, §6.2, §6.8;
+  not built: 6-PR build order. → `docs/systems/ghosts-v2-proposal.md` (the spec, §12 build order).
+
+### H15 — Ghost rules: what an eliminated player can do, its cooldowns, and how they earn a respawn — 2026-10-14 23:10 — RESOLVED
+- **Resolved 2026-10-14 (heavy):** Danzo picked "recommended": ghosts spook "it" by touch (-3 s, 8 s cooldown, a shared
+  6 s ward, 1.5x burn cap), the latest spooker holds the mark and comes back where it stands if the fuse runs out, once
+  per player per round. Built (`shared/Ghost`, `server/Ghosts`, `server/Bots`, remotes `GhostClaim`/`GhostVerdict`, HUD,
+  pale ghosts, hollow arrows); tests mutation-checked; dummy ghosts seen in Studio. A player's own spook waits on a
+  `rojo serve` restart (→ T6) and Danzo's two-player test. → DESIGN §3 rules 37-41, §6.1; `docs/systems/ghosts.md`; S12.
 
 ### H14 — The snapshot stream: other runners drawn from a 20-30 Hz unreliable remote, not physics replication — 2026-10-14 20:30 — RESOLVED
 - **Trigger:** 3 (a new remote; what the server trusts and records for the tag) and 1 (replaces H12's "no movement
