@@ -17,12 +17,18 @@ loop (`sprites/`, `scenes/`), one scene per frame, named `<thing>_<state>_<n>`.
   (the rig's alt accent); trap = straight graphite blades, red `#ff3b3b` teeth and plate line; ice = a dead-straight
   cyan `#45e0ff` lance with triangular spikes (bluer and darker than the visor `#7df9ff`). Pass 1 (gold ball, brown
   wood, arcs) is superseded.
+- **Pass 3 (Danzo's five canvas notes, same day):** both orbs are ORBS again and shinier: a graphite sphere with a lime
+  rim light, a lime equator band that turns on the spin, a hard white specular; the ghost orb the same as a violet
+  wireframe with a white specular arc. The hex is the pass 1 diamond (inked inner diamond, rune cross) in magenta.
+  The ice beam is softened: still straight, round ends, low rounded crystals, no spike tip. Crate and trap stand from
+  pass 2. Danzo on the shard spin: "i like the way these animations are done, keep some of that spirit": the turn
+  still reads as one bright line at the half-way frame, the shatter is geometric (quarters + one ring).
 - **Timing keys** (frames are holds, no in-betweens unless said):
 
 | Thing | Frames | Timing |
 |---|---|---|
-| Orb idle | 4, ping-pong (rest, shine climbs, shine on top, squash + glint) | 1.0 s loop; the ghost orb never squashes |
-| Orb taken | 4 (flash, burst into 6 shards, ring + small shards, faint spot) | 0.25 s, ~0.06 s each; spot faint until respawn |
+| Orb idle | 4, loop: the equator band turns 0°, 45°, edge-on (a line, glint ticks), -45°; the light is fixed | 1.0 s; the ghost orb is wire |
+| Orb taken | 4 (white flash in a ring, four quarters out on the diagonals, expanding ring + slivers, faint spot) | 0.25 s, ~0.06 s each; spot faint until respawn |
 | Hex | still; a ring breathes out every 0.8 s only while the ward is down; cracks in two on touch | no idle spin |
 | Trap | armed open (flat, wide), snap (2 frames, 0.12 s), shut (tall, teeth meshed, dust), pried one notch per press | 1 s timeout ends on frame 0, dust, gone |
 | Stuck pose | A yank back / B lurch forward, ping-pong at 8 fps; caught foot is always the FAR leg; release = 2 dash-lean frames | head leads the struggle |
