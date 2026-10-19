@@ -19,3 +19,10 @@ file as a hub with a table mapping every § and rule ID to its new file, keep th
 move by LINE RANGE with a script (never retype). Prove "lose nothing" mechanically: every non-blank line of the old
 file must be in the multiset of hub + new files; then a relative-link check over all tracked `.md`. *(inherited,
 handoff H2.)*
+
+**G4 — Stage from `git status`, never from a path list.** A commit staged with `git add -A docs ideas roblox` left
+`test/` and `INDEX.md` behind, so HEAD failed its own tests while the working tree was green, and the QA reviewer
+found it on a clean `git archive HEAD`. Before any commit: `git status --short` must show only files you MEAN to
+leave out; stage with `git add -A` at the root (the `.gitignore` already keeps `cache/`, `.env` and `exports/*.png`
+out), then re-read the staged list. For a PR with tests, run `npm test` on a clean export once before pushing.
+*(2026-10-19, `claude/friendly-hawking-74891i`, QA round 2 of H18.)*

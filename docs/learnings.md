@@ -32,7 +32,7 @@ format, its world sim) were left behind.
 - [`S — Shared Luau`](learnings/shared-luau.md): **S** — S1, …, S12
 - [`N — Networking and fairness`](learnings/networking.md): **N** — N1, …, N14
 - [`T — Tooling`](learnings/tooling.md): **T** — T1, …, T12
-- [`G — Git and generated files`](learnings/git.md): **G** — G1, …, G3
+- [`G — Git and generated files`](learnings/git.md): **G** — G1, …, G4
 - [`Q — QA loop and review`](learnings/qa.md): **Q** — Q1, …, Q5
 
 Add a new rule to its section file and bump the ID; keep this hub to the intro and the list.

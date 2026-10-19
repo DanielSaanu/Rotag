@@ -35,11 +35,11 @@ local function part(shape: Enum.PartType, size: Vector3, color: Color3): BasePar
 	return p
 end
 
+-- An orb's look is set every frame in Items.draw: a ghost orb reads as a pickup only to a ghost (QA round 2, rule 12).
 local function setUp(i: number, up: boolean)
 	local o = orbs[i]
 	if not o then return end
 	o.up = up
-	o.part.Transparency = if up then 0.1 else 0.85
 end
 
 -- Shape only (→ N3): the server is the only sender, but a malformed table must not break the frame loop.
@@ -77,6 +77,10 @@ end
 -- `showSlot`: the local runner has a slot worth showing (it is a ghost; the living get items in PR 2).
 -- `roundOver`: nothing is held between rounds (QA round 1): icons and the readout clear until the next sync.
 function Items.draw(me: number, showSlot: boolean, roundOver: boolean)
+	-- `showSlot` doubles as "the local runner is a ghost": only then is an up ghost orb drawn at full brightness.
+	for _, o in orbs do
+		o.part.Transparency = if not o.up then 0.85 elseif showSlot then 0.1 else 0.55
+	end
 	local seen = {}
 	for _, model in CollectionService:GetTagged(RUNNER_TAG) do
 		local id = model:GetAttribute("RunnerId")

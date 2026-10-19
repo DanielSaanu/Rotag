@@ -28,9 +28,9 @@ to (`roblox/default.project.json`).
   camera, controls, juice, the test map, the two drawing methods. Before any movement, camera or controls change.
 - [`docs/systems/tag.md`](docs/systems/tag.md): the tag, the fuse, elimination, what the server trusts from a tag claim,
   the Studio dummy runner. Before any tag, fuse, round or remote change.
-- [`docs/systems/ghosts.md`](docs/systems/ghosts.md): ghosts (H15): the spook, cooldowns and the shared ward, the mark,
-  the comeback, what the server trusts from a `GhostClaim`, what each screen shows. The code as built; its rules superseded by H16.
-- [`docs/systems/ghosts-v2-proposal.md`](docs/systems/ghosts-v2-proposal.md): H16, ADOPTED spec (not built): no comeback, orbs and
+- [`docs/systems/ghosts.md`](docs/systems/ghosts.md): ghosts as built (v2 PR 1, H18): no comeback, ghost orbs and the one
+  slot, the hex and the shared ward, what the server trusts (orb touches, `GhostClaim`), `ItemEvent`, what each screen shows.
+- [`docs/systems/ghosts-v2-proposal.md`](docs/systems/ghosts-v2-proposal.md): H16, ADOPTED spec (PR 1 built, H18): no comeback, orbs and
   item pools, the ability list, holds and dash i-frames, fixtures and the keep-clear map rule, 4 map feels, the 6-PR build
   order (§12). Before any ghost, pickup, ability or map work.
 - [`docs/systems/controls.md`](docs/systems/controls.md): H17, PROVISIONAL default: the researched keyboard / pad / touch
