@@ -1,5 +1,5 @@
 -- The server entry point. Resolves the sprite sheet, builds the test map, starts the match (server/Match.lua: "it",
--- the fuse, tag claims) and spawns each player's runner body. Ghosts are not built yet (DESIGN §6.1).
+-- the fuse, tag claims, ghosts and orbs) and spawns each player's runner body.
 local Players = game:GetService("Players")
 -- First, before anything can yield: no stock character for anyone (server/Runners.lua builds the runner body).
 Players.CharacterAutoLoads = false

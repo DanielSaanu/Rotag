@@ -91,3 +91,10 @@ array.** (H14, 2026-10-14, `claude/friendly-hawking-74891i`.) The snapshot relay
 client at 53 batches/s and was dropped whole: `type(id) == "number"` failed because `-2` had become `"-2"`. Studio showed
 it in one probe (`typeof(k)` on the received batch); the symptom was only "has no stream". Shape-check what ARRIVES, not
 what you sent.
+
+**N14 — A touch the server judges on sampled positions sweeps the path between two consecutive trusted samples, never
+the point.** The snapshot stream is 30 Hz, and a dash moves 4 studs per snapshot, about the width of an orb's touch
+window, so a point test can let a runner pass straight through a pickup or zone. Test the box swept from the previous
+sample to the newest (a slab test), skip an untrusted sample as either end, and pin "a dash between two samples through
+it counts" in a test. The tag escapes this only because it pairs many samples over a rewind window. *(2026-10-19,
+handoff H18, `Orbs.touches`.)*

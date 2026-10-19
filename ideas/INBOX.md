@@ -77,6 +77,9 @@
       `Config.SPOOK_DRAIN`, `SPOOK_COOLDOWN`, `GHOST_WARD`. **Paste from the Server window:** every `[Rotag] ghost:` line
       (`spook ... received`, `SPOOK ...`, `spook ... dropped: <why>`), every `... is BACK (the mark)` line, and any
       warning naming `GhostClaim` or `GhostVerdict`. Solo alternative: `Config.STUDIO_DUMMIES = 3` gives a 4-runner round.
+- [ ] **QA round 1 for PR 1 (2026-10-19): 7/10.** Fixed: dummies default 3, slot readout de-duplicated, held items
+      clear between rounds; client half seen in Studio by Claude. Deferred to later PRs: hex rarity (PR 2 fills the ghost
+      pool; interim knob `ORB_RESPAWN` if a test feels like a hex stream), off-screen orb arrows (PR 6), item palette (PR 2).
 - [ ] **Next (2026-10-19):** commit the H15 ghost work as tested; then build ghosts v2 in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`

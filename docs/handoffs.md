@@ -27,7 +27,37 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-_None._
+### H18 — Build ghosts v2 PR 1: no comeback, ghost orbs, the hex — 2026-10-19 14:20 — OPEN
+- **Trigger:** 2 (`shared/Ghost.lua` rewritten, new `shared/Orbs.lua`, `Tag.tick`'s comeback path removed), 3 (new remote
+  `ItemEvent`; orb touches and hex drains judged on the server's own record).
+- **Doc:** `docs/systems/ghosts-v2-proposal.md` §12 item 1 (the PR spec), §3 (hex), §8 (trust); `docs/DESIGN.md` §3 rules
+  37-42 and 49; `docs/systems/ghosts.md` (H15 as built, to be superseded); `docs/systems/README.md` remotes table.
+- **Observed:** Danzo (2026-10-19): "commit then build". H15 committed as tested in df94334. DESIGN now says no comeback,
+  ghost orbs, hex -3 s with the 6 s ward, separate ghost orbs respawning 10 / (1 + 0.5 × ghosts) s, vanilla toggle
+  (rule 49: orbs off, a hex every 20 s).
+- **Evidence:** `git log -1` df94334; `roblox/src/shared/Ghost.lua`, `server/Ghosts.lua`, `server/Bots.lua`,
+  `test/luau/ghost.test.luau` are the H15 code; `server/Match.lua` 369/400 lines (new server logic goes in new modules);
+  `Config.SPOOK_DRAIN` 3, `GHOST_WARD` 6, `SPOOK_COOLDOWN` 8 (goes with the per-ghost cooldown), `GHOST_COMEBACKS` (goes).
+- **Routine session's read (guess):** follow §12 item 1 to the letter. The comeback tests are retired WITH the rule and the
+  PR says so in those words. `GhostClaim`/`GhostVerdict` keep their names and become the hex's claim and verdict. The
+  pool roll takes an injected random source so the Luau tests stay deterministic. The ghost pool is hex-only until PRs 2
+  and 4. The Studio MCP (`Roblox_Studio`) is available on this PC: if `rojo serve` is connected, smoke-test in Studio
+  with `Config.STUDIO_DUMMIES = 3` and read the Output; if not, say so and ask Danzo to restart `rojo serve` (new
+  remote → T6).
+- **Decision needed:** build it. Write the QA goals file `docs/qa/ghosts-v2-core.md` BEFORE starting (the qa-loop skill
+  needs it: goals, out of scope, what Danzo should feel). Run verification steps 1-4 (sourcemap before/after, rojo build,
+  npm test + lint:luau, links). Update `docs/systems/ghosts.md` to describe the code as it now is (or replace it with a
+  short hub pointing at the proposal doc), the remotes table in `docs/systems/README.md`, the three `roblox/src/*/README.md`
+  files, INDEX.md. One worklog line. Do NOT commit; the routine session commits after the QA loop.
+- **Blocked routine work:** the QA loop for this PR, until built.
+- **Built, waiting on QA loop (2026-10-19, heavy):** not committed. Restart `rojo serve` and reconnect (new remote, → T6),
+  then `/qa-loop docs/qa/ghosts-v2-core.md`. Detail: `docs/systems/ghosts.md` §5 (decisions), §8 (verification).
+
+Resolution draft (for the routine session to apply after the QA loop):
+- **Resolved <date>:** built PR 1: no comeback (H15's mark/comeback code and tests retired with rules 39-40), pure
+  `shared/Orbs` (respawn 10/(1+0.5n) recomputed live, one slot, swept touch, injected roll), `shared/Ghost` = the hex
+  (held hex, -3 s, shared 6 s ward), `server/Orbs`, `client/Items`, remote `ItemEvent`; server path seen in Studio
+  (orbs taken, hexes, three burn-outs end the round); <client-side and QA outcome>. → `docs/systems/ghosts.md`; N14.
 
 ## Resolved
 

@@ -1,6 +1,6 @@
 -- The round: who is "it", the fuse clock, confirming tags, eliminations, ghosts (docs/systems/tag.md, ghosts.md).
--- The rules are shared/Tag.lua and shared/Ghost.lua (pure, tested); this file only feeds them positions and clocks and
--- tells the clients. The server is the ONLY side that changes "it", the fuse or a ghost's state (DESIGN §3 rule 6).
+-- The rules are shared/Tag, Ghost and Orbs (pure, tested); this file only feeds them positions and clocks and wires
+-- the server modules. The server is the ONLY side that changes "it", the fuse, an orb or a slot (DESIGN §3 rule 6).
 -- Remotes: docs/systems/README.md.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -12,6 +12,7 @@ local Tag = require(Shared:WaitForChild("Tag"))
 local Ghost = require(Shared:WaitForChild("Ghost"))
 local Bots = require(script.Parent:WaitForChild("Bots"))
 local Ghosts = require(script.Parent:WaitForChild("Ghosts"))
+local Orbs = require(script.Parent:WaitForChild("Orbs"))
 local Runners = require(script.Parent:WaitForChild("Runners"))
 local Arena = require(script.Parent:WaitForChild("Arena"))
 local MoveGuard = require(script.Parent:WaitForChild("MoveGuard"))
@@ -63,6 +64,7 @@ local function rootOf(id: number): BasePart?
 	if r and r.Parent then return r end
 	return nil
 end
+local function present(id: number): boolean return rootOf(id) ~= nil end
 
 local function snapshot(now: number)
 	local r = round
@@ -74,7 +76,7 @@ local function snapshot(now: number)
 	for _, id in order do
 		if rootOf(id) and not (r and table.find(r.order, id)) then table.insert(spectating, id) end
 	end
-	local ghosts, ward, mark = Ghosts.state(r, ghostState, now, function(id) return rootOf(id) ~= nil end)
+	local ghosts, ward = Ghosts.state(r, ghostState, now, present)
 	return {
 		round = roundNo,
 		it = r and r.it,
@@ -86,9 +88,8 @@ local function snapshot(now: number)
 		over = r == nil or r.over,
 		held = r == nil, -- the next round is due but not started (waiting for clients to draw, players.md §5)
 		winner = r and r.winner,
-		ghosts = ghosts, -- H15: { { id, ready, comebacks } } for every present ghost (ghosts.md §4)
-		ward = ward, -- seconds before any ghost may spook again
-		mark = mark, -- the ghost that comes back if the fuse runs out now, or nil
+		ghosts = ghosts, -- H18: { { id } } for every present ghost (ghosts.md §4)
+		ward = ward, -- seconds before any ghost may hex again
 	}
 end
 
@@ -149,6 +150,7 @@ local function startRound(now: number)
 	for id, x in Tag.startPlaces(ids, starter, Arena.SPAWN.X, Config.START_SPREAD) do place(id, x) end
 	round = Tag.newRound(ids, starter, now)
 	ghostState = Ghost.new()
+	Orbs.reset(now) -- every orb down until ORB_FIRST, every slot empty, a sync to every client (H18)
 	table.clear(pending)
 	Ghosts.reset()
 	log(("round %d: %d runner(s), %s is it with %ds"):format(roundNo, #ids, tostring(starter), Config.FUSE_START))
@@ -283,21 +285,20 @@ end
 local function step(dt: number)
 	local now = os.clock()
 	local r = round
-	Bots.move(r, dt, now, history)
+	Bots.move(r, dt, now, history, Orbs.current())
 	sample(now)
 	if r and not r.over then
-		-- Order inside one frame: players' tags, the dummies' tags, then spooks, then the fuse. A tag and a killing
-		-- spook in the same frame: the tag wins (ghosts.md §5).
+		-- Order inside one frame: players' tags, the dummies' tags, then hexes, then orbs, then the fuse. A tag and a
+		-- killing hex in the same frame: the tag wins; a hex taken this frame is usable next frame (ghosts.md §5).
 		judgePending(now)
 		Bots.tags(r, now, history, pass)
 		Ghosts.judge(now)
-		Bots.spooks(r, ghostState, now, history, Ghosts.land)
-		local g = ghostState
-		local out, back = nil, nil
-		if g then out, back = Ghost.tick(r, g, now) else out = Tag.tick(r, now) end
+		Bots.hexes(r, ghostState, Orbs.current(), now, history, Ghosts.land)
+		Orbs.step(r, now, history, present)
+		local out = Tag.tick(r, now) -- no comeback (H16): the burnt-out holder is a ghost for the rest of the round
 		if out then
-			log(("%s's fuse ran out%s%s"):format(tostring(out), if back then (", " .. tostring(back) .. " is BACK (the mark)")
-				else "", if r.over then (", round over, winner " .. tostring(r.winner)) else (", " .. tostring(r.it) .. " is it")))
+			log(("%s's fuse ran out, %s"):format(tostring(out), if r.over then ("round over, winner " .. tostring(r.winner))
+				else (tostring(r.it) .. " is it")))
 			dirty = true
 		end
 		if r.over then nextRoundAt = now + Config.ROUND_GAP end
@@ -311,8 +312,10 @@ end
 function Match.start(tagName: string)
 	stateRemote, verdictRemote, claimRemote = remote("MatchState"), remote("TagVerdict"), remote("TagClaim")
 	readyRemote = remote("Ready")
+	Orbs.start(remote("ItemEvent"), Arena.GHOST_ORBS)
 	Ghosts.start(remote("GhostClaim"), remote("GhostVerdict"), { round = function() return round end,
-		ghosts = function() return ghostState end, history = history, changed = function() dirty = true end })
+		ghosts = function() return ghostState end, orbs = Orbs.current, history = history,
+		changed = function() dirty = true end })
 	if readyRemote then readyRemote.OnServerEvent:Connect(onReady) end
 	Snapshots.start(unreliable("Snapshot"))
 	-- Server -> client events: the server never listens (→ N3).
@@ -336,6 +339,7 @@ function Match.start(tagName: string)
 			for _ = 1, math.max(1, Config.STUDIO_DUMMIES) do join(Bots.add(tagName)) end
 		end
 		sendState(os.clock(), player)
+		Orbs.syncTo(player)
 	end
 	Players.PlayerAdded:Connect(onPlayer)
 	for _, player in Players:GetPlayers() do onPlayer(player) end
@@ -346,7 +350,6 @@ function Match.start(tagName: string)
 		roots[id], history[id], lastClaim[id], pending[id], ready[id] = nil, nil, nil, nil, nil
 		MoveGuard.forget(id)
 		local r = round
-		if ghostState then Ghost.leave(ghostState, id) end
 		if r and not r.over then
 			local now = os.clock()
 			Tag.leave(r, id, now)

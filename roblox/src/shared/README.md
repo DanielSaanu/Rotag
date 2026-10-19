@@ -7,15 +7,16 @@ edit it by hand.
 
 | Module | What | Required by | Lines |
 | --- | --- | --- | --- |
-| `Config` | every tuning number (players, fuse, freeze, the movement and camera values, studs per tile, the stream rate and delay, the ghost knobs) | Server, Client | 112 |
+| `Config` | every tuning number (players, fuse, freeze, the movement and camera values, studs per tile, the stream rate and delay, the ghost and orb knobs) | Server, Client | 114 |
 | `Snapshot` | the snapshot stream: the 13-byte wire format (pack/unpack), the sequence ring, the server's per-sender rate limit, the receiving buffer that draws another runner `SNAPSHOT_DELAY` behind its newest point ([netcode.md](../../../docs/systems/netcode.md) §8) | Server, Client | 184 |
 | `Movement` | the move rules: run, jump, double jump, wall jump, dash, the forgiveness windows, refresh, speed retention, the sprite pick ([movement.md](../../../docs/systems/movement.md)) | Client | 225 |
 | `SideCam` | the side-on camera's follow, lead and distance; `edgeArrow` for the off-screen arrows | Client | 57 |
 | `RemotePose` | another runner's sprite from its replicated position alone: speed, grounded, dash, slide, facing, run clock, juice events; the draw trail (another runner drawn a fixed delay behind, smoothed, H13) ([players.md](../../../docs/systems/players.md) §3) | Client | 145 |
 | `MoveCheck` | the server's speed check on a client-owned runner: a distance budget per axis at Movement's top speeds, untrusted after a violation, the snap-back spot ([trust.md](../../../docs/systems/trust.md)) | Server | 74 |
-| `Tag` | the tag and the fuse: round state (with `hold`, +1 per change of hands), fuse clock, who may claim, lag-fair confirm, pass, elimination (and a ghost's comeback, `back`), rotation, chaser ramp ([tag.md](../../../docs/systems/tag.md)) | Server, Client | 230 |
-| `Ghost` | the ghosts (H15, DESIGN §3 rules 37-41): who is one, `canSpook`, `spook` (drain, cooldown, shared ward, mark), `markOf`, `tick` (the comeback), `leave` ([ghosts.md](../../../docs/systems/ghosts.md)) | Server, Client | 101 |
+| `Tag` | the tag and the fuse: round state (with `hold`, +1 per change of hands), fuse clock, who may claim, lag-fair confirm, pass, elimination (no comeback since H18), rotation, chaser ramp ([tag.md](../../../docs/systems/tag.md)) | Server, Client | 227 |
+| `Ghost` | the ghosts (v2, H18, DESIGN §3 rules 37-40): who is one, `count`, `canHex`, `hex` (drain, shared ward, empties the slot), `wardLeft`; no mark, no comeback ([ghosts.md](../../../docs/systems/ghosts.md)) | Server, Client | 68 |
+| `Orbs` | orbs and the one item slot (H18, rules 39, 42): spots, `isUp`, the respawn formula, `touches` (the path between two samples), `roll` (injected random source), `step`, `use`, `POOLS` (ghost pool = the hex) ([ghosts.md](../../../docs/systems/ghosts.md)) | Server | 120 |
 | `Sprites` | GENERATED sprite table: `Apply`, `New`, `Has`, `ResolveOnServer`, `ApplySheetIds` | Server, Client | generated |
 
 Each module returns its own table (`return <Name>`) and gets a `test/luau/<name>.test.luau`. Planned, from the
-design: `Crates` (the ability table, DESIGN §3 rules 10–13).
+design: `Items` (the pools, holds and i-frames, ghosts-v2-proposal.md §12 PR 2), `Placement` (PR 4).

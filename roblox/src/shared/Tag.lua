@@ -17,8 +17,8 @@ export type Round = {
 	frozenUntil: number,      -- the holder can neither move nor tag before this, and the fuse waits (rule 1)
 	chaseFrom: number,        -- when the current chase began (the ramp clock, rule 4) = the end of the freeze
 	eliminations: number,
-	hold: number,             -- +1 every time the fuse changes hands (pass, elimination, leave): a ghost's mark is
-	                          -- on one hold only (shared/Ghost.lua, DESIGN §3 rule 39)
+	hold: number,             -- +1 every time the fuse changes hands (pass, elimination, leave): key anything tied to
+	                          -- one holder by this, never by the holder's id (→ S12; H15's mark used it)
 	winner: number?,
 	over: boolean,
 }
@@ -160,25 +160,22 @@ end
 
 -- Advance the round. Returns the id eliminated this call, if the fuse ran out. The next holder is the next alive
 -- runner after the eliminated one in join order (rotation, rule 5) with a fresh, shorter fuse; the round ends when
--- one runner is left (or none, in a round that started with one).
--- `back` (DESIGN §3 rule 39, shared/Ghost.tick decides it): a ghost that comes back to life in the same moment. It is
--- never the new holder (the holder is picked before it revives), and the round goes on: the count of the living holds.
-function Tag.tick(r: Round, now: number, back: number?): number?
+-- one runner is left (or none, in a round that started with one). The eliminated runner is a ghost for the rest of
+-- the round: no comeback (DESIGN §3 rule 38, H16; H15's `back` argument is gone with its rule).
+function Tag.tick(r: Round, now: number): number?
 	local it = r.it
 	if r.over or it == nil or Tag.fuseLeft(r, now) > 0 then return nil end
 	r.alive[it] = false
 	r.eliminations += 1
 	r.hold += 1
 	local left = Tag.aliveCount(r)
-	local comeback = back ~= nil and back ~= it and r.alive[back] == false and left >= 1
-	if left <= 1 and not comeback then
+	if left <= 1 then
 		r.over = true
 		r.it = nil
 		r.winner = if left == 1 then Tag.nextStarter(r.order, r.alive, it) else nil
 		return it
 	end
 	r.it = Tag.nextStarter(r.order, r.alive, it)
-	if comeback and back ~= nil then r.alive[back] = true end
 	r.fuse = Tag.freshFuse(r.eliminations)
 	r.since = now
 	r.frozenUntil = now + Config.TAG_FREEZE

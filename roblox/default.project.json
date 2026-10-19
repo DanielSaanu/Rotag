@@ -32,6 +32,9 @@
         },
         "GhostVerdict": {
           "$className": "RemoteEvent"
+        },
+        "ItemEvent": {
+          "$className": "RemoteEvent"
         }
       }
     },

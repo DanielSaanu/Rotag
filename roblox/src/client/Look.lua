@@ -164,7 +164,7 @@ function Look:place(x: number, y: number)
 	if self.holder then self.holder.CFrame = CFrame.new(x, y, Config.RUNNER_DEPTH / 2 + 0.05) end
 end
 
--- H15 (DESIGN §3 rules 37, 41): a ghost is the same sprite, pale and see-through; brighter when its spook is ready,
+-- H15 (DESIGN §3 rules 37, 41): a ghost is the same sprite, pale and see-through; brighter when it holds a hex (H18),
 -- so the holder can see which ghosts are armed. `mode` nil = alive (normal), "ready", or "cooling".
 local GHOST_TINT = Color3.fromRGB(170, 215, 255)
 local GHOST_SEE = { ready = 0.3, cooling = 0.65 } -- ImageTransparency

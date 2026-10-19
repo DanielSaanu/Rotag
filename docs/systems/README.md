@@ -30,9 +30,10 @@ code. Add a row here in the same commit as the declaration. Never rename one: bo
 | `TagClaim` | client → server, at most every 0.15 s while the sender is it | `number`: the target's runner id (a UserId, or -1000 for the Studio dummy). Nothing else is read | `client/Tagging.lua` fires; `server/Match.lua` checks rate, who may claim, and its OWN position history ([tag.md](tag.md) §2) |
 | `TagVerdict` | server → all, on each confirmed tag | `{ from: number, to: number, fuse: number, gained: number }`: fuse = the new holder's seconds, min(remaining + `FUSE_PASS_BONUS`, the life's fresh fuse); gained = what the pass really added (H7) | `server/Match.lua` fires; `client/Tagging.lua` (hit-stop) and `client/Hud.lua` (the "+N" pop, from `gained`) |
 | `Ready` | client → server, once per client session, after its runner's first draw | none: only the sender is read; a repeat changes nothing (H11) | `client/Client.client.lua` fires; `server/Match.lua` holds a due round until every present player is ready or `Config.READY_TIMEOUT` (5 s) has passed ([players.md](players.md) §5) |
-| `MatchState` | server → all on every change and at least once a second; → one client on join | `{ round, it: number?, fuse, frozenFor, chaseFor, alive: { number }, spectating: { number }, over: boolean, held: boolean, winner: number?, ghosts: { { id, ready, comebacks } }, ward: number, mark: number? }` (`spectating`, H8: present but joined after the round began; `held`, 2026-10-14: no round object yet, the HUD says "waiting for players"; `ghosts`/`ward`/`mark`, H15: [ghosts.md](ghosts.md) §4): durations in seconds, no timestamps | `server/Match.lua` fires; `client/Tagging.lua` holds it, `client/Hud.lua` draws it |
-| `GhostClaim` (H15) | client → server, at most every 0.15 s while the sender is a ghost with its spook ready | `number`: the holder's runner id. Nothing else is read; rate gap `TAG_CLAIM_GAP` per player, like `TagClaim` | `client/Tagging.lua` fires on an overlap with the holder's DRAWN spot; `server/Ghosts.lua` checks rate, `Ghost.canSpook` (ghost of this round, target is it, not frozen, ward and cooldown over, on the server's clock) and its OWN position history ([ghosts.md](ghosts.md) §3) |
-| `GhostVerdict` (H15) | server → all, on each confirmed spook | `{ from: number, to: number, drained: number, fuse: number, mark: number? }`: from = the ghost, to = the holder, drained = what really came off (→ N7), mark = who comes back if the fuse runs out now | `server/Ghosts.lua` fires (never listens); `client/Tagging.lua` → `client/Hud.lua` (the "-3s" pop) |
+| `MatchState` | server → all on every change and at least once a second; → one client on join | `{ round, it: number?, fuse, frozenFor, chaseFor, alive: { number }, spectating: { number }, over: boolean, held: boolean, winner: number?, ghosts: { { id } }, ward: number }` (`spectating`, H8: present but joined after the round began; `held`, 2026-10-14: no round object yet, the HUD says "waiting for players"; `ghosts`/`ward`, H15, trimmed by H18 to `{ { id } }` and the ward, `mark` gone: [ghosts.md](ghosts.md) §4): durations in seconds, no timestamps | `server/Match.lua` fires; `client/Tagging.lua` holds it, `client/Hud.lua` draws it |
+| `GhostClaim` (H15; the hex's claim since H18) | client → server, at most every 0.15 s while the sender is a ghost holding a hex | `number`: the holder's runner id. Nothing else is read; rate gap `TAG_CLAIM_GAP` per player, like `TagClaim` | `client/Tagging.lua` (`Tagging.hex`) fires on an overlap with the holder's DRAWN spot; `server/Ghosts.lua` checks rate, `Ghost.canHex` (ghost of this round, holds a hex in the SERVER's slots, target is it, not frozen, ward over, on the server's clock) and its OWN position history ([ghosts.md](ghosts.md) §3) |
+| `GhostVerdict` (H15; the hex's verdict since H18) | server → all, on each confirmed hex | `{ from: number, to: number, drained: number, fuse: number }`: from = the ghost, to = the holder, drained = what really came off (→ N7) (`mark` gone with the comeback, H18) | `server/Ghosts.lua` fires (never listens); `client/Tagging.lua` → `client/Hud.lua` (the "-3s HEX" pop) |
+| `ItemEvent` (H18) | server → all on each orb or slot change; → one client on join; → all at round start | one of: `{ kind = "sync", orbs: { { x, y, ghost: boolean, up: boolean } }, held: { { id, item: string } } }`; `{ kind = "orb", spot: number, up: boolean, by: number?, item: string? }` (an orb back, or `by` took it and now holds `item`); `{ kind = "slot", id: number, item: string? }` (a slot changed outside an orb; nil = empty). Arrays only (→ N13) | `server/Orbs.lua` fires (never listens; no client claims an orb, the server judges touches on its own record); `client/Items.lua` draws orbs, held items and the slot; `Items.held` feeds the hex claim, the ghost look and the HUD line ([ghosts.md](ghosts.md) §3, §4) |
 | `Snapshot` (`UnreliableRemoteEvent`, H14) | client → server 30/s (`Config.SNAPSHOT_RATE`); server → all once per Heartbeat | up: one 13-byte `buffer` (`shared/Snapshot.pack`: seq, x, y, vx, vy, sprite, facing/dash flags, juice events); down: `{ [runner id] = { t: server stamp, b: that buffer } }` | `client/Client.client.lua` fires; `server/Snapshots.lua` limits, stamps, relays, feeds `Match.sample`; `client/Others.lua` draws from it ([netcode.md](netcode.md) §8) |
 
 **`SheetIds` (H4, 2026-10-10).** Uploads are Decals; the server resolves the Image id at boot and this carries it to
@@ -61,9 +62,14 @@ rule above. The first client → server event sets these for every remote a clie
   A refused claim gets no reply; a Studio-only log line says why.
 - Full reasoning, the rewind and its cap, and the limit of trusting client-owned bodies: [tag.md](tag.md) §2.
 
-**`GhostClaim`, `GhostVerdict` (H15, 2026-10-14).** The same rules as `TagClaim` and `TagVerdict`, word for word: one
-number up, the sender is the `Player`, rate-gapped, judged on the server's clock and its own position history; the
-verdict carries what really happened. The full trust statement: [ghosts.md](ghosts.md) §3.
+**`GhostClaim`, `GhostVerdict` (H15, 2026-10-14; the hex since H18).** The same rules as `TagClaim` and `TagVerdict`,
+word for word: one number up, the sender is the `Player`, rate-gapped, judged on the server's clock, its own slots and
+its own position history; the verdict carries what really happened. The full trust statement: [ghosts.md](ghosts.md) §3.
+
+**`ItemEvent` (H18, 2026-10-19).** Server → clients only, every `SheetIds` rule above (no-op listener, the client never
+blocks and checks only the shape). There is deliberately no client → server orb remote: a pickup is the server's
+reading of its own position record (proposal §8). A full `sync` on join and at each round start, then one event per
+change; RemoteEvents are reliable and ordered, so no resend timer.
 
 **`Snapshot` (H14, 2026-10-14).** The one `UnreliableRemoteEvent`: no resends, no ordering, so a lost packet is simply
 skipped and a late one dropped (the sequence number). Client → server it follows every `TagClaim` rule: the sender is
@@ -89,10 +95,10 @@ One file each. Read only the one your task touches.
 | Tag, the fuse, elimination | [tag.md](tag.md) | `shared/Tag`, `server/Match`, `server/Dummy`, `server/Bots`, `client/Tagging`, `client/Hud` |
 | Movement trust: the server's speed check, snap-back, untrusted samples (H12) | [trust.md](trust.md) | `shared/MoveCheck`, `server/MoveGuard`, `Tag.touchedBetween` |
 | Players: other runners drawn, pass-through collision, off-screen arrows, round-ready (H11) | [players.md](players.md) | `shared/RemotePose`, `SideCam.edgeArrow`, `Tag.readyToStart`, `client/Others`, `client/Arrows`, `server/Runners` |
-| Ghosts v2, orbs, abilities, placement, maps: the adopted spec and build order (H16, DESIGN §3 rules 37-51; not built) | [ghosts-v2-proposal.md](ghosts-v2-proposal.md) | — |
+| Ghosts v2, orbs, abilities, placement, maps: the adopted spec and build order (H16, DESIGN §3 rules 37-51; PR 1 built, H18) | [ghosts-v2-proposal.md](ghosts-v2-proposal.md) | — |
 | Controls layout per verb, provisional (H17) | [controls.md](controls.md) | `client/Controls` |
-| Ghosts as built: spook, ward, the mark, the comeback (H15; superseded in DESIGN by H16) | [ghosts.md](ghosts.md) | `shared/Ghost`, `server/Ghosts`, `server/Bots`, `client/Tagging`, `client/Look`, `client/Hud`, `client/Arrows` |
-| Crates and abilities | *(not built; DESIGN §6.2 is open)* | |
+| Ghosts as built (v2 PR 1, H18): no comeback, ghost orbs, the hex, the shared ward | [ghosts.md](ghosts.md) | `shared/Ghost`, `shared/Orbs`, `server/Ghosts`, `server/Orbs`, `server/Bots`, `client/Items`, `client/Tagging`, `client/Look`, `client/Hud`, `client/Arrows` |
+| Items and abilities beyond the hex | *(PRs 2-4 of [ghosts-v2-proposal.md](ghosts-v2-proposal.md) §12)* | |
 | Maps | the first-playable test map only: [movement.md](movement.md) §7 | `server/Arena` |
 | HUD and mobile controls | the two touch buttons: [movement.md](movement.md) §5; the fuse HUD: [tag.md](tag.md) §6 | `client/Controls`, `client/Hud` |
 

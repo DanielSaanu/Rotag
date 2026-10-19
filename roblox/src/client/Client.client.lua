@@ -18,6 +18,7 @@ local Tagging = require(script.Parent:WaitForChild("Tagging"))
 local Hud = require(script.Parent:WaitForChild("Hud"))
 local Others = require(script.Parent:WaitForChild("Others"))
 local Arrows = require(script.Parent:WaitForChild("Arrows"))
+local Items = require(script.Parent:WaitForChild("Items"))
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -104,7 +105,7 @@ RunService.PreSimulation:Connect(function(dt: number)
 	end
 	c.body:apply(s.x, s.y, s.vx, s.vy)
 	Tagging.claim(s.x, s.y)
-	Tagging.spook(s.x, s.y) -- H15: as a ghost, a touch on the holder (docs/systems/ghosts.md)
+	if Items.held(player.UserId) == "hex" then Tagging.hex(s.x, s.y) end -- H18: a ghost's hex (docs/systems/ghosts.md)
 end)
 
 -- The snapshot stream (H14, docs/systems/netcode.md §8): after physics, Config.SNAPSHOT_RATE times a second, our
@@ -154,10 +155,10 @@ local function sendReady()
 	end)
 end
 
--- H15: how a runner is drawn: nil alive, or a ghost "ready" to spook / "cooling" (DESIGN §3 rules 37, 41).
+-- How a runner is drawn: nil alive, or a ghost "ready" (holding a hex, H18) / "cooling" (empty-handed) (rules 37, 41).
 local function ghostMode(id: number): string?
 	if not Tagging.ghost(id) then return nil end
-	return if Tagging.readyIn(id) > 0 then "cooling" else "ready"
+	return if Items.held(id) == "hex" then "ready" else "cooling"
 end
 
 -- Before drawing: camera, then our sprite, then everyone else's sprite and the off-screen arrows (H11).
@@ -183,6 +184,8 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		if not readySent then sendReady() end
 	end
 	Others.draw(dt, ghostMode)
+	local st = Tagging.state()
+	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true) -- H18: held items, slot
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
 	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	Arrows.update(Tagging.me(), Tagging.state())
@@ -234,13 +237,14 @@ Controls.start(player)
 Hud.start(player)
 Arrows.start(player, Hud.nameOf)
 Others.start(player)
+Items.start(player)
 -- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
 -- where Others draws each runner (the snapshot stream), as the server judges it.
 Tagging.start(player, function() end, function(v)
 	Hud.pass(v, player.UserId)
 	Others.lunge(v.from, v.to)
 end, Others.positionOf, function(v)
-	Hud.spook(v, player.UserId) -- H15: "-3s  <ghost>" where the "+2s" pops
+	Hud.spook(v, player.UserId) -- H18: "-3s HEX  <ghost>" where the "+2s" pops
 end)
 player.CharacterAdded:Connect(setup)
 player.CharacterRemoving:Connect(function(character)

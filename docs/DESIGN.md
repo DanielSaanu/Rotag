@@ -149,7 +149,7 @@ Moves should hand speed off to each other:
 *Danzo picked "orbs for everyone" and answered every question: no comeback; grapple for the living only; trap 1 s
 ("fast paced"), rule 11 unchanged; the dash goes over traps, never through crates; hex -3 s; separate ghost orbs; plus
 ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order:
-[ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md). H15's spook-and-mark rules: [ghosts.md](systems/ghosts.md) (superseded).*
+[ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md). Built so far (PR 1, H18: no comeback, ghost orbs, the hex): [ghosts.md](systems/ghosts.md).*
 
 37. **A ghost is a pale, see-through runner:** run, jump, double and wall jump, dash; never the grapple. It passes
     through runners and items, collides with the map and fixtures, cannot tag or be tagged.
@@ -217,7 +217,7 @@ No 2D, side-on parkour tag game has made it big on Roblox. The few 2D projects o
 
 1. ~~**Ghost rules.**~~ **Resolved 2026-10-14 (H15), superseded 2026-10-19 (H16, rules 37-51):** H15's rules 37-41 were: ghosts spook "it" by touch (-3 s, 8 s
    cooldown, a shared 6 s ward); the latest spooker holds the mark and swaps back in if the fuse runs out, once per
-   player per round. Detail: [ghosts.md](systems/ghosts.md). (Kept as item 1 so "§6.2" and later citations still
+   player per round. Detail: `docs/systems/ghosts.md` at commit `df94334` (the file now describes v2). (Kept as item 1 so "§6.2" and later citations still
    resolve; the open list now starts at 3.)
 2. ~~**Crate ability list.**~~ **Resolved 2026-10-19 (H16):** rules 39-49: crate, bear trap, ice beam (living and
    ghosts), hex, boost grant, boost pad, fixture (ghosts); the grapple stays a kit move. Old drafts: Sketch Wall became

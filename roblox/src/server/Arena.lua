@@ -26,6 +26,16 @@ local BLOCKS = {
 
 Arena.SPAWN = Vector3.new(0, Config.RUNNER_HEIGHT / 2 + 0.05, 0)
 
+-- H18 (DESIGN §3 rule 42): three ghost-orb spots, each orb's centre ORB_SIZE / 2 + 1.5 above a floor: on the left floor,
+-- on PlatformMid (a jump from PlatformLow), and on the floor past the wall-jump walls. The Studio dummies stay on the
+-- floor, so they only ever reach the two floor ones (server/Bots).
+local ORB_UP = Config.ORB_SIZE / 2 + 1.5
+Arena.GHOST_ORBS = {
+	{ x = -10 * T, y = ORB_UP, kind = "ghost" },
+	{ x = 10.5 * T, y = 5 * T + ORB_UP, kind = "ghost" },
+	{ x = 26 * T, y = ORB_UP, kind = "ghost" },
+}
+
 -- The stock Studio template puts a Baseplate and a SpawnLocation at the origin. Seen side-on, the baseplate's top is
 -- a grey plane running toward the camera, and the spawn pad sits in the runner's plane. Remove both for this Play
 -- only (the place file is not changed) and say so in Output.

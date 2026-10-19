@@ -1,14 +1,15 @@
 -- The tag HUD (DESIGN §3 rule 2, "make the fuse readable"; docs/systems/tag.md §6): the fuse readout at the top
 -- centre (rule 23 keeps the lower middle clear), a "+N" pop at every pass, a big red glowing triangle over the
 -- holder, one status line (out, round over), and a big countdown to GO while the holder waits (start or pass freeze,
--- H6). H15 (docs/systems/ghosts.md §6): a ghost's own status line, "-N  <ghost>" on every spook, who holds the mark,
--- "<name> is back!" on a comeback, and the IT marker's halo turns pale blue while the shared ward holds.
+-- H6). Ghosts (H18, docs/systems/ghosts.md §6): a ghost's own status line (grab a ghost orb / hex the holder),
+-- "-N HEX  <ghost>" on every hex, and the IT marker's halo turns pale blue while the shared ward holds.
 -- Placeholder UI, not art: the growing, beeping bomb comes with the art pass.
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Others = require(script.Parent:WaitForChild("Others")) -- the IT marker sits on the DRAWN runner (H13)
+local Items = require(script.Parent:WaitForChild("Items")) -- what the local ghost holds (H18)
 
 local Hud = {}
 
@@ -21,13 +22,10 @@ local MARKER_W, MARKER_H = 3, 2.6 -- studs: the triangle is nearly the runner's 
 local MARKER_UP = Config.RUNNER_HEIGHT / 2 + 0.6 + MARKER_H / 2 -- its centre above the holder's centre
 local MARKER_Z = Config.RUNNER_DEPTH / 2 + 0.4 -- in front of the runner's sprite plane, toward the camera
 local HIDDEN = CFrame.new(0, -1e4, 0)
-local gui, fuseLabel, statusLabel, popLabel, countLabel, markLabel = nil, nil, nil, nil, nil, nil
+local gui, fuseLabel, statusLabel, popLabel, countLabel = nil, nil, nil, nil, nil
 local halves: { BasePart } = {} -- the solid triangle's two wedges, then the halo's two
 local popAt, goAt, wasWaiting = -math.huge, -math.huge, false
-local BACK_TIME = 1.6 -- seconds "<name> is back!" stays up
 local GHOST_BLUE, POP_GOLD = Color3.fromRGB(170, 215, 255), Color3.fromRGB(255, 210, 90)
-local backAt, backText = -math.huge, ""
-local seen: { round: number?, alive: { [number]: boolean } } = { round = nil, alive = {} }
 
 local function label(parent: Instance, y: number, h: number, size: number): TextLabel
 	local l = Instance.new("TextLabel")
@@ -124,8 +122,6 @@ function Hud.start(player: Player)
 	popLabel = label(gui, 48, 32, 28)
 	popLabel.TextColor3 = Color3.fromRGB(255, 210, 90)
 	statusLabel = label(gui, 82, 24, 18)
-	markLabel = label(gui, 106, 22, 16)
-	markLabel.TextColor3 = GHOST_BLUE
 	-- The holder's wait, counted down big in the middle of the screen, then "GO!" (H6: a small "frozen 3.0" line
 	-- read as being stuck).
 	countLabel = label(gui, 0, 120, 72)
@@ -153,40 +149,22 @@ function Hud.pass(v: any, me: number)
 	popAt = os.clock()
 end
 
--- H15: a spook landed (GhostVerdict): "-3s  <ghost>" pops on every screen, in ghost blue. The number is what really
+-- A hex landed (GhostVerdict, H18): "-3s HEX  <ghost>" pops on every screen, in ghost blue. The number is what really
 -- came off (`drained`, → N7), never Config.
 function Hud.spook(v: any, me: number)
 	if not popLabel then return end
 	local who = if v.from == me then "you" else Hud.nameOf(v.from)
-	popLabel.Text = ("-%gs  %s%s"):format(math.floor(v.drained * 10 + 0.5) / 10, who, if v.to == me then " spooked you" else "")
+	popLabel.Text = ("-%gs HEX  %s%s"):format(math.floor(v.drained * 10 + 0.5) / 10, who, if v.to == me then " hexed you" else "")
 	popLabel.TextColor3 = GHOST_BLUE
 	popAt = os.clock()
 end
 
--- H15: a ghost coming back shows as a runner newly alive in the same round (no event needed: MatchState carries it).
-local function noticeComebacks(state: any, me: number, now: number)
-	local alive = {}
-	for _, id in state.alive do alive[id] = true end
-	if seen.round == state.round then
-		for id in alive do
-			if not seen.alive[id] then
-				backText = if id == me then "YOU'RE BACK!" else (Hud.nameOf(id) .. " is back!")
-				backAt = now
-			end
-		end
-	end
-	seen.round, seen.alive = state.round, alive
-end
-
--- A ghost's own line (rule 38): what to do, whether the spook is ready, and the comeback.
-local function ghostLine(state: any, e: any, me: number): string
-	local since = os.clock() - (state.at or os.clock())
-	local ready, ward = math.max(0, e.ready - since), math.max(0, (state.ward or 0) - since)
-	local now = if ready > 0 then ("ready in %.1f"):format(ready) elseif ward > 0 then ("ward %.1f"):format(ward)
-		else "READY"
-	local back = if state.mark == me then "you hold the mark" elseif e.comebacks > 0 then "comeback left"
-		else "no comeback left"
-	return ("GHOST: touch %s for -%gs  |  %s  |  %s"):format(Hud.nameOf(state.it), Config.SPOOK_DRAIN, now, back)
+-- A ghost's own line (rules 38-40): out for the round; grab a ghost orb, then a held hex drains on touch.
+local function ghostLine(state: any, me: number): string
+	if Items.held(me) ~= "hex" then return "GHOST: out this round  |  grab a ghost orb" end
+	local ward = math.max(0, (state.ward or 0) - (os.clock() - (state.at or os.clock())))
+	return ("GHOST: HEX held, touch %s for -%gs  |  %s"):format(Hud.nameOf(state.it), Config.SPOOK_DRAIN,
+		if ward > 0 then ("ward %.1f"):format(ward) else "READY")
 end
 
 -- Every frame, from the client's view of the server's state (client/Tagging.lua).
@@ -212,16 +190,10 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		countLabel.Text = ""
 	end
 	if now - popAt > POP_TIME then popLabel.TextColor3 = POP_GOLD end
-	markLabel.Text = ""
 	if not state then
 		fuseLabel.Text, statusLabel.Text = "", "waiting for the round"
 		placeMarker(nil, 0)
 		return
-	end
-	noticeComebacks(state, me, now)
-	if now - backAt < BACK_TIME and not (waiting and state.it == me) then -- over "RUN!", not over your own count
-		countLabel.Text = backText
-		countLabel.TextColor3 = GHOST_BLUE
 	end
 	local inRound = table.find(state.alive, me) ~= nil
 	local myGhost = nil
@@ -244,17 +216,13 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	elseif frozenLeft > 0 and inRound then
 		statusLabel.Text = ("%s is it: run!"):format(Hud.nameOf(state.it))
 	elseif myGhost then
-		statusLabel.Text = ghostLine(state, myGhost, me)
+		statusLabel.Text = ghostLine(state, me)
 	elseif not inRound and type(state.spectating) == "table" and table.find(state.spectating, me) then
 		statusLabel.Text = "next round soon" -- joined after this round began (H8): waiting, not eliminated
 	elseif not inRound then
 		statusLabel.Text = "out (next round soon)"
 	else
 		statusLabel.Text = ""
-	end
-	if state.mark then -- rule 39: everyone sees who comes back if the fuse runs out now
-		markLabel.Text = if state.mark == me then "you hold the mark: if the fuse runs out, you're back"
-			else ("marked by %s: back if the fuse runs out"):format(Hud.nameOf(state.mark))
 	end
 	local warded = (state.ward or 0) - (now - (state.at or now)) > 0 and #state.ghosts > 0
 	local holder = if state.it then rootOf(state.it) else nil

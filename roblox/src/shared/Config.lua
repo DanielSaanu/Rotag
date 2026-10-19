@@ -25,13 +25,16 @@ Config.RAMP_TIME = 15             -- seconds from no boost to the full boost
 Config.RAMP_MAX = 0.15            -- the full boost: +15% run speed; resets on every tag
 Config.HIT_STOP = 0.08            -- rule 21: seconds both runners hold still when a tag lands (client only)
 Config.STUDIO_DUMMY = true        -- in Studio only, a server-driven dummy runner joins the round (tag.md §4)
-Config.STUDIO_DUMMIES = 1         -- how many (ids -1000, -1001, ...); 3 = a solo 4-runner round where dummy ghosts spook
--- Ghosts (DESIGN §3 rules 37-41, docs/systems/ghosts.md; Danzo's trial numbers 2026-10-14, H15).
-Config.SPOOK_DRAIN = 3            -- seconds a ghost's touch takes off the holder's fuse
-Config.SPOOK_COOLDOWN = 8         -- seconds one ghost waits between spooks (a new ghost starts on a full wait)
-Config.GHOST_WARD = 6             -- after ANY spook no ghost may spook for this long: the fuse burns at most
-                                  -- 1 + SPOOK_DRAIN / GHOST_WARD = 1.5x however many ghosts there are
-Config.GHOST_COMEBACKS = 1        -- comebacks per player per round; a spent ghost still spooks but takes no mark
+Config.STUDIO_DUMMIES = 3         -- how many (ids -1000, -1001, ...); 3 = a solo 4-runner round where dummy ghosts hex
+                                  -- (3 while ghosts are under test, QA round 1; 1 = the old solo chase)
+-- Ghosts v2 (DESIGN §3 rules 37-42, docs/systems/ghosts.md; Danzo's trial numbers 2026-10-19, H16/H18). No comeback.
+Config.SPOOK_DRAIN = 3            -- seconds a held hex takes off the holder's fuse on a ghost's touch (rule 40)
+Config.GHOST_WARD = 6             -- after ANY hex no ghost may hex for this long: the fuse burns at most
+                                  -- 1 + SPOOK_DRAIN / GHOST_WARD = 1.5x however many ghosts and hexes there are
+Config.ORB_FIRST = 5              -- seconds into a round before any orb is up (rule 42)
+Config.ORB_RESPAWN = 10           -- seconds a taken orb stays gone; a ghost orb: this / (1 + GHOST_ORB_RAMP x ghosts)
+Config.GHOST_ORB_RAMP = 0.5
+Config.ORB_SIZE = 2               -- studs across an orb: a runner box touching this square takes it
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
