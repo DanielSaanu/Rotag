@@ -97,7 +97,7 @@ at every round start keep a client exact without a once-a-second resend.
   and the Luau lint knows it (`Random` is a Roblox global it flags).
 - **The held item floats at 5 studs over the runner's centre**, above the IT marker's halo, so a living holder's item
   (PR 2) never hides the triangle. A hex is a magenta diamond; an orb a violet ball (rule 12: distinct shapes).
-- **Dummies reach only floor orbs** (they are floor-bound boxes); the platform orb is for players.
+- **Dummies reach only floor orbs** (they are floor-bound boxes); the platform orb is for players. So solo hex pacing UNDERSTATES a real 4-player match (QA round 3).
 
 ## 6. What each screen shows (rule 41)
 

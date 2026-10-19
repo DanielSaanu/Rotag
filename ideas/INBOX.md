@@ -77,12 +77,16 @@
       `Config.SPOOK_DRAIN`, `SPOOK_COOLDOWN`, `GHOST_WARD`. **Paste from the Server window:** every `[Rotag] ghost:` line
       (`spook ... received`, `SPOOK ...`, `spook ... dropped: <why>`), every `... is BACK (the mark)` line, and any
       warning naming `GhostClaim` or `GhostVerdict`. Solo alternative: `Config.STUDIO_DUMMIES = 3` gives a 4-runner round.
-- [ ] **QA round 1 for PR 1 (2026-10-19): 7/10.** Fixed: dummies default 3, slot readout de-duplicated, held items
-      clear between rounds; client half seen in Studio by Claude. Deferred to later PRs: hex rarity (PR 2 fills the ghost
-      pool; interim knob `ORB_RESPAWN` if a test feels like a hex stream), off-screen orb arrows (PR 6), item palette (PR 2).
-      Round 2 (7/10): tests had been left out of the round 1 commit (fixed, G4); ghost orbs now dim for the living. Reviewer
-      saw one dummy ghost alone hold the 1.5x burn for 18 s on the test arena: the hex stream is real until PR 2.
-- [ ] **Next (2026-10-19):** commit the H15 ghost work as tested; then build ghosts v2 in the PR order of
+- [x] **QA loop for PR 1 done (2026-10-19): 7 → 7 → 8/10,** target met in round 3. Summary and Danzo's Play checklist:
+      `docs/qa/ghosts-v2-core-summary.md`. Fixed on the way: dummies default 3, slot readout, held items clear between
+      rounds, the tests left out of a commit (G4), ghost orbs dim for the living.
+- [ ] **Danzo's call, raised in all three rounds: the hex is a stream, not rare.** One ghost lands a hex every 6 s (the
+      1.5x cap) because the ghost pool is hex-only until PR 2. Options: (a) accept it for this PR, PR 2 dilutes the pool
+      (Claude's lean); (b) an interim hex chance on the ghost roll, a Config weight PR 2 removes; (c) slower ghost orbs
+      until PR 2 (weakest). Say a, b or c.
+- [ ] **Danzo: Play the checklist** in the summary (keyboard, then the phone preset, then a two-player hex). The
+      reviewer could not drive a human's hex; Claude saw dummies do it.
+- [ ] **Next (2026-10-19):** PR 1 done and pushed. Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
       (heavy guess 150 s, not in DESIGN).
