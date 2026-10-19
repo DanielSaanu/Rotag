@@ -64,6 +64,11 @@ function Items.held(id: number, now: number): boolean
 	return Rules.holdOf(state, id, now) ~= nil
 end
 
+-- Rule 44 (H20): may `id` pass the fuse now? Not while the ice beam has it frozen (Rules.canTag, the server's record).
+function Items.canTag(id: number, now: number): (boolean, string?)
+	return Rules.canTag(state, id, now)
+end
+
 -- A Use, judged on the server's own state: in the round, holding a usable item, not held or frozen (rule 44), at the
 -- server's newest TRUSTED sample of the user (a suspect position places nothing) and the facing its stream reports.
 local function use(id: number, now: number): (boolean, string?)

@@ -164,7 +164,8 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
     10 s / (1 + 0.5 x ghosts). Touch one with an empty slot and the server rolls your pool. One slot; Use fires or places it.
 43. **The living pools:** runners roll escape items (crate, trap, ice beam); the holder rolls the ice beam first (rule 10).
 44. **Holds** (crate stumble 0.7 s at half speed, no steer, jump, dash or item; ice freeze 1 s, sliding; bear trap
-    1 s or 3 presses; the tag freeze) never stop a tag, never chain (0.5 s immunity after one) and block starting an
+    1 s or 3 presses; the tag freeze) never stop a tag, except that an ice-frozen holder cannot pass the fuse (H20);
+    a frozen runner can still be tagged. Holds never chain (0.5 s immunity after one) and block starting an
     item; an item started before a hold goes off. Rule 11 stands as written.
 45. **Dash i-frames:** the first 0.2 s of a dash dodges aimed abilities (ice beam, hex) and carries you over a bear
     trap; never through a crate (jump it), never a tag.

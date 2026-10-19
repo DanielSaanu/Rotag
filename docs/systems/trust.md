@@ -256,6 +256,8 @@ would raise to widen its own allowance; unknown = the dash speed, the lenient si
   (a slide from `v` bleeding linearly to 0 averages `v / 2`; 24.5 from a run). Up and down keep their H19 rates
   (trap 0 / 0; stumble and freeze the jump speed and the fall cap) and their caps.
 - A pry ends it early (`MoveCheck.release`).
+- **H20:** an iced holder's TagClaims are refused on the server's hold record (`Items.canTag`), so ignoring the freeze
+  on its own screen buys a cheat no tag, only the speed check above.
 
 **Measured** (`move_check.test.luau`, all from a run at 45): an honest client that obeys a trap, a freeze or a stumble
 0.3 s late is never flagged, nor an honest freeze slide from 140 heard at once. Ignoring a trap is caught **0.34 s**

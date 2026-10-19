@@ -214,4 +214,31 @@ do -- the swept touch is the slab test (→ N14): a fast path through a thin box
 	assert(Items.swept(0, 0, 1, 1, 1, 1) and not Items.swept(0, 0, 1, 1, 1.01, 0), "a point: edges in, a hair out")
 end
 
+do -- rule 44 (H20, Danzo 2026-10-19): an iced holder cannot pass the fuse; an iced runner can be tagged; nothing else stops a tag
+	local Tag = __require("Tag")
+	local r = Tag.newRound({ A, B, C }, A, 0) -- A is it; its start freeze is long over by t = 5
+	local st = Items.new()
+	-- What server/Match.judge does: the round's rules, then the claimant's hold, then a same-frame touch.
+	local function passes(claimant, target, now)
+		local ok = Tag.canClaim(r, claimant, target, now)
+		if ok then ok = Items.canTag(st, claimant, now) end
+		return ok and Tag.confirm({ { t = now, x = 0, y = Y } }, { { t = now, x = 1, y = Y } }, now, 0)
+	end
+	assert(passes(A, B, 5), "no hold: the holder's touch passes")
+	local beam = Items.use(st, B, "ice", false, 10, Y, -1, 4.9) -- B ices the holder
+	assert(kinds(Items.step(st, 5, { at(A, beam.x), at(B, 10) }, {})) == "hold:101:freeze", "the beam freezes A")
+	local ok, why = Items.canTag(st, A, 5.1)
+	assert(not ok and why == "frozen by ice", "an iced holder may not tag: " .. tostring(why))
+	assert(not passes(A, B, 5.1) and not passes(A, C, 5 + Config.FREEZE_TIME - 0.01), "nor pass the fuse, the whole freeze")
+	assert(passes(A, B, 5 + Config.FREEZE_TIME), "the freeze ends on its own clock: the next frame's claim passes, even"
+		.. " before Items.step marks it over (Match judges tags first)")
+	st.holds[A] = nil
+	st.holds[B] = { kind = "freeze", from = 5, untilT = 6, presses = 0, over = false }
+	assert(passes(A, B, 5.5), "an iced runner is still a free tag (rule 44 as written)")
+	for _, kind in { "trap", "stumble" } do
+		st.holds[A] = { kind = kind, from = 5, untilT = 6, presses = 0, over = false }
+		assert(Items.canTag(st, A, 5.5) and passes(A, C, 5.5), "a " .. kind .. " never stops the holder's tag")
+	end
+end
+
 print("items ok")

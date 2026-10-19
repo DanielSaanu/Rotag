@@ -91,6 +91,17 @@ function Items.holdOf(st: State, id: number, now: number): Hold?
 	return nil
 end
 
+-- Rule 44 (H20, Danzo 2026-10-19): the holds that stop their victim passing the fuse. Only the ice freeze: a frozen
+-- holder's claims are refused until it ends; a trap or a stumble never stops a tag, and no hold shields a victim.
+Items.STOPS_TAG = { freeze = true } :: { [string]: boolean }
+
+-- May `id` pass the fuse at `now`, on the server's own hold record (never the client's)? Ok and, when not, why (logs).
+function Items.canTag(st: State, id: number, now: number): (boolean, string?)
+	local h = Items.holdOf(st, id, now)
+	if h and Items.STOPS_TAG[h.kind] then return false, "frozen by ice" end
+	return true, nil
+end
+
 -- May a new hold land on `id`? Never during one, never in the HOLD_IMMUNITY after one ends (rule 44: no chains). The
 -- holder's tag freeze is a hold too: pass its end as `frozenUntil`.
 function Items.canHold(st: State, id: number, now: number, frozenUntil: number?): boolean

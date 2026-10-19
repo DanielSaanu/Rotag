@@ -42,7 +42,8 @@ which target it names. Nothing else.** In order:
 1. **Rate:** a claim within `TAG_CLAIM_GAP` (0.1 s) of that player's last one is dropped unread. A payload that is not
    an integer is dropped.
 2. **Who may claim** (`Tag.canClaim`): the round is running; the claimant IS the holder; the claimant is not frozen;
-   the target is alive in this round and is not the claimant; the fuse is not out.
+   the target is alive in this round and is not the claimant; the fuse is not out. **H20:** then `Items.canTag`: the
+   holder is not frozen by an ice beam (rule 44, [items.md](items.md) §5). An iced target is still taggable.
 3. **Positions are the server's own record.** Since H14 ([netcode.md](netcode.md) §8) a player's position each server
    frame is its newest `Remotes.Snapshot` (stamped by the server on arrival, bounded by `MoveCheck`), the body only
    when that stream is stale; the claim on the holder's screen tests the same stream's drawn spot. The rest of this

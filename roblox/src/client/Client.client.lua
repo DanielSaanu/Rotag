@@ -9,6 +9,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Movement = require(Shared:WaitForChild("Movement"))
 local Snapshot = require(Shared:WaitForChild("Snapshot"))
+local ItemRules = require(Shared:WaitForChild("Items")) -- H20: which holds stop a tag claim
 local Sprites = require(Shared:WaitForChild("Sprites"))
 local Body = require(script.Parent:WaitForChild("Body"))
 local Controls = require(script.Parent:WaitForChild("Controls"))
@@ -92,7 +93,7 @@ RunService.PreSimulation:Connect(function(dt: number)
 		return
 	end
 	local input = Controls.read(c.humanoid)
-	Use.frame(input, s, Tagging.frozen()) -- a hold rides on input.hold; a hold never stops the tag claim below
+	Use.frame(input, s, Tagging.frozen()) -- a hold rides on input.hold; only the ice freeze stops the claim below
 	if Tagging.frozen() then
 		input = { moveX = 0, jumpPressed = false, jumpHeld = false, dashPressed = false, touch = input.touch }
 		s.vx, s.dashTime = 0, 0 -- a dash in progress ends too
@@ -106,7 +107,8 @@ RunService.PreSimulation:Connect(function(dt: number)
 		p.dash = ev.dash or p.dash
 	end
 	c.body:apply(s.x, s.y, s.vx, s.vy)
-	Tagging.claim(s.x, s.y)
+	local held = Items.holdOf(player.UserId) -- H20: an iced holder's claim would be refused; the server decides anyway
+	if not (held and ItemRules.STOPS_TAG[held.kind]) then Tagging.claim(s.x, s.y) end
 	if Items.held(player.UserId) == "hex" then Tagging.hex(s.x, s.y) end -- H18: a ghost's hex (docs/systems/ghosts.md)
 end)
 

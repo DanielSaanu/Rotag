@@ -175,6 +175,7 @@ local function judge(claimant: number, target: number, from: number, to: number,
 	local r = round
 	if not r then return true end
 	local ok, why = Tag.canClaim(r, claimant, target, now)
+	if ok then ok, why = Items.canTag(claimant, now) end -- H20: an iced holder cannot pass the fuse (rule 44)
 	if not ok then
 		log(("claim %s -> %s dropped: %s"):format(tostring(claimant), tostring(target), tostring(why)))
 		return true

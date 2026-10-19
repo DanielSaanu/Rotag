@@ -27,8 +27,9 @@ in Studio.
   front edge 24 studs ahead the way you face, 0.5 s, does not turn; **freezes** each runner it touches once, 1 s, with
   no input, sliding on the speed it caught you with, which bleeds linearly to 0. Use with a hex does nothing (the hex
   is used by touch, PR 1's `GhostClaim`).
-- **Holds (rule 44).** Never stop a tag (the tag code is untouched: a trapped runner is tagged, a stumbling holder
-  tags). **No chains:** no hold lands during one or in the 0.5 s after it; the holder's tag freeze counts as a hold.
+- **Holds (rule 44).** Never stop a tag (a trapped runner is tagged, a stumbling holder tags), **except the ice
+  freeze on the holder (H20, Danzo 2026-10-19): an iced holder cannot pass the fuse** (§5); an iced runner is still a
+  free tag. **No chains:** no hold lands during one or in the 0.5 s after it; the holder's tag freeze counts as a hold.
   **No item starts during a hold or the tag freeze; one started before goes off in full** (a beam out stays out).
 - **Dash i-frames (rule 45).** The first 0.2 s of a dash the SERVER counted dodges an ice beam and the hex and carries
   you over a trap; never a crate, never a tag.
@@ -120,6 +121,17 @@ a late joiner then gets a `put` per live thing and a `hold` per live hold. `UseI
   runner in the air drops (never rises, never moves across); arming a trap only on a grounded sample was the other
   option, but the server does not know "grounded", and Movement stays one line. `Config.STUDIO_DUMMY_TAGS` (false:
   dummies never tag) is the Studio knob for testing items solo.
+- **An iced holder cannot pass the fuse (H20, Danzo 2026-10-19).** `Items.canTag` (shared, pure) refuses the holder
+  while `holdOf` says freeze; `Items.STOPS_TAG = { freeze = true }` is the one switch. The server asks it in
+  `Match.judge` right after `Tag.canClaim`, and `Bots.tags` asks it for a dummy holder, both on the SERVER's hold
+  record. Like the tag freeze it is judged **when the claim is decided**, not when the touch happened: a claim still
+  pending when the ice lands is dropped. The ice ends on its own clock (`now >= untilT`), so the next frame's claim
+  passes even though the frame judges tags before `Items.step` marks the hold over. The holder's client skips claims
+  while iced (it would only be refused) and its HUD says "FROZEN: can't tag". **Trap and stumble are unchanged**: Danzo
+  named only the freeze, so this is my reading, not his ruling; extending it is one line in `STOPS_TAG`. A cheat that
+  ignores the freeze on its own screen still cannot tag: the refusal reads the hold record, not the motion. Test:
+  `items.test.luau` (rule 44, H20 block); mutation-checked 6/6 (no hold stops it, trap or stumble stops it, the freeze
+  never ends, ends one tick late, an iced victim shielded).
 - **The trap press path (QA round 1):** no rate gap during a trap (`Items.acceptPress`), and the client stays pinned
   until the server's `free`. Both, not one: the first removes the desync, the second makes any future one harmless.
 - **A press during a trap is any `UseItem`**: no second remote; the integer is not read for it.

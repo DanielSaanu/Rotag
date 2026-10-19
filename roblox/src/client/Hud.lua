@@ -223,7 +223,7 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		local h = Items.holdOf(me) :: any -- hold lands next to a tag and is shorter than the 1.5 s freeze (QA round 2)
 		statusLabel.Text = if h.kind == "trap" then ("TRAPPED: %s  %d/%d"):format(
 				if UserInputService.TouchEnabled then "tap anywhere" else "mash any key", h.presses, Config.TRAP_PRESSES)
-			elseif h.kind == "freeze" then "FROZEN" else "STUMBLE"
+			elseif h.kind == "freeze" then (if mine then "FROZEN: can't tag" else "FROZEN") else "STUMBLE" -- H20
 	elseif frozenLeft > 0 and inRound then
 		statusLabel.Text = ("%s is it: run!"):format(Hud.nameOf(state.it))
 	elseif myGhost then

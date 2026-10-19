@@ -93,6 +93,13 @@
       `docs/qa/ghosts-v2-items-summary.md`. Solo knob: `Config.STUDIO_DUMMY_TAGS = false` to get held.
 - [ ] **Danzo: Play the PR 2 checklist.** Nobody has pried a trap by hand yet. Two calls: "own traps safe" if being
       caught by your own trap feels cheap; and do 1 s freeze / half-speed stumble feel fair.
+- [ ] **Danzo (2026-10-19, with the /design brief), two rule calls:** (1) ice does NOT freeze you in place: a frozen
+      runner slides on, keeping its momentum (this is rule 44 as written; keep it); (2) **a frozen tagger cannot pass the
+      fuse, and a frozen runner can still be tagged.** (2) changes rule 44 ("a hold never stops a tag") for the FREEZE:
+      the holder's claims are refused while frozen. Trap and stumble unchanged unless Danzo says. → handoff H20.
+- [ ] **/design brief (Danzo, 2026-10-19):** item art WITH animation: orbs spin or shine, a shatter effect on collect;
+      the trap snaps shut, crates break away; player poses for stuck (trapped), stumbling, frozen-sliding.
+      Brief: `docs/briefs/items-art.md`.
 - [ ] **Next (2026-10-19):** PRs 1-2 done and pushed. Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`

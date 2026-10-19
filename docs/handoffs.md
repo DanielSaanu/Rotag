@@ -27,9 +27,8 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-_None._
-
-## Resolved
+### H20 — A frozen tagger cannot pass the fuse (rule 44 changes for the freeze) — 2026-10-19 18:11 — RESOLVED
+- Built (heavy, not committed): `Items.canTag` refuses an ice-frozen holder's claims on the server's hold record (Match + Bots), iced runners stay taggable, trap/stumble unchanged (flagged); rule 44 reworded; detail in [items.md](systems/items.md) §5.
 
 ### H19 — Build ghosts v2 PR 2: living orbs, Use, the holds (crate, bear trap, ice beam) — 2026-10-19 16:47 — RESOLVED
 - **Resolved 2026-10-19 (heavy build, routine QA loop):** PR 2 built: living orbs and the pools (hex now 1 roll in 5),

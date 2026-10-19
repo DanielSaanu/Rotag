@@ -109,7 +109,8 @@ function Bots.tags(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample
 	local it = r and not r.over and r.it
 	if not (r and it and list[it]) or not Config.STUDIO_DUMMY_TAGS then return end -- off: solo item testing (H19)
 	for _, id in r.order do
-		if id ~= it and r.alive[id] and not Bots.isBot(id) and Tag.canClaim(r, it, id, now) then
+		if id ~= it and r.alive[id] and not Bots.isBot(id) and Tag.canClaim(r, it, id, now)
+			and Items.canTag(it, now) then -- H20: an iced dummy holder cannot pass the fuse either
 			local ha, hb = history[it], history[id]
 			if ha and hb and Tag.confirm(ha, hb, now, 0) then pass(r, it, id, now) return end
 		end
