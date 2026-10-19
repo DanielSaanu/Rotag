@@ -219,13 +219,13 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	fuseLabel.TextColor3 = if mine then Color3.fromRGB(255, 90, 70) else Color3.new(1, 1, 1)
 	if mine and frozenLeft > 0 then
 		statusLabel.Text = "you're it: wait for GO"
-	elseif frozenLeft > 0 and inRound then
-		statusLabel.Text = ("%s is it: run!"):format(Hud.nameOf(state.it))
-	elseif Items.holdOf(me) then -- H19: what holds you, and for a trap how to get out
-		local h = Items.holdOf(me) :: any
+	elseif Items.holdOf(me) then -- H19: what holds you, and for a trap how to get out. Above the tag-freeze line: a
+		local h = Items.holdOf(me) :: any -- hold lands next to a tag and is shorter than the 1.5 s freeze (QA round 2)
 		statusLabel.Text = if h.kind == "trap" then ("TRAPPED: %s  %d/%d"):format(
 				if UserInputService.TouchEnabled then "tap anywhere" else "mash any key", h.presses, Config.TRAP_PRESSES)
 			elseif h.kind == "freeze" then "FROZEN" else "STUMBLE"
+	elseif frozenLeft > 0 and inRound then
+		statusLabel.Text = ("%s is it: run!"):format(Hud.nameOf(state.it))
 	elseif myGhost then
 		statusLabel.Text = ghostLine(state, me)
 	elseif not inRound and type(state.spectating) == "table" and table.find(state.spectating, me) then

@@ -35,7 +35,7 @@ export type State = {
 -- the victim's client hears of it a ping later and runs on at v until then, so v x HOLD_GRACE + HOLD_SLACK, not the
 -- free 24-stud burst (with the full burst a client could ignore a whole freeze from a run, QA round 1).
 MoveCheck.HOLD_RATES = {
-	trap = { 0, 0, 0 },
+	trap = { 0, 0, Config.MAX_FALL }, -- pinned across and up; a runner caught low in the air drops onto it (QA round 2)
 	stumble = { Config.RUN_SPEED * Config.STUMBLE_SPEED, Config.JUMP_SPEED, Config.MAX_FALL },
 	freeze = { 0, Config.JUMP_SPEED, Config.MAX_FALL },
 } :: { [string]: { number } }
@@ -100,6 +100,12 @@ function MoveCheck.step(s: State, x: number, y: number, t: number): (boolean, st
 	local rx, ru, rd = MoveCheck.RATE_X, MoveCheck.RATE_UP, MoveCheck.RATE_DOWN
 	local h = s.hold
 	local capX = cap(MoveCheck.RATE_X)
+	if h and t > (s.holdUntil :: number) then
+		-- QA round 2: the hold is over (pried or run out). The x budget is back to a resting runner's full burst: a pinned
+		-- runner left at the hold's 2-stud floor had 0.49 studs to spare on a dash-jump out of a trap, under the stream's
+		-- own catch-up jitter (trust.md §3). A client that ignored the hold was already caught during it.
+		s.bx, s.hold, h = capX, nil, nil
+	end
 	if h and t >= (s.holdFrom :: number) and t <= (s.holdUntil :: number) then
 		rx, ru, rd = h[1], h[2], h[3]
 		capX = math.min(capX, s.holdCap :: number)

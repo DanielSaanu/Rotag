@@ -22,7 +22,8 @@ in Studio.
   brings the hex to the spec's 8 in 100. The pools live in `shared/Items.POOLS` (moved from `Orbs.POOLS`).
 - **Use.** Crate: dropped behind you, on your feet's line, lasts 20 s; touching it breaks it and **stumbles** you
   0.7 s (half run speed the way you were going, no steer, jump, dash or item). Bear trap: at your feet, 20 s or one
-  catch; **pins** you up to 1 s, or 3 presses (any key or click; any tap on touch) pry it open. Ice beam: from your
+  catch; **pins** you up to 1 s (across; caught in the air you drop onto it and never rise, QA round 2), or 3 presses
+  (any key or click; any tap on touch) pry it open. Ice beam: from your
   front edge 24 studs ahead the way you face, 0.5 s, does not turn; **freezes** each runner it touches once, 1 s, with
   no input, sliding on the speed it caught you with, which bleeds linearly to 0. Use with a hex does nothing (the hex
   is used by touch, PR 1's `GhostClaim`).
@@ -114,6 +115,11 @@ a late joiner then gets a `put` per live thing and a `hold` per live hold. `UseI
   victim's server-measured speed x `HOLD_GRACE` + `HOLD_SLACK` for the whole hold, and a freeze refills at half that
   speed + `HOLD_SLACK`. Trap 0/0/0; stumble half run, jump speed up, fall cap down. The speed comes from the server's
   own samples (`MoveCheck.recentSpeed`), not the snapshot's `vx`, so a client cannot widen its own allowance.
+- **After a hold (QA round 2):** the x budget is back to the full burst the moment the hold ends, pried or run out
+  (`MoveCheck.step`), so a dash-jump straight out of a trap keeps ~22.6 studs to spare instead of 0.49. A trapped
+  runner in the air drops (never rises, never moves across); arming a trap only on a grounded sample was the other
+  option, but the server does not know "grounded", and Movement stays one line. `Config.STUDIO_DUMMY_TAGS` (false:
+  dummies never tag) is the Studio knob for testing items solo.
 - **The trap press path (QA round 1):** no rate gap during a trap (`Items.acceptPress`), and the client stays pinned
   until the server's `free`. Both, not one: the first removes the desync, the second makes any future one harmless.
 - **A press during a trap is any `UseItem`**: no second remote; the integer is not read for it.
@@ -170,6 +176,11 @@ rule 11 (no hold over ~1 s).
   leniently. Not caught, both equivalent in the server: "the budget drops when the hold lands" (the in-hold cap clamps
   it on the next sample anyway) and "the hold starts at its first sample" (`>=` vs `>`: the server applies a hold after
   that frame's sample, so no sample sits on the start). Plus the beam-user one above.
+- **QA round 2 (8/10, target met, [`../qa/ghosts-v2-items-round2.md`](../qa/ghosts-v2-items-round2.md)):** 54
+  mutations, 51 caught (the same 3 equivalents). New and caught: the full burst after a hold (a dash-jump-out-of-a-trap
+  test that asserts the margin, since it first passed by 0.49 studs without the rule), a trapped runner never rises,
+  drops rather than hangs, stays pinned across, and its fall is legal (a trap set in mid-air, 40 studs: the first
+  re-run missed this one, so the test was added).
 - **Studio:** connected (Edit mode). The running `rojo serve` had synced `Shared.Items`, `Server.Items` and `Client.Use`
   but not `Remotes.UseItem` (→ T6), so the builder did not start Play. The round 1 reviewer then played it with the
   remote present (its Output is in the round file); the round 1 fixes have not been played.

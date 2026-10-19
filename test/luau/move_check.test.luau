@@ -256,6 +256,69 @@ do -- H19, rule 44, tightened by QA round 1: when a hold lands the x budget DROP
 		"a stumble ignored is caught no sooner than its end: the measured edge")
 end
 
+do -- QA round 2: out of a trap from a standstill, the fastest legal move (dash, then jump out of it) is never flagged,
+	-- whether the trap was pried open at 0.3 s or simply ran out. Driven by a real Movement runner (Q3).
+	local function outOfTrap(pryAt: number?): (string?, number, number)
+		local world = { { -400, -10, 400, 0 } }
+		local s = standing(world, 0)
+		local c = MoveCheck.new(s.x, s.y, 0)
+		local t, t0 = 0, 0.5
+		local untilT = t0 + Config.TRAP_TIME
+		local freeAt = pryAt and t0 + pryAt or untilT
+		local held, freedFrame, fastest, lowest = false, nil, 0, math.huge
+		for i = 1, 150 do
+			t = i * DT
+			if not held and t >= t0 then
+				MoveCheck.hold(c, "trap", t, untilT, 0) -- caught standing: the server measured 0
+				held = true
+			end
+			if pryAt and t >= freeAt and not freedFrame then MoveCheck.release(c, freeAt) end
+			local inp
+			if t >= t0 and t < freeAt then
+				inp = input({ moveX = 1 })
+				inp.hold = "trap"
+			else
+				if t >= freeAt and not freedFrame then freedFrame = i end
+				local k = if freedFrame then i - freedFrame else -1
+				inp = input({ moveX = 1, dash = k == 1, jump = k == 2, held = k >= 2 })
+			end
+			tick(world, s, inp)
+			local ok, axis, over = MoveCheck.step(c, s.x, s.y, t)
+			if not ok then
+				return ("frame %d (%.2f s after the trap): %s over by %.2f"):format(i, t - t0, tostring(axis), over or 0), 0, 0
+			end
+			if freedFrame and i > freedFrame then fastest, lowest = math.max(fastest, math.abs(s.vx)), math.min(lowest, c.bx) end
+		end
+		return nil, fastest, lowest
+	end
+	for _, pry in { 0.3, false } do
+		local bad, fastest, lowest = outOfTrap(if pry then pry else nil)
+		local what = if pry then "pried at 0.3 s" else "the trap runs out"
+		assert(bad == nil, what .. ", dash-jump a frame later: not flagged, got " .. tostring(bad))
+		assert(fastest > Config.DASH_SPEED, what .. ": the jump out of the dash really went past the dash speed")
+		print(("    out of a trap (%s): peak %.0f studs/s, x budget never under %.2f studs"):format(what, fastest, lowest))
+		-- Q5: passing is not enough (it passed by 0.49 studs before the fix); the margin itself is the rule's work.
+		assert(lowest > BURST_X / 2, ("%s: the budget is a resting runner's again, not the hold's floor (%.2f)"):format(
+			what, lowest))
+	end
+end
+
+do -- QA round 2: a trap set in mid-air (Use puts it at the user's feet, airborne or not) can catch a runner high up;
+	-- trapped, it drops (shared/Movement), and that honest fall of ~40 studs (past the 16-stud down burst) is not flagged
+	local world = { { -400, -10, 400, 0 } }
+	local s = Movement.new(0, 40)
+	local c = MoveCheck.new(s.x, s.y, 0)
+	MoveCheck.hold(c, "trap", 0, Config.TRAP_TIME, 0)
+	for i = 1, 60 do
+		local inp = input()
+		inp.hold = "trap"
+		tick(world, s, inp)
+		local ok, axis, over = MoveCheck.step(c, s.x, s.y, i * DT)
+		assert(ok, ("a trapped runner's fall is legal, frame %d: %s over by %.2f"):format(i, tostring(axis), over or 0))
+	end
+	assert(s.grounded and 40 - s.y > MoveCheck.RATE_DOWN * Config.MOVE_BURST_TIME, "it fell further than the down burst")
+end
+
 do -- the speed a hold is judged from comes from the SERVER's own samples, over the last 0.1 s
 	local h = {}
 	for i = 0, 30 do table.insert(h, { t = i * DT, x = Config.RUN_SPEED * i * DT }) end

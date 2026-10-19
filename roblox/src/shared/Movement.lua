@@ -201,9 +201,10 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 			end
 		end
 	end
-	-- 5b. A hold (H19) overrides the run: gravity above still applies to stumble and freeze; a trap pins.
+	-- 5b. A hold (H19) overrides the run: gravity above still applies. A trap pins x; caught low in the air you drop
+	-- onto it (never rise: a jump in progress is cut), so nobody hangs in mid-air until freed (QA round 2).
 	if hold == "trap" then
-		s.vx, s.vy = 0, 0
+		s.vx, s.vy = 0, if s.grounded then 0 else math.min(s.vy, 0)
 	elseif hold == "stumble" then
 		s.vx = (if (input.holdDir or 0) ~= 0 then sign(input.holdDir :: number) else s.facing)
 			* Config.RUN_SPEED * Config.STUMBLE_SPEED

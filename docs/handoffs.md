@@ -66,6 +66,9 @@ Resolution (added by the heavy agent under the same entry):
 - **QA round 1: 7/10; both FIXes applied** (the pry desync; a freeze not enforced): see "Builder decisions" in
   `docs/qa/ghosts-v2-items-round1.md`, trust.md §10, N15 rewritten. Tests, lint and build green; mutation 47/50 (3
   equivalent). The fixes have not been played yet. Next: round 2.
+- **Built and QA'd 7 → 8, waiting on Danzo's Play.** Round 2: 8/10, target met. The routine session fixed the HUD
+  FIX. The heavy agent did the three CONSIDERs: the full burst back after a hold, a trapped runner in the air drops,
+  and `Config.STUDIO_DUMMY_TAGS`. Detail: "Outcome" in `docs/qa/ghosts-v2-items-round2.md`, items.md §5 and §8.
 - **Resolution draft:** "Built as §12 item 2 with Danzo's numbers; pools moved to `shared/Items` (the hex is 1 ghost
   roll in 5 until PR 4); holds enforced on the server through `MoveCheck.hold` (cap kept, refill lowered, from a 0.3 s
   grace: N15); i-frames from the server's own dash record with the cooldown enforced; QA <scores>. → items.md."

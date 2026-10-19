@@ -27,6 +27,8 @@ Config.HIT_STOP = 0.08            -- rule 21: seconds both runners hold still wh
 Config.STUDIO_DUMMY = true        -- in Studio only, a server-driven dummy runner joins the round (tag.md §4)
 Config.STUDIO_DUMMIES = 3         -- how many (ids -1000, -1001, ...); 3 = a solo 4-runner round where dummy ghosts hex
                                   -- (3 while ghosts are under test, QA round 1; 1 = the old solo chase)
+Config.STUDIO_DUMMY_TAGS = true   -- false: a dummy holder never tags (it still chases), so solo Play can test items
+                                  -- without being "it" or tag-frozen every 1.5 s (H19 QA round 2). Studio only
 -- Ghosts v2 (DESIGN §3 rules 37-42, docs/systems/ghosts.md; Danzo's trial numbers 2026-10-19, H16/H18). No comeback.
 Config.SPOOK_DRAIN = 3            -- seconds a held hex takes off the holder's fuse on a ghost's touch (rule 40)
 Config.GHOST_WARD = 6             -- after ANY hex no ghost may hex for this long: the fuse burns at most

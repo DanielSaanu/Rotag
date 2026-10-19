@@ -56,6 +56,10 @@ speed-check hold (trust.md §8 names it, not this PR).
 
 ## What Danzo should feel (Studio, `STUDIO_DUMMIES = 3`, keyboard, then the phone preset)
 
+For items 1-6, set `Config.STUDIO_DUMMY_TAGS = false` first (`roblox/src/shared/Config.lua`): the dummies then never
+tag, so you are not "it" or tag-frozen every 1.5 s and the holds can land on you (QA round 2). Put it back to `true`
+for item 7 (a trapped runner can still be tagged) and before committing.
+
 1. Run through a living orb (gold ball) at 0:05: your slot reads CRATE, TRAP or ICE, an icon floats over your head.
    As "it" you mostly get ICE.
 2. Press E (or V, left click, RB): a crate drops behind you / a trap at your feet / a cyan beam shoots ahead. The

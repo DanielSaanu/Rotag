@@ -269,3 +269,9 @@ an honest ~22. **The honest edge:** a victim whose client hears of a hold more t
 running is flagged and snapped back; at today's Studio delays that is far off, but a live server with very high ping
 would need `HOLD_GRACE` from the victim's measured ping (items.md, expansion). The first H19 version kept the full burst
 and a fixed freeze refill of 60, so a whole freeze from a run went unflagged (QA round 1); learnings N15 records why.
+
+**QA round 2 (2026-10-19).** When a hold ends (pried or run out), the x budget goes back to the full burst: a pinned
+runner left at the hold's 2-stud floor had only 0.49 studs to spare on a dash-jump out of a trap, less than the
+stream's own catch-up jitter (§3). It now keeps ~22.6. A client that ignored the hold was already caught during it.
+The trap's down rate is the fall cap: a runner caught by a trap set in mid-air drops onto it (shared/Movement), and
+that fall (40 studs in the test) is legal.

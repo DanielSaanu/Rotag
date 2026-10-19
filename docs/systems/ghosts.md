@@ -120,6 +120,7 @@ at every round start keep a client exact without a once-a-second resend.
 | `GHOST_ORB_RAMP` | 0.5 | the ghost orbs' respawn ramp (rule 42) |
 | `ORB_SIZE` | 2 | studs across an orb's touch square |
 | `STUDIO_DUMMIES` | 3 | Studio dummies; 3 gives a solo 4-runner round where dummy ghosts take orbs and hex |
+| `STUDIO_DUMMY_TAGS` | true | false: a dummy holder chases but never tags, so solo Play tests items (holds) without the player being "it" or tag-frozen every 1.5 s (H19 QA round 2; [items.md](items.md)) |
 
 `config.test.luau` pins 3 / 6 / 5 / 10 / 0.5 and that `SPOOK_COOLDOWN` and `GHOST_COMEBACKS` no longer exist.
 

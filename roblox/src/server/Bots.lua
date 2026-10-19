@@ -107,7 +107,7 @@ end
 function Bots.tags(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample } },
 	pass: (Tag.Round, number, number, number) -> ())
 	local it = r and not r.over and r.it
-	if not (r and it and list[it]) then return end
+	if not (r and it and list[it]) or not Config.STUDIO_DUMMY_TAGS then return end -- off: solo item testing (H19)
 	for _, id in r.order do
 		if id ~= it and r.alive[id] and not Bots.isBot(id) and Tag.canClaim(r, it, id, now) then
 			local ha, hb = history[it], history[id]

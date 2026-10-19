@@ -284,10 +284,17 @@ do -- a trap pins: no run, jump or dash moves you, and a press made during it do
 	end
 	assert(near(s.x, x) and s.vx == 0 and s.vy == 0, "pinned where it was caught")
 	assert(not tick(FLOOR, s, input()).jump, "the buffered press is dropped, not fired when the trap lets go")
-	local a = Movement.new(0, 20) -- caught in the air (falling onto a trap): pinned there, gravity too (Q5: not the floor)
-	a.vy = -30
-	for _ = 1, 10 do tick(FLOOR, a, held("trap")) end
-	assert(near(a.y, 20) and a.vy == 0, "pinned in the air")
+	-- QA round 2 changed this rule: H19 pinned a runner caught in the air where it was (it hung until freed); the old
+	-- "pinned in the air" assertion is retired WITH that rule. Now x stays pinned, the runner never rises, and it drops.
+	local a = Movement.new(5, HH + 1.5) -- caught low, still rising out of a jump (Q5: not on the floor)
+	a.vy = 30
+	local top = a.y
+	for _ = 1, 30 do
+		tick(FLOOR, a, held("trap", { moveX = 1, jump = true }))
+		top = math.max(top, a.y)
+	end
+	assert(near(top, HH + 1.5) and near(a.x, 5), "never rises, never moves across")
+	assert(a.grounded and a.vy == 0 and near(a.y, HH, 0.05), "dropped onto the floor and held there")
 end
 
 do -- a jump pressed just BEFORE a hold does not fire when it ends (the buffer is cleared, not left to run out)
