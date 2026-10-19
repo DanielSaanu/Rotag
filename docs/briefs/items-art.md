@@ -28,7 +28,7 @@ loop (`sprites/`, `scenes/`), one scene per frame, named `<thing>_<state>_<n>`.
 | Thing | Frames | Timing |
 |---|---|---|
 | Orb idle | 4, loop: the equator band turns 0°, 45°, edge-on (a line, glint ticks), -45°; the light is fixed | 1.0 s; the ghost orb is wire |
-| Orb taken | 4 (white flash in a ring, four quarters out on the diagonals, expanding ring + slivers, faint spot) | 0.25 s, ~0.06 s each; spot faint until respawn |
+| Orb taken | 4 (white flash in a ring; splits along its seams: the cap lifts with the specular, the band rings out, two curved shell pieces drop; band widens, pieces fade, core bursts into 4 ticks; faint spot) | 0.25 s, ~0.06 s each; spot faint until respawn. Danzo: "use the geometry of the orb to split" |
 | Hex | still; a ring breathes out every 0.8 s only while the ward is down; cracks in two on touch | no idle spin |
 | Trap | armed open (flat, wide), snap (2 frames, 0.12 s), shut (tall, teeth meshed, dust), pried one notch per press | 1 s timeout ends on frame 0, dust, gone |
 | Stuck pose | A yank back / B lurch forward, ping-pong at 8 fps; caught foot is always the FAR leg; release = 2 dash-lean frames | head leads the struggle |
