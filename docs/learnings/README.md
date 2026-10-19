@@ -2,7 +2,7 @@
 
 The hub is [`../learnings.md`](../learnings.md): read it first. One file per section:
 
-- [`A — Art`](art.md): **A** — A1, …, A5
+- [`A — Art`](art.md): **A** — A1, …, A6
 - [`S — Shared Luau`](shared-luau.md): **S** — S1, …, S12
 - [`N — Networking and fairness`](networking.md): **N** — N1, …, N15
 - [`T — Tooling`](tooling.md): **T** — T1, …, T12

@@ -21,6 +21,7 @@ local Others = require(script.Parent:WaitForChild("Others"))
 local Arrows = require(script.Parent:WaitForChild("Arrows"))
 local Items = require(script.Parent:WaitForChild("Items"))
 local Use = require(script.Parent:WaitForChild("Use")) -- H19: Use, prying, the local hold (docs/systems/items.md)
+local ItemArt = require(script.Parent:WaitForChild("ItemArt")) -- H21: is the hold art in the sheet yet
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -35,6 +36,21 @@ local current = nil -- { character, humanoid, root, body, look, state, spawnX, s
 local LOOP_LOG = 5
 local loop = { steps = 0, frames = 0, worst = 0, since = os.clock() }
 local studio = RunService:IsStudio()
+
+-- H21: the pose to draw and send. A hold pose only once the sheet has the hold art and this name; until then the
+-- motion pose, exactly as before (every screen reads the same Sprites.lua, so what we send they can draw).
+local function pose(s: Movement.State): string
+	if not ItemArt.HOLD_ART then return Movement.motionSprite(s) end
+	local name = Movement.spriteFor(s)
+	return if Sprites.Has(name) then name else Movement.motionSprite(s)
+end
+
+-- H21: runner `id` is held by the ice beam (client/Look draws the frozen rim), once the hold art is in the sheet.
+local function iced(id: number): boolean
+	if not ItemArt.HOLD_ART then return false end
+	local h = Items.holdOf(id)
+	return h ~= nil and h.kind == "freeze"
+end
 
 local function teardown()
 	if not current then return end
@@ -128,7 +144,7 @@ RunService.Heartbeat:Connect(function()
 	local s, e = c.state, c.toSend
 	c.toSend = {}
 	snapRemote:FireServer(Snapshot.pack({ seq = seq, x = s.x, y = s.y, vx = s.vx, vy = s.vy,
-		sprite = Movement.spriteFor(s), facing = s.facing, dashing = s.dashTime > 0,
+		sprite = pose(s), facing = s.facing, dashing = s.dashTime > 0,
 		jump = e.jump, dash = e.dash == true, landed = e.landed }))
 end)
 task.spawn(function()
@@ -184,10 +200,11 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		c.look:react(c.pending)
 		c.pending = {}
 		c.look:ghost(ghostMode(player.UserId))
-		c.look:draw(Movement.spriteFor(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
+		c.look:frozen(iced(player.UserId))
+		c.look:draw(pose(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
 		if not readySent then sendReady() end
 	end
-	Others.draw(dt, ghostMode)
+	Others.draw(dt, ghostMode, iced)
 	local st = Tagging.state()
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))

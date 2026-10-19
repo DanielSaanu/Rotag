@@ -93,4 +93,93 @@ do -- the air poses follow vy (rise, apex, fall), a wall slide is a fall, a dash
 	assert(Movement.spriteFor(s) == "runner_jump_rise", "a jump out of the dash rises")
 end
 
+do -- H21: the hold poses (docs/briefs/items-art.md "Sprite names and sizes"): trapped ping-pong at 8 fps, the stumble's
+	-- roll (trip 0.14 s, three tucked frames 0.12 s each, recover 0.2 s), a freeze keeps the frame it landed on;
+	-- motionSprite is the fallback
+	local function held(kind, left, moveX)
+		local i = input({ moveX = moveX or 0 })
+		i.hold, i.holdDir, i.holdLeft = kind, 1, left or 1
+		return i
+	end
+	local names = table.concat(Movement.HOLD_SPRITES, " ")
+	assert(names == "runner_trapped_0 runner_trapped_1 runner_stumble_0 runner_stumble_1 runner_stumble_2"
+		.. " runner_stumble_3 runner_stumble_4",
+		"the brief's hold pose names, got " .. names)
+
+	-- Trapped: frame 0 on the frame it lands, then a swap every 1/8 s (two frames ping-pong), whatever the motion does.
+	local s = standing(FLOOR, 0)
+	frames(FLOOR, s, 10, input({ moveX = 1 }))
+	local runs, last, start = {}, nil, 0
+	for k = 1, 60 do -- one second
+		tick(FLOOR, s, held("trap"))
+		local name = Movement.spriteFor(s)
+		assert(name == "runner_trapped_0" or name == "runner_trapped_1", "trapped shows a trapped frame, got " .. name)
+		if k == 1 then assert(name == "runner_trapped_0", "the trap lands on frame 0, got " .. name) end
+		if name ~= last then
+			if last then table.insert(runs, (k - start) * DT) end
+			last, start = name, k
+		end
+	end
+	assert(#runs >= 7, "eight holds a second: at least seven swaps in one second, got " .. #runs)
+	for i, len in runs do assert(math.abs(len - 1 / 8) <= DT + 1e-6, "swap " .. i .. " after 1/8 s, got " .. len) end
+	assert(Movement.motionSprite(s) == "runner_idle", "the fallback under the trap is the motion pose: pinned, idle")
+	tick(FLOOR, s, input())
+	assert(Movement.spriteFor(s) == "runner_idle", "freed: back to the motion pose")
+	tick(FLOOR, s, held("trap"))
+	assert(Movement.spriteFor(s) == "runner_trapped_0", "a second trap starts its clock again on frame 0")
+
+	-- Stumble: the roll, each frame once, for 0.14 / 0.12 / 0.12 / 0.12 / 0.2 s (Config.STUMBLE_TIME), from a full run.
+	local ends = Movement.STUMBLE_ENDS
+	assert(math.abs(ends[#ends] - Config.STUMBLE_TIME) < 1e-9, "the roll fills the stumble exactly")
+	local function at(t)
+		local r = Movement.new(0, 0)
+		r.hold, r.holdTime = "stumble", t
+		return Movement.spriteFor(r)
+	end
+	assert(at(0) == "runner_stumble_0", "frame 0 at t = 0, got " .. at(0))
+	assert(at(0.45) == "runner_stumble_3", "frame 3 at t = 0.45, got " .. at(0.45))
+	assert(at(0.6) == "runner_stumble_4", "frame 4 at t = 0.6, got " .. at(0.6))
+	assert(at(5) == "runner_stumble_4", "held on recover past the table, got " .. at(5))
+	s = standing(FLOOR, 0)
+	frames(FLOOR, s, 30, input({ moveX = 1 }))
+	local seen, lens = {}, {}
+	for _ = 1, math.floor(Config.STUMBLE_TIME / DT + 0.5) do
+		tick(FLOOR, s, held("stumble"))
+		local name = Movement.spriteFor(s)
+		if name ~= seen[#seen] then table.insert(seen, name) table.insert(lens, 0) end
+		lens[#lens] += DT
+	end
+	local order = table.concat(seen, " ")
+	assert(order == "runner_stumble_0 runner_stumble_1 runner_stumble_2 runner_stumble_3 runner_stumble_4",
+		"trip, the roll, recover: got " .. order)
+	for i, want in { 0.14, 0.12, 0.12, 0.12, 0.2 } do
+		assert(math.abs(lens[i] - want) <= DT + 1e-6, "stumble frame " .. (i - 1) .. " holds " .. want .. " s, got " .. lens[i])
+	end
+	assert(string.sub(Movement.motionSprite(s), 1, 11) == "runner_run_", "the fallback under a stumble runs (it carries on)")
+
+	-- Freeze: the frame showing when it lands stays for the whole hold, though the slide moves the run clock on.
+	s = standing(FLOOR, 0)
+	frames(FLOOR, s, 17, input({ moveX = 1 }))
+	local before = Movement.spriteFor(s)
+	assert(string.sub(before, 1, 11) == "runner_run_", "the fixture is mid-run")
+	local motionMoved = false
+	for k = 1, 60 do
+		tick(FLOOR, s, held("freeze", 1 - (k - 1) * DT))
+		assert(Movement.spriteFor(s) == before, "frozen on " .. before .. ", got " .. Movement.spriteFor(s))
+		if Movement.motionSprite(s) ~= before then motionMoved = true end
+	end
+	assert(motionMoved, "the fixture slides far enough that the motion pose would have changed")
+	tick(FLOOR, s, input())
+	assert(Movement.spriteFor(s) == Movement.motionSprite(s), "thawed: the motion pose again")
+	-- In the air: frozen on the rise, it keeps the rise while it falls.
+	s = standing(FLOOR, 0)
+	frames(FLOOR, s, 12)
+	tick(FLOOR, s, input({ jump = true }))
+	tick(FLOOR, s, input({ held = true }))
+	assert(Movement.spriteFor(s) == "runner_jump_rise", "the fixture is rising")
+	for _ = 1, 50 do tick(FLOOR, s, held("freeze", 1)) end
+	assert(s.vy <= 0 or s.grounded, "the fixture has come down")
+	assert(Movement.spriteFor(s) == "runner_jump_rise", "frozen mid-rise keeps the rise, got " .. Movement.spriteFor(s))
+end
+
 print("movement sprites ok")

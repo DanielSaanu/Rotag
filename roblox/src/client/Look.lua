@@ -20,6 +20,10 @@ local SURFACE_PPS = 50 -- SurfaceGui pixels per stud: above screen density so th
 -- The runner is smooth vector art (128 px per tile, Danzo 2026-10-10: "not pixel art"), so it is sampled bilinear,
 -- not with the Pixelated mode Sprites.Apply sets for tile art.
 local RESAMPLE = Enum.ResamplerMode.Default
+-- H21: the frozen rim (Look:frozen): ice cyan, this much larger than the frame, and the feet line's thickness.
+local RIM_TINT = Color3.fromRGB(0x45, 0xe0, 0xff)
+local RIM_SCALE = 1.08
+local ICE_LINE = 0.012 -- of the canvas: ~3 px at SURFACE_PPS
 
 -- Juice targets as {x scale, y scale}; each eases back to {1, 1} (DESIGN §3 rule 21). Feet stay planted.
 local JUICE = {
@@ -52,7 +56,8 @@ end
 
 function Look:_clear()
 	if self.holder then self.holder:Destroy() end
-	self.holder, self.image = nil, nil
+	self.holder, self.image, self.rim, self.iceLine = nil, nil, nil, nil
+	self.frozenOn = false
 end
 
 function Look:_build()
@@ -89,7 +94,9 @@ function Look:_build()
 	local image = Sprites.New("runner_idle", gui)
 	image.AnchorPoint = Vector2.new(0.5, 1)
 	image.Position = UDim2.fromScale(0.5, FEET)
+	image.ZIndex = 2
 	self.image = image
+	self.gui = gui
 	self.sprite = nil -- force the next draw to apply frame, flip and size
 	self.ghostMode = nil
 	print("[Rotag] runner drawn with a SurfaceGui on a part")
@@ -157,6 +164,14 @@ function Look:draw(spriteName: string, facing: number, dashing: boolean, vx: num
 	local rad = math.rad(self.lean)
 	local half = BASE * self.sy / 2
 	image.Position = UDim2.fromScale(0.5 + half * math.sin(rad), FEET + half * (1 - math.cos(rad)))
+	local rim = self.rim
+	if self.frozenOn and rim then -- the same rect, turn and feet as the frame, a little larger (Look:frozen)
+		rim.Image, rim.ImageRectOffset, rim.ImageRectSize = image.Image, image.ImageRectOffset, image.ImageRectSize
+		rim.ResampleMode, rim.Rotation = image.ResampleMode, image.Rotation
+		rim.Size = UDim2.fromScale(BASE * self.sx * RIM_SCALE, BASE * self.sy * RIM_SCALE)
+		-- centred on the frame: its bottom sits half the growth below the frame's
+		rim.Position = UDim2.fromScale(image.Position.X.Scale, image.Position.Y.Scale + (RIM_SCALE - 1) / 2 * BASE * self.sy)
+	end
 end
 
 -- A free look only: put the sprite plane's centre at (x, y) on the runner plane.
@@ -174,6 +189,35 @@ function Look:ghost(mode: string?)
 	self.ghostMode = mode
 	image.ImageColor3 = if mode then GHOST_TINT else Color3.new(1, 1, 1)
 	image.ImageTransparency = if mode then (GHOST_SEE[mode] or 0.5) else 0
+end
+
+-- H21 (docs/briefs/items-art.md, "Frozen"): while the ice beam holds this runner, the CURRENT frame drawn again behind
+-- itself, tinted ice cyan and RIM_SCALE larger, plus a thin cyan line at the feet. Built on the first freeze, hidden
+-- after. ImageColor3 multiplies, so the copy reads cyan only where the art is light (Danzo's Play judges it).
+function Look:frozen(on: boolean)
+	if on == self.frozenOn or not self.image then return end
+	self.frozenOn = on
+	if on and not self.rim then
+		local rim = Instance.new("ImageLabel")
+		rim.Name = "RotagFrozenRim"
+		rim.BackgroundTransparency = 1
+		rim.ImageColor3 = RIM_TINT
+		rim.AnchorPoint = Vector2.new(0.5, 1)
+		rim.ZIndex = 1
+		rim.Parent = self.gui
+		local line = Instance.new("Frame")
+		line.Name = "RotagIceLine"
+		line.BorderSizePixel = 0
+		line.BackgroundColor3 = RIM_TINT
+		line.AnchorPoint = Vector2.new(0.5, 0.5)
+		line.Size = UDim2.fromScale(BASE * 0.9, ICE_LINE)
+		line.Position = UDim2.fromScale(0.5, FEET)
+		line.ZIndex = 3
+		line.Parent = self.gui
+		self.rim, self.iceLine = rim, line
+	end
+	if self.rim then self.rim.Visible = on end
+	if self.iceLine then self.iceLine.Visible = on end
 end
 
 -- The sheet ids changed after this look was built (Remotes.SheetIds landed late): re-apply on the next draw.

@@ -42,6 +42,15 @@ do -- the wire: every field survives pack/unpack to within the quantisation; bad
 		assert(table.find(Snapshot.SPRITES, name), name .. " is on the wire list")
 	end
 	for i = 0, Config.RUN_FRAMES - 1 do assert(table.find(Snapshot.SPRITES, "runner_run_" .. i), "run frame " .. i) end
+	-- H21: the hold poses ride the wire too, after every older name (their indices never move).
+	for _, name in { "runner_trapped_0", "runner_trapped_1", "runner_stumble_0", "runner_stumble_1", "runner_stumble_2",
+		"runner_stumble_3", "runner_stumble_4" } do
+		local at = table.find(Snapshot.SPRITES, name)
+		assert(at and at > 5 + Config.RUN_FRAMES, name .. " is on the wire list, after the motion poses")
+		local back = Snapshot.unpack(Snapshot.pack({ seq = 1, x = 0, y = 0, vx = 0, vy = 0, sprite = name, facing = 1,
+			dashing = false, dash = false }))
+		assert(back and back.sprite == name, name .. " survives the wire")
+	end
 end
 
 do -- the sequence ring: newer within half a ring, including across the wrap; never equal or older

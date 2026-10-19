@@ -6,12 +6,15 @@
 -- physics replication smooths a CFrame-driven body into ~0.4 s of lag (netcode.md §3); a remote arrives at once (N6).
 -- Pure Luau (`buffer` is a language builtin, not a Roblox API); tests: test/luau/snapshot.test.luau.
 local Config = require(script.Parent.Config)
+local Movement = require(script.Parent.Movement) -- the hold pose names (H21)
 
 local Snapshot = {}
 
 -- Every name Movement.spriteFor can return, in a fixed order: the wire carries the index. Unknown on the wire = idle.
 Snapshot.SPRITES = { "runner_idle", "runner_jump_rise", "runner_jump_apex", "runner_fall", "runner_dash" }
 for i = 0, Config.RUN_FRAMES - 1 do table.insert(Snapshot.SPRITES, "runner_run_" .. tostring(i)) end
+-- H21: the hold poses, appended so every older index keeps its meaning.
+for _, name in Movement.HOLD_SPRITES do table.insert(Snapshot.SPRITES, name) end
 local SPRITE_INDEX = {}
 for i, name in Snapshot.SPRITES do SPRITE_INDEX[name] = i end
 local JUMPS = { "ground", "double", "wall" }

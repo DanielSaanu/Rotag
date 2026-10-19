@@ -9,6 +9,7 @@ local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Others = require(script.Parent:WaitForChild("Others")) -- the item floats over the DRAWN runner (H13)
+local ItemArt = require(script.Parent:WaitForChild("ItemArt")) -- H21: the sprites on these parts, once in the sheet
 
 local Items = {}
 
@@ -26,12 +27,17 @@ local ICON = { crate = { Vector3.new(1.3, 1.3, 0.2), 0 }, trap = { Vector3.new(1
 	ice = { Vector3.new(1.1, 1.1, 1.1), 0 } }
 local HIDDEN = CFrame.new(0, -1e4, 0)
 
-local orbs: { { part: BasePart, up: boolean, ghost: boolean } } = {}
+local orbs: { { part: BasePart, up: boolean, ghost: boolean, takenAt: number? } } = {}
 local held: { [number]: string } = {}
-local icons: { [number]: { part: BasePart, item: string } } = {}
-local things: { [number]: { part: BasePart, untilT: number } } = {} -- by the server's thing number
-local holds: { [number]: { kind: string, untilT: number, presses: number } } = {} -- by runner id
+local icons: { [number]: { part: BasePart, item: string, spentAt: number? } } = {}
+-- By the server's thing number. H21: `art` a sprite is on (client/ItemArt), `born`, `caught` (a hold named it as `by`
+-- just before its "gone"), `endedAt` its "gone" (the break or fade plays out), `charge` the beam's bloom part.
+local things: { [number]: { part: BasePart, untilT: number, item: string, art: boolean, born: number, caught: boolean?,
+	endedAt: number?, charge: BasePart? } } = {}
+local holds: { [number]: { kind: string, from: number, untilT: number, presses: number } } = {} -- by runner id
 local overlays: { [number]: BasePart } = {}
+local released: { [number]: number } = {} -- H21: when a trap overlay's hold ended (trap_armed, then gone)
+local seen: { [number]: boolean }, seenHold: { [number]: boolean } = {}, {} -- reused every frame
 local folder: Folder? = nil
 local slotLabel: TextLabel? = nil
 
@@ -51,7 +57,13 @@ end
 local function setUp(i: number, up: boolean)
 	local o = orbs[i]
 	if not o then return end
+	if o.up and not up then o.takenAt = os.clock() end -- H21: the take one-shot
 	o.up = up
+end
+
+local function drop(t: any)
+	t.part:Destroy()
+	if t.charge then t.charge:Destroy() end
 end
 
 -- Shape only (→ N3): the server is the only sender, but a malformed table must not break the frame loop.
@@ -60,7 +72,7 @@ local function onEvent(e: any)
 	if e.kind == "sync" and type(e.orbs) == "table" and type(e.held) == "table" then
 		for _, o in orbs do o.part:Destroy() end
 		table.clear(orbs)
-		for _, t in things do t.part:Destroy() end -- a sync is a round start or a join: the world starts empty
+		for _, t in things do drop(t) end -- a sync is a round start or a join: the world starts empty
 		table.clear(things)
 		table.clear(holds)
 		for _, s in e.orbs do
@@ -89,20 +101,29 @@ local function onEvent(e: any)
 		p.Material = if ice then Enum.Material.Neon else Enum.Material.SmoothPlastic -- a crate and a trap are objects
 		p.Transparency = if ice then 0.25 else 0
 		p.CFrame = CFrame.new(e.x, e.y, 0)
-		if things[e.n] then things[e.n].part:Destroy() end
-		things[e.n] = { part = p, untilT = os.clock() + e.life + 1 } -- the server says "gone"; this is a backstop
+		if things[e.n] then drop(things[e.n]) end
+		local art, charge = ItemArt.put(p, e.item, if e.dir == -1 then -1 else 1)
+		things[e.n] = { part = p, untilT = os.clock() + e.life + 1, -- the server says "gone"; this is a backstop
+			item = e.item, art = art, born = os.clock(), charge = charge }
 	elseif e.kind == "gone" and type(e.n) == "number" then
 		local t = things[e.n]
-		if t then t.part:Destroy() things[e.n] = nil end
+		if t and t.art and not t.endedAt then -- H21: ItemArt.thing plays the break or the fade, Items.draw destroys it
+			t.endedAt, t.untilT = os.clock(), os.clock() + 1
+		elseif t then
+			drop(t)
+			things[e.n] = nil
+		end
 	elseif e.kind == "hold" and type(e.id) == "number" and type(e.hold) == "string" and type(e.time) == "number" then
-		holds[e.id] = { kind = e.hold, untilT = os.clock() + e.time, presses = 0 }
+		holds[e.id] = { kind = e.hold, from = os.clock(), untilT = os.clock() + e.time, presses = 0 }
+		local by = if type(e.by) == "number" then things[e.by] else nil -- the server fires it just before the "gone"
+		if by then by.caught = true end
 	elseif e.kind == "free" and type(e.id) == "number" then
 		holds[e.id] = nil
 	end
 end
 
 -- The hold in force on runner `id` as this screen was told (client/Use applies the local one), or nil.
-function Items.holdOf(id: number): { kind: string, untilT: number, presses: number }?
+function Items.holdOf(id: number): { kind: string, from: number, untilT: number, presses: number }?
 	local h = holds[id]
 	if h and os.clock() < h.untilT then return h end
 	return nil
@@ -118,14 +139,18 @@ end
 -- is a living runner of this round. Either shows the readout. `roundOver`: nothing is held between rounds (QA round 1).
 function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boolean?)
 	local showSlot = ghost or inRound == true
-	for _, o in orbs do
-		o.part.Transparency = if not o.up then 0.85 elseif o.ghost == ghost then 0.1 else 0.55
-	end
 	local now = os.clock()
-	for n, t in things do
-		if now > t.untilT then t.part:Destroy() things[n] = nil end
+	for _, o in orbs do
+		local bright = if o.ghost == ghost then 0.1 else 0.55
+		if not ItemArt.orb(o.part, o.ghost, o.up, o.takenAt, now, bright) then
+			o.part.Transparency = if not o.up then 0.85 else bright
+		end
 	end
-	local seen, seenHold = {}, {}
+	for n, t in things do
+		if now > t.untilT or (t.art and ItemArt.thing(t, now)) then drop(t) things[n] = nil end
+	end
+	table.clear(seen)
+	table.clear(seenHold)
 	for _, model in CollectionService:GetTagged(RUNNER_TAG) do
 		local id = model:GetAttribute("RunnerId")
 		local root = model:FindFirstChild("HumanoidRootPart")
@@ -142,11 +167,16 @@ function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boo
 						if shape then shape[1] else Vector3.new(1.3, 1.3, 0.2), ITEM_COLOR[item] or Color3.new(1, 1, 1)) }
 					icons[id] = icon
 				end
-				local turn = if ICON[item] then ICON[item][2] else math.pi / 4 -- the hex: a diamond
+				icon.spentAt = nil
+				local art = ItemArt.icon(icon.part, item, nil, now)
+				local turn = if art then 0 elseif ICON[item] then ICON[item][2] else math.pi / 4 -- the hex: a diamond
 				icon.part.CFrame = CFrame.new(at.X, at.Y + ITEM_UP, Z) * CFrame.Angles(0, 0, turn)
 			end
 			local h = not roundOver and Items.holdOf(id)
-			if h and h.kind ~= "stumble" then -- a trap at the feet, ice around the body; a stumble shows in the motion
+			-- a trap at the feet, ice around the body; a stumble shows in the motion (H21: in its pose, and a freeze in
+			-- client/Look's rim, once the sheet has the hold art)
+			if h and (h.kind == "stumble" or (h.kind == "freeze" and ItemArt.HOLD_ART)) then h = nil end
+			if h then
 				seenHold[id] = true
 				local o = overlays[id]
 				if o and o.Name ~= h.kind then o:Destroy() o = nil end
@@ -158,16 +188,29 @@ function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boo
 					o.Name, o.Transparency = h.kind, if trap then 0 else 0.55
 					overlays[id] = o
 				end
+				released[id] = nil
+				if h.kind == "trap" then ItemArt.trap(o, h.from, h.presses, nil, now) end
 				local dy = if h.kind == "trap" then Config.TRAP_H / 2 - Config.RUNNER_HEIGHT / 2 else 0
 				o.CFrame = CFrame.new(at.X, at.Y + dy, Z - 0.2)
 			end
 		end
 	end
-	for id, icon in icons do
-		if not seen[id] then icon.part:Destroy() icons[id] = nil end
+	for id, icon in icons do -- H21: a hex that left the slot mid-round flashes hex_spent first
+		if not seen[id] then
+			if icon.item == "hex" and not roundOver and ItemArt.has(icon.part) then icon.spentAt = icon.spentAt or now end
+			local _, over = ItemArt.icon(icon.part, icon.item, icon.spentAt, now)
+			if not icon.spentAt or over then icon.part:Destroy() icons[id] = nil end
+		end
 	end
-	for id, o in overlays do
-		if not seenHold[id] then o:Destroy() overlays[id] = nil end
+	for id, o in overlays do -- H21: a trap with art shows trap_armed a moment after the hold, then goes
+		if not seenHold[id] then
+			local over = true
+			if o.Name == "trap" and not roundOver and ItemArt.has(o) then
+				released[id] = released[id] or now
+				_, over = ItemArt.trap(o, 0, 0, released[id], now)
+			end
+			if over then o:Destroy() overlays[id] = nil released[id] = nil end
+		end
 	end
 	local label = slotLabel
 	if label then

@@ -197,6 +197,48 @@ rule 11 (no hold over ~1 s).
   but not `Remotes.UseItem` (→ T6), so the builder did not start Play. The round 1 reviewer then played it with the
   remote present (its Output is in the round file); the round 1 fixes have not been played.
 
+## 9. The art on the parts (H21, 2026-10-19)
+
+The contract is [the brief](../briefs/items-art.md) "Sprite names and sizes"; this is how the client meets it.
+
+- **Where:** `client/ItemArt.lua` (new ModuleScript; `client/Items` calls it). `ItemArt.show(part, name, mirrored)` puts a
+  SurfaceGui (+Z face, 50 px per stud, bilinear) on the part `client/Items` already made and turns the part see-through
+  (a ball becomes a block: a face is the bounding box's). **Guard:** while `Sprites.Has(name)` is false the part is
+  untouched and stays the coloured placeholder, so the code ships before the sheet (checked in Studio: a missing name
+  leaves the Ball as it was). `ItemArt.alpha` fades the label once art is on, the part otherwise.
+- **Frame pickers** (all from the clock and name tables built once; no string is built per frame):
+  orb: `floor(now * 4) % 4` while up; the take one-shot (0.06 s a frame) from the "orb" event's up=false, then the faint
+  `orb_spin_0` (ImageTransparency 0.75); ghost orbs the `ghost_orb_` set at the old half-bright rule. Crate: `crate_0`;
+  on a "gone" for a crate that **caught someone**, `crate_break_0..2` (0.05 / 0.08 / 0.07 s) then destroy. Trap thing:
+  `trap_armed`; the trap at a pinned runner's feet: `trap_snap_0` 0.06 s, then `trap_snap_1`, `trap_pried_1/2` by the
+  local runner's presses, `trap_armed` for 0.12 s after the hold, then gone. Beam: `ice_beam` (mirrored when `dir` is
+  -1), `ice_charge` at the hand for 0.05 s, `ice_fade` 0.1 s after "gone". Held icons: `crate_0`, `trap_armed` (1.8
+  wide), `ice_icon`; the hex `hex_dim` while the shared ward holds, else `hex_ready` / `hex_pulse` every 0.8 s, and
+  `hex_spent` 0.3 s when it leaves the slot mid-round.
+- **"Caught" without a new field:** `server/Items` fires each `hold` (with `by` = the thing's number) just before that
+  thing's `gone`, in the same frame, in order. The client marks the thing caught on the hold, so a gone after it is a
+  catch and any other gone is an expiry. No payload changed; `by` is now written into the remotes table.
+- **Runner holds:** `Movement.spriteFor` picks a hold first, from `s.hold` / `s.holdTime` / `s.holdSprite`, which `step`
+  records from the input it already had: trapped `floor(t * 8) % 2`, the stumble ROLL by `STUMBLE_ENDS` (0.14, 0.26,
+  0.38, 0.5, 0.7: trip, the tucked pose at 20 / 160 / 290 degrees, recover; Danzo's change on the canvas), a freeze the
+  frame showing when it landed. The old pick is now `Movement.motionSprite`. The five hold names are appended to
+  `Snapshot.SPRITES`, so older wire indices keep their meaning. Tests: `movement_sprites` (trap, roll, freeze on the
+  ground and mid-rise, the fallback) and `snapshot` (the names ride the wire). Mutation check: 11 mutants, 10 caught; the
+  miss (capturing `holdSprite` on every hold change, not only a freeze) is equivalent, since only a freeze reads it.
+- **One switch for the runner:** `ItemArt.HOLD_ART` (`runner_trapped_0` and `runner_stumble_0` in the sheet). Off: the
+  client draws and sends `motionSprite` and the frozen runner keeps the cyan box, exactly as before H21. On: hold poses,
+  and `Look:frozen` draws the brief's rim (the current frame again behind itself, tint `#45e0ff`, 1.08 x) plus a cyan
+  feet line instead of the box, on every screen (`Others.draw`'s new `iced` callback). **Risk for Danzo's Play:**
+  ImageColor3 multiplies, so the rim is cyan only where the art is light; on the dark graphite it may read weakly. If
+  it does, the fix is a white-filled silhouette per frame in the sheet (an art change), not more code.
+- **Left out on purpose:** other screens see no pry presses (the server does not send them), so a trap on another runner
+  stays on `trap_snap_1` until free; crate planks do not follow the runner's direction (one set of frames); the dummies
+  (no snapshot stream) show motion poses only.
+- **The trap in the guard:** `Sprites.Has` only knows the generated `Sprites.lua`. After `roblox build` and BEFORE the
+  upload, the names are there but the sheet id is still the old image, so every sprite (the runner's too) draws the wrong
+  rect. Seen in Studio on 2026-10-19: the runner and items were fragments. The guard covers a missing name, not a missing
+  upload (→ A6).
+
 ## Expansion: deficits at scale
 
 - Things cost one slab test per living runner per thing per frame: 4 runners x a few dozen things is negligible.

@@ -27,6 +27,43 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
+### H21 — Wire the item and hold art into the client (sprites on parts, hold poses, the frozen edge-light) — 2026-10-19 18:31 — OPEN
+- **Status (heavy, 2026-10-19):** Built, waiting on the sheet upload and Danzo's Play. Detail and decisions:
+  [items.md](systems/items.md) §9; new rule A6. Not committed.
+- **Trigger:** 2 (`shared/Movement.spriteFor` gains the hold poses; `movement_sprites.test.luau` pins them), 6 (the item
+  drawer and Look run every render frame: frame picking must stay allocation-free).
+- **Doc:** `docs/briefs/items-art.md` "Sprite names and sizes" (the contract: names, canvases, who picks the frame);
+  `docs/systems/sprites-and-animation.md` §3-§5 (frames are sprites, the clock picks; SurfaceGui on a part; the checklist
+  for a new animated thing); `docs/systems/items.md`; `client/Items.lua`, `client/Look.lua`, `client/Use.lua`,
+  `shared/Movement.lua`, `shared/Items.lua`.
+- **Observed:** Danzo (2026-10-19): "make it happen": the canvas art (https://claude.ai/artifact/K9dE1GepPSSWB29PKirtyE)
+  is to reach Play. The routine session draws the sprites and scenes IN PARALLEL (`tools/items-rig.js`, rig poses) and
+  runs `roblox build`; Danzo uploads. This handoff is the code half only.
+- **Evidence:** `client/Items.lua` draws orbs, placed things, held icons and hold overlays as coloured Parts; `Look.lua`
+  builds one SurfaceGui + ImageLabel per runner (`Look:_build`, `setSprite`, `Look:ghost`); `Movement.spriteFor` has
+  no hold branch; `Items.holdOf(id)` gives {kind, untilT, presses}; `Sprites.Has(name)`; `server/Items.lua` fires
+  put / gone / hold / free over `ItemEvent` ("gone" covers broke, caught someone, or expired).
+- **Routine session's read (guess):** (1) a small `client/Sprite.lua` helper (or a function in a new module) that puts a
+  SurfaceGui + ImageLabel on a given Part (the Look pattern, bilinear resample) and applies a name, so orbs, crates,
+  traps, beams and icons draw sprites ON the parts they already have (the Part turns transparent when a sprite is
+  applied; stays a coloured placeholder when `Sprites.Has` is false). (2) Orb spin from the clock; the take one-shot
+  on the "orb" event with up=false; trap frames from the hold's presses; crate break on "gone" when the crate caught
+  someone (if "gone" cannot tell that from expiry, add a `why` field to the gone payload and document it in the
+  remotes table). (3) `Movement.spriteFor`: hold == "trap" → `runner_trapped_` .. floor(elapsed*8)%2; hold == "stumble"
+  → `runner_stumble_0/1/2` by elapsed (0.2/0.3/0.2); a freeze keeps the frame it had when the hold landed. Movement is
+  pure: the hold's start time and kind are already inputs; keep it so. Tests pin all three. (4) Look: on a freeze, a
+  second ImageLabel behind the first, same rect, tint `#45e0ff`, 1.08 scale, plus a thin cyan line at the feet; removed
+  on free. (5) Keep the line ceiling: `Items.lua` is near its limit, so the sprite helper and the frame picking go in a
+  new module.
+- **Decision needed:** build it, guarded so it ships before the sheet: every `Sprites.Apply` behind `Sprites.Has`.
+  Verification steps 3-4 (no tree change expected; a new ModuleScript is fine, say so). Update items.md, ghosts.md if
+  touched, `roblox/src/client/README.md`, one worklog line. Leave H21 OPEN "Built, waiting on the sheet upload and
+  Danzo's Play". Do NOT commit; do NOT touch `sprites/`, `scenes/`, `tools/`, `Sprites.lua` or `assets.lock.json`
+  (the routine session owns those this block).
+- **Blocked routine work:** none; the art is drawn alongside.
+
+## Resolved
+
 ### H20 — A frozen tagger cannot pass the fuse (rule 44 changes for the freeze) — 2026-10-19 18:11 — RESOLVED
 - Built (heavy, not committed): `Items.canTag` refuses an ice-frozen holder's claims on the server's hold record (Match + Bots), iced runners stay taggable, trap/stumble unchanged (flagged); rule 44 reworded; detail in [items.md](systems/items.md) §5.
 

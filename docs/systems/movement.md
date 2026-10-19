@@ -152,7 +152,7 @@ boost) into the air, bleeding only at the over-speed rate while held. A double j
 - **Ceiling bonk.** A rise into a roof zeroes the upward speed and ends the jump hold, so the runner drops at once
   instead of hanging under it for 0.1 s.
 
-**Sprite pick (`Movement.spriteFor`, decided H3, 2026-10-10).** First match wins:
+**Sprite pick (`Movement.spriteFor`, decided H3, 2026-10-10).** First match wins. H21 puts a hold first (trap, stumble roll, freeze's kept frame; [items.md](items.md) §9); this table is `Movement.motionSprite`:
 
 | State | Sprite |
 |---|---|

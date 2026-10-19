@@ -24,6 +24,9 @@ export type State = {
 	airJumps: number, dashes: number, dashTime: number, dashDir: number, dashCooldown: number, dashFloor: boolean,
 	wallForce: number, wallForceDir: number, runDistance: number, runFrom: number, stillTime: number,
 	sliding: boolean, events: Events,
+	-- H21, for the sprite pick only: the hold in force (input.hold as last stepped), seconds since it landed, and the
+	-- frame a freeze keeps (the one showing when it landed).
+	hold: string?, holdTime: number, holdSprite: string,
 }
 
 local function approach(v: number, target: number, maxDelta: number): number
@@ -52,8 +55,36 @@ function Movement.new(x: number, y: number): State
 		coyote = 0, jumpBuffer = 0, jumpHold = 0, holdSpeed = 0,
 		airJumps = Config.AIR_JUMPS, dashes = 1, dashTime = 0, dashDir = 1, dashCooldown = 0, dashFloor = false,
 		wallForce = 0, wallForceDir = 0, runDistance = 0, runFrom = 0, stillTime = 0, sliding = false,
-		events = {},
+		events = {}, hold = nil, holdTime = 0, holdSprite = "runner_idle",
 	}
+end
+
+-- The sprite names, built once so a frame pick never builds a string (H21, → trigger 6). The hold poses are the
+-- items-art brief's contract (docs/briefs/items-art.md, "Sprite names and sizes"); shared/Snapshot puts them on the wire.
+local RUN_NAMES: { string } = {}
+for i = 0, Config.RUN_FRAMES - 1 do RUN_NAMES[i + 1] = "runner_run_" .. tostring(i) end
+local TRAPPED = { "runner_trapped_0", "runner_trapped_1" }
+local STUMBLE = { "runner_stumble_0", "runner_stumble_1", "runner_stumble_2", "runner_stumble_3", "runner_stumble_4" }
+Movement.HOLD_SPRITES = { TRAPPED[1], TRAPPED[2], STUMBLE[1], STUMBLE[2], STUMBLE[3], STUMBLE[4], STUMBLE[5] }
+Movement.TRAPPED_FPS = 8 -- the stuck pose's yank / lurch, ping-pong (two frames: they alternate)
+-- The stumble is a roll (Danzo, 2026-10-19): trip 0.14 s, the tucked pose at 20 / 160 / 290 degrees 0.12 s each, recover
+-- 0.2 s; each entry is when that frame ENDS (cumulative). The last one is Config.STUMBLE_TIME, 0.7 s.
+Movement.STUMBLE_ENDS = { 0.14, 0.26, 0.38, 0.5, 0.7 }
+
+-- The pose from motion alone (docs/systems/movement.md §3, H3): the dash pose while dashing; in the air rise, apex or
+-- fall by vertical speed (a wall slide is a fall: its capped speed sits inside the apex band); on the ground idle at
+-- rest after a short grace, else the RUN_FRAMES run frames by distance travelled. Also the client's fallback when the
+-- sheet lacks a hold pose (H21: the game looks as it did before the art until Danzo uploads).
+function Movement.motionSprite(s: State): string
+	if s.dashTime > 0 then return "runner_dash" end
+	if not s.grounded then
+		if s.sliding or s.vy < -Config.APEX_POSE_BELOW then return "runner_fall" end
+		if s.vy > Config.APEX_POSE_BELOW then return "runner_jump_rise" end
+		return "runner_jump_apex"
+	end
+	if s.stillTime >= Config.IDLE_GRACE then return "runner_idle" end
+	local n = Config.RUN_FRAMES -- frame = which nth of the cycle; RUN_CYCLE alone sets the cadence
+	return RUN_NAMES[math.floor((s.runDistance - s.runFrom) * n / Config.RUN_CYCLE) % n + 1]
 end
 
 -- Rule 15: dash and double jump come back on landing and on a wall touch. A dash in progress keeps its charge spent.
@@ -97,6 +128,12 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	local scale = if input.touch then Config.TOUCH_WINDOW_SCALE else 1
 	local moveX = Movement.axis(input.moveX)
 	local hold = input.hold
+	if hold ~= s.hold then -- a hold landed (or ended): its clock restarts; a freeze keeps the frame showing now (H21)
+		if hold == "freeze" then s.holdSprite = Movement.motionSprite(s) end
+		s.hold, s.holdTime = hold, 0
+	elseif hold then
+		s.holdTime += dt
+	end
 	local jumpPressed, jumpHeld, dashPressed = input.jumpPressed, input.jumpHeld, input.dashPressed
 	if hold then
 		moveX, jumpPressed, jumpHeld, dashPressed = 0, false, false, false
@@ -245,19 +282,20 @@ function Movement.integrate(s: State, dt: number)
 	s.y += s.vy * dt
 end
 
--- Which sprite to show (docs/systems/movement.md §3, H3): the dash pose while dashing; in the air rise, apex or
--- fall by vertical speed (a wall slide is a fall: its capped speed sits inside the apex band); on the ground idle
--- at rest after a short grace, else the RUN_FRAMES run frames by distance travelled.
+-- Which sprite to show (docs/systems/movement.md §3): a hold first (H21: trapped yank / lurch at TRAPPED_FPS, the
+-- stumble's roll by time since it landed (STUMBLE_ENDS), a freeze the frame it landed on), else motionSprite.
 function Movement.spriteFor(s: State): string
-	if s.dashTime > 0 then return "runner_dash" end
-	if not s.grounded then
-		if s.sliding or s.vy < -Config.APEX_POSE_BELOW then return "runner_fall" end
-		if s.vy > Config.APEX_POSE_BELOW then return "runner_jump_rise" end
-		return "runner_jump_apex"
+	local hold, t = s.hold, s.holdTime
+	if hold == "trap" then return TRAPPED[math.floor(t * Movement.TRAPPED_FPS) % 2 + 1] end
+	if hold == "stumble" then
+		local ends = Movement.STUMBLE_ENDS
+		for i = 1, #ends - 1 do
+			if t < ends[i] then return STUMBLE[i] end
+		end
+		return STUMBLE[#ends] -- recover, and held there should the hold outlast the table
 	end
-	if s.stillTime >= Config.IDLE_GRACE then return "runner_idle" end
-	local n = Config.RUN_FRAMES -- frame = which nth of the cycle; RUN_CYCLE alone sets the cadence
-	return "runner_run_" .. tostring(math.floor((s.runDistance - s.runFrom) * n / Config.RUN_CYCLE) % n)
+	if hold == "freeze" then return s.holdSprite end
+	return Movement.motionSprite(s)
 end
 
 return Movement

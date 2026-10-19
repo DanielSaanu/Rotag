@@ -30,3 +30,9 @@ the wall slide's 10 studs/s sat inside the 20 apex band and would have shown the
 PlayerGui and adorned to a part, a test BillboardGui still showed nothing in a Studio capture, while the neon wedges and
 the runner's SurfaceGui did. Build markers the way the runner is drawn, and LOOK at a capture before calling one done.
 *(2026-10-11, handoff H6, the IT triangle.)*
+
+**A6 — `Sprites.Has` says a name is in the generated `Sprites.lua`, not that the sheet holding it was uploaded.** After
+`roblox build` the new names and new rects are there while `Sheets[1].Id` still points at the old image, so everything
+(the old sprites too, whose rects moved) draws the wrong part of the old picture until Danzo uploads. Guard new art with
+`Sprites.Has` so code can ship BEFORE the build; between build and upload, do not judge the look in Studio, and tell
+Danzo to upload before he plays. *(2026-10-19, handoff H21, the item art.)*
