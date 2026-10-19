@@ -27,7 +27,8 @@ local studio = game:GetService("RunService"):IsStudio()
 
 type Drawn = { id: number, root: BasePart, look: any, params: RaycastParams, pose: RemotePose.Pose,
 	trail: RemotePose.Trail, prevT: number, at: Vector3, streamed: boolean, logged: number,
-	lunge: { x0: number, y0: number, tx: number, ty: number, t0: number }? }
+	lunge: { x0: number, y0: number, tx: number, ty: number, t0: number }?,
+	hold: any?, holdSprite: string? } -- H21: the hold a streamless runner is under, and the frame a freeze keeps
 local drawn: { [Model]: Drawn } = {}
 local byId: { [number]: Model } = {}
 local byRoot: { [BasePart]: Vector3 } = {} -- where each other runner was drawn this frame (the IT marker, the claim)
@@ -103,9 +104,19 @@ local function log(model: Model, d: Drawn, now: number, st: Snapshot.Stream?)
 	end
 end
 
+-- A streamless runner (the Studio dummies) under a hold: the pose comes from the hold, not the motion, exactly as
+-- Movement.spriteFor picks it for the local runner (trapped ping-pong, the roll by elapsed, a freeze keeps the frame
+-- that was showing when it landed). `h` = client/Items' hold {kind, from}. Streamed runners send their own pose.
+local function heldSprite(d: Drawn, h: any, sprite: string, now: number): string
+	if h ~= d.hold then d.hold, d.holdSprite = h, sprite end
+	return Movement.spriteFor({ hold = h.kind, holdTime = now - h.from, holdSprite = d.holdSprite } :: any)
+end
+
 -- Every render frame, after the camera. `ghostMode(id)` (H15): nil for the living, "ready"/"cooling" for a ghost.
--- `iced(id)` (H21): the ice beam holds it, so its Look draws the frozen rim.
-function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((number) -> boolean)?)
+-- `iced(id)` (H21): the ice beam holds it, so its Look draws the frozen rim. `heldOf(id)` (H21): the hold on runner
+-- id, or nil (only once the sheet has the hold art), for the streamless runners' poses.
+function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((number) -> boolean)?,
+	heldOf: ((number) -> any?)?)
 	local now = os.clock()
 	for model, d in drawn do
 		if not d.root.Parent or (player and model == player.Character) then
@@ -120,6 +131,8 @@ function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((numb
 			d.look:react(v.events)
 		else
 			x, y, sprite, facing, dashing, vx = fromBody(d, now, dt)
+			local h = if heldOf then heldOf(d.id) else nil
+			if h then sprite = heldSprite(d, h, sprite, now) else d.hold = nil end
 		end
 		d.streamed = v ~= nil
 		log(model, d, now, st)

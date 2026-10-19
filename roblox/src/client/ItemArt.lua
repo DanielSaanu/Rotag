@@ -37,6 +37,8 @@ local ICE_FADE = 0.1
 local SNAP = 0.06 -- trap_snap_0 as a hold lands, then trap_snap_1
 local PRIED = { "trap_pried_1", "trap_pried_2" }
 local TRAP_RELEASE = 0.12 -- after the hold: trap_armed this long, then gone
+local ORB_FILL = 128 / 68 -- the ball's diameter as a share of its canvas, inverted (tools/items-rig.js: r = 34 of 128)
+local CRATE_FILL = 128 / 80 -- the cube: 80 of 128 px
 
 -- Part -> its label and the name and flip on it. Weak keys: a destroyed part takes its entry with it.
 local drawn: { [BasePart]: { image: ImageLabel, name: string, mirrored: boolean, alpha: number } } =
@@ -100,6 +102,11 @@ end
 function ItemArt.orb(p: BasePart, ghost: boolean, up: boolean, takenAt: number?, now: number, bright: number): boolean
 	local frame, t = 1, FAINT
 	local set = SPIN[ghost]
+	if not drawn[p] and Sprites.Has(set[1]) then
+		-- The sphere fills 68 of its 128 px canvas (the shatter needs the rest), so the visual part grows to keep the
+		-- ball itself at ORB_SIZE studs. These parts collide with nothing; the server judges the pickup (seen in Play).
+		p.Size = p.Size * ORB_FILL
+	end
 	if up then
 		frame, t = math.floor(now * ORB_FPS) % 4 + 1, bright
 	elseif takenAt and now - takenAt < 4 * TAKE_FRAME then
@@ -115,6 +122,9 @@ end
 -- art fields for client/Items: `art` (a sprite is on), `charge`.
 function ItemArt.put(p: BasePart, item: string, dir: number): (boolean, BasePart?)
 	local name = PUT[item]
+	if item == "crate" and not drawn[p] and Sprites.Has(name) then
+		p.Size = Vector3.new(p.Size.X * CRATE_FILL, p.Size.Y * CRATE_FILL, p.Size.Z) -- the cube is 80 of 128 px
+	end
 	if not (name and ItemArt.show(p, name, dir < 0)) then return false, nil end
 	if item ~= "ice" or not Sprites.Has("ice_charge") then return true, nil end
 	local c = Instance.new("Part")

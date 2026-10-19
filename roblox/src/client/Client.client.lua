@@ -52,6 +52,12 @@ local function iced(id: number): boolean
 	return h ~= nil and h.kind == "freeze"
 end
 
+-- H21: the hold on a streamless runner (a Studio dummy), so client/Others draws its hold pose too.
+local function heldOf(id: number): any?
+	if not ItemArt.HOLD_ART then return nil end
+	return Items.holdOf(id)
+end
+
 local function teardown()
 	if not current then return end
 	current.look:destroy()
@@ -204,7 +210,7 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		c.look:draw(pose(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
 		if not readySent then sendReady() end
 	end
-	Others.draw(dt, ghostMode, iced)
+	Others.draw(dt, ghostMode, iced, heldOf)
 	local st = Tagging.state()
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))
