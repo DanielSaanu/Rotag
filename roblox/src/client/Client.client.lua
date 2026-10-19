@@ -19,6 +19,7 @@ local Hud = require(script.Parent:WaitForChild("Hud"))
 local Others = require(script.Parent:WaitForChild("Others"))
 local Arrows = require(script.Parent:WaitForChild("Arrows"))
 local Items = require(script.Parent:WaitForChild("Items"))
+local Use = require(script.Parent:WaitForChild("Use")) -- H19: Use, prying, the local hold (docs/systems/items.md)
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -91,6 +92,7 @@ RunService.PreSimulation:Connect(function(dt: number)
 		return
 	end
 	local input = Controls.read(c.humanoid)
+	Use.frame(input, s, Tagging.frozen()) -- a hold rides on input.hold; a hold never stops the tag claim below
 	if Tagging.frozen() then
 		input = { moveX = 0, jumpPressed = false, jumpHeld = false, dashPressed = false, touch = input.touch }
 		s.vx, s.dashTime = 0, 0 -- a dash in progress ends too
@@ -185,7 +187,8 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	end
 	Others.draw(dt, ghostMode)
 	local st = Tagging.state()
-	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true) -- H18: held items, slot
+	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
+		Tagging.isAlive(player.UserId))
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
 	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	Arrows.update(Tagging.me(), Tagging.state())
@@ -238,6 +241,7 @@ Hud.start(player)
 Arrows.start(player, Hud.nameOf)
 Others.start(player)
 Items.start(player)
+Use.start(player)
 -- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
 -- where Others draws each runner (the snapshot stream), as the server judges it.
 Tagging.start(player, function() end, function(v)

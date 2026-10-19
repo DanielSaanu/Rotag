@@ -35,6 +35,26 @@ Config.ORB_FIRST = 5              -- seconds into a round before any orb is up (
 Config.ORB_RESPAWN = 10           -- seconds a taken orb stays gone; a ghost orb: this / (1 + GHOST_ORB_RAMP x ghosts)
 Config.GHOST_ORB_RAMP = 0.5
 Config.ORB_SIZE = 2               -- studs across an orb: a runner box touching this square takes it
+-- Items and holds (DESIGN §3 rules 41-45, docs/systems/items.md; Danzo's numbers 2026-10-19, H16/H19).
+Config.ITEM_LIFE = 20             -- seconds a dropped crate or a set trap stays (a trap: or until it catches someone)
+Config.CRATE_SIZE = 3             -- studs across a crate, dropped behind you
+Config.TRAP_W = 3                 -- studs: the bear trap, set at your feet
+Config.TRAP_H = 1
+Config.ICE_LENGTH = 24            -- studs the ice beam reaches ahead the way you face; it does not turn with you
+Config.ICE_HEIGHT = 2
+Config.ICE_LIFE = 0.5             -- seconds the beam is out
+Config.STUMBLE_TIME = 0.7         -- crate: carry on at STUMBLE_SPEED x run speed, no steer, jump, dash or item
+Config.STUMBLE_SPEED = 0.5
+Config.FREEZE_TIME = 1            -- ice: no input, sliding on your momentum, which bleeds to 0 over the hold
+Config.TRAP_TIME = 1              -- bear trap: pinned this long at most (Danzo: "fast paced"; rule 11 unchanged) ...
+Config.TRAP_PRESSES = 3           -- ... or this many presses (any key or click; taps on touch) pry it open sooner
+Config.HOLD_IMMUNITY = 0.5        -- after any hold (and the tag freeze) no new hold lands for this long: no chains
+Config.OWNER_SAFE = 0.5           -- a crate or trap never catches its owner this soon, nor before it has stepped off it
+Config.DASH_IFRAMES = 0.2         -- rule 45: the first this-long of a dash dodges aimed abilities and clears a trap
+Config.HOLD_GRACE = 0.3           -- server: seconds of lateness a hold forgives (the victim's client hears of it a ping
+                                  -- later): its x budget drops to its speed x this + HOLD_SLACK when it lands; trust.md §10
+Config.HOLD_SLACK = 2             -- studs (and studs/s on a freeze's refill): float and snapshot-step dust
+Config.USE_GAP = 0.05             -- a client's UseItem presses closer together than this are dropped unread
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart

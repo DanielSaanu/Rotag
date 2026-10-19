@@ -35,6 +35,15 @@ Arena.GHOST_ORBS = {
 	{ x = 10.5 * T, y = 5 * T + ORB_UP, kind = "ghost" },
 	{ x = 26 * T, y = ORB_UP, kind = "ghost" },
 }
+-- H19 (rules 42, 43): three living-orb spots: on the floor in the dummies' patrol lane (x 12-52, so a solo test sees
+-- dummies take and use living items), on PlatformHigh, and on the floor at the far left.
+Arena.LIVING_ORBS = {
+	{ x = 8 * T, y = ORB_UP, kind = "living" },
+	{ x = -6 * T, y = 3 * T + ORB_UP, kind = "living" },
+	{ x = -16 * T, y = ORB_UP, kind = "living" },
+}
+Arena.ORBS = table.clone(Arena.GHOST_ORBS) -- every spot server/Orbs runs: ghost ones first (the indices clients see)
+for _, s in Arena.LIVING_ORBS do table.insert(Arena.ORBS, s) end
 
 -- The stock Studio template puts a Baseplate and a SpawnLocation at the origin. Seen side-on, the baseplate's top is
 -- a grey plane running toward the camera, and the spawn pad sits in the runner's plane. Remove both for this Play

@@ -80,10 +80,11 @@
 - [x] **QA loop for PR 1 done (2026-10-19): 7 → 7 → 8/10,** target met in round 3. Summary and Danzo's Play checklist:
       `docs/qa/ghosts-v2-core-summary.md`. Fixed on the way: dummies default 3, slot readout, held items clear between
       rounds, the tests left out of a commit (G4), ghost orbs dim for the living.
-- [ ] **Danzo's call, raised in all three rounds: the hex is a stream, not rare.** One ghost lands a hex every 6 s (the
+- [x] **Danzo's call, raised in all three rounds: the hex is a stream, not rare.** One ghost lands a hex every 6 s (the
       1.5x cap) because the ghost pool is hex-only until PR 2. Options: (a) accept it for this PR, PR 2 dilutes the pool
       (Claude's lean); (b) an interim hex chance on the ghost roll, a Config weight PR 2 removes; (c) slower ghost orbs
       until PR 2 (weakest). Say a, b or c.
+      **Danzo (2026-10-19): a.** Then "build 2": H19 opened for PR 2.
 - [ ] **Danzo: Play the checklist** in the summary (keyboard, then the phone preset, then a two-player hex). The
       reviewer could not drive a human's hex; Claude saw dummies do it.
 - [ ] **Next (2026-10-19):** PR 1 done and pushed. Build on in the PR order of

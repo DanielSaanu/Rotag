@@ -140,4 +140,16 @@ do -- Tag: every change of hands is a new hold (kept with Round.hold, → S12, t
 	assert(r2.hold == 1 and r2.it == B, "the holder leaving")
 end
 
+do -- rule 41 (H19): the per-target ward. A holder a ghost's ice beam hit is safe from the hex; a hex wards its target
+	local r, g, o, t = afterFirstOut({ A, B, C }, A)
+	local it = r.it :: number
+	o.held[A] = "hex"
+	g.wards[it] = t + 2 -- what Items.step writes when a ghost's beam freezes it
+	local ok, why = Ghost.canHex(r, g, o, A, it, t + 1)
+	assert(not ok and why ~= nil and string.find(why, "target warded", 1, true) ~= nil, "warded by a ghost's ice hit")
+	assert(Ghost.canHex(r, g, o, A, it, t + 2), "and free again when that ward ends")
+	Ghost.hex(r, g, o, A, t + 2)
+	assert(near(g.wards[it], t + 2 + Config.GHOST_WARD), "a hex wards its target from every ghost's aimed abilities")
+end
+
 print("ghost ok")

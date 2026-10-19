@@ -110,7 +110,8 @@ end
 -- the claimant saw the target late too, so "touching on the tagger's screen" is the claimant's sample against an
 -- older target sample, not the same frame. A claimant sample marked `untrusted` (H12: recorded while the server's speed
 -- check, shared/MoveCheck, held that runner suspect) is never used; a target's is (the tagger did nothing wrong).
-export type Sample = { t: number, x: number, y: number, untrusted: boolean? }
+-- `iframe` (H19): recorded inside a dash's i-frames (rule 45); only a hex and the items read it, never a tag.
+export type Sample = { t: number, x: number, y: number, untrusted: boolean?, iframe: boolean? }
 function Tag.touchedBetween(a: { Sample }, b: { Sample }, from: number, to: number, lag: number): boolean
 	for i = #a, 1, -1 do
 		local sa = a[i]

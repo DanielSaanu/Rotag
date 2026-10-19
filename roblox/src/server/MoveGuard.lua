@@ -94,4 +94,18 @@ function MoveGuard.forget(id: number)
 	guards[id] = nil
 end
 
+-- H19 (rule 44, trust.md §10): a hold landed on `id` at `from` until `untilT`, when the server measured it moving at
+-- `speed`. The speed check holds it to the hold (MoveCheck.hold: the x budget drops to what lateness can cost, the
+-- refill to the hold's allowance): a client that ignores a trap or a freeze is snapped back like any other violation.
+-- The server's own runners have no check (their bodies are the server's).
+function MoveGuard.hold(id: number, kind: string, from: number, untilT: number, speed: number?)
+	local g = guards[id]
+	if g then MoveCheck.hold(g.check, kind, from, untilT, speed) end
+end
+
+function MoveGuard.release(id: number, t: number)
+	local g = guards[id]
+	if g then MoveCheck.release(g.check, t) end
+end
+
 return MoveGuard

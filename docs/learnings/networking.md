@@ -98,3 +98,14 @@ window, so a point test can let a runner pass straight through a pickup or zone.
 sample to the newest (a slab test), skip an untrusted sample as either end, and pin "a dash between two samples through
 it counts" in a test. The tag escapes this only because it pairs many samples over a rewind window. *(2026-10-19,
 handoff H18, `Orbs.touches`.)*
+
+**N15 — When the server tightens a check for something the client only hears of a ping later, size the forgiveness to
+that lateness, not to the check's general slack, and check the outcome over the event's own length.** A hold (trap,
+stumble, freeze) is written on the server and applied by the victim's client a ping later. H19's first version kept
+the speed check's whole 24-stud burst "so honest victims are not flagged" and lowered only the refill: over a 1 s
+freeze from a run that burst was never used up, so a client could ignore the freeze completely (QA round 1). Drop the
+cap at the event to what lateness costs (the victim's speed, measured on the server's own samples, x the grace, plus
+dust), keep it as the cap for the whole event so standing still cannot bank budget, and derive the allowance from that
+same measured speed. Pin all four sides: an honest client a grace late passes; ignoring the event is caught BEFORE it
+ends; idling then sprinting inside it is caught; the control with no event passes. State the residual in studs.
+*(2026-10-19, handoff H19, `MoveCheck.hold`, trust.md §10; first version wrong, corrected by QA round 1.)*

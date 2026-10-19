@@ -37,7 +37,7 @@ function Dummy.new(tagName: string, id: number?)
 	model:SetAttribute("RunnerId", runnerId)
 	CollectionService:AddTag(model, tagName)
 	model.Parent = workspace
-	return { model = model, root = root, dir = 1 }
+	return { model = model, root = root, dir = 1, facing = 1 } -- facing: where its crate or beam goes (H19)
 end
 
 -- Round start (H8): stand at `x` on the floor. Outside the patrol, Dummy.step walks it back in.
@@ -52,9 +52,11 @@ function Dummy.step(d, dt: number, chaseX: number?, frozen: boolean)
 	if chaseX then
 		local dx = chaseX - x
 		x += math.sign(dx) * math.min(math.abs(dx), CHASE_SPEED * dt)
+		if dx ~= 0 then d.facing = math.sign(dx) end
 	else
 		x += d.dir * PATROL_SPEED * dt
 		if x > PATROL_MAX then d.dir = -1 elseif x < PATROL_MIN then d.dir = 1 end
+		d.facing = d.dir
 	end
 	d.root.CFrame = CFrame.new(x, Y, 0)
 end

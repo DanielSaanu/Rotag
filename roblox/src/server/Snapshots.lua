@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Snapshot = require(Shared:WaitForChild("Snapshot"))
+local ItemRules = require(Shared:WaitForChild("Items"))
 
 local Snapshots = {}
 
@@ -26,6 +27,11 @@ local limiters: { [number]: Snapshot.Limiter } = {}
 local grace: { [number]: { x: number, y: number, until_: number } } = {}
 local batch: { [number]: { t: number, b: buffer } } = {}
 local dirty = false
+-- H19 (items.md §3): the facing each stream reports (where Use puts a crate or a beam), and when the server saw each
+-- runner's last COUNTED dash start (rule 45's i-frames; Items.dashSeen enforces the dash cooldown on the server).
+local facing: { [number]: number } = {}
+local dashAt: { [number]: number } = {}
+local wasDashing: { [number]: boolean } = {}
 
 local function onSnapshot(player: Player, b: any)
 	local id = player.UserId
@@ -47,6 +53,10 @@ local function onSnapshot(player: Player, b: any)
 	end
 	lastSeq[id] = s.seq
 	latest[id] = { x = s.x, y = s.y, vx = s.vx, vy = s.vy, t = now }
+	facing[id] = s.facing
+	local started = s.dash or (s.dashing and not wasDashing[id]) -- the event, or the flag rising if that packet was lost
+	wasDashing[id] = s.dashing
+	if started and ItemRules.dashSeen(dashAt[id], now) then dashAt[id] = now end
 	batch[id] = { t = now, b = b }
 	dirty = true
 end
@@ -67,7 +77,13 @@ end
 
 function Snapshots.forget(id: number)
 	latest[id], lastSeq[id], limiters[id], grace[id], batch[id] = nil, nil, nil, nil, nil
+	facing[id], dashAt[id], wasDashing[id] = nil, nil, nil
 end
+
+-- H19: the facing the runner's stream last reported (+1 right, -1 left; 1 with no stream), and whether a dash the
+-- server counted is in its i-frames at `now` (rule 45).
+function Snapshots.facingOf(id: number): number return facing[id] or 1 end
+function Snapshots.iframed(id: number, now: number): boolean return ItemRules.iframed(dashAt[id], now) end
 
 -- One batch to everyone per Heartbeat: { [runner id] = { t = server stamp, b = the client's buffer } }. Each client
 -- skips its own id. Four runners are ~150 bytes, well inside the unreliable limit (900).

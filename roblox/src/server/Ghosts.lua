@@ -11,6 +11,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local Tag = require(Shared:WaitForChild("Tag"))
 local Ghost = require(Shared:WaitForChild("Ghost"))
 local OrbRules = require(Shared:WaitForChild("Orbs"))
+local ItemRules = require(Shared:WaitForChild("Items"))
 local Orbs = require(script.Parent:WaitForChild("Orbs"))
 
 local Ghosts = {}
@@ -56,7 +57,8 @@ local function judge(ghost: number, p: Pending, to: number, now: number): boolea
 		return true
 	end
 	local ha, hb = c.history[ghost], c.history[p.target]
-	if not (ha and hb and Tag.touchedBetween(ha, hb, p.from, to, p.lag)) then return false end
+	-- H19, rule 45: a holder in its dash's i-frames dodges the hex (only samples outside them count)
+	if not (ha and hb and Tag.touchedBetween(ha, ItemRules.undodged(hb), p.from, to, p.lag)) then return false end
 	Ghosts.land(r, g, o, ghost, now)
 	return true
 end

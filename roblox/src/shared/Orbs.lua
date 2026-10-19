@@ -4,8 +4,9 @@
 -- SERVER owns the one State per round and is the only caller that changes it; clients draw what ItemEvent says.
 -- An orb sits at a fixed spot; its kind says who may take it: "ghost" orbs are for ghosts only (rule 39). Touch one
 -- that is up with an empty slot and the server rolls the pool of the orb's kind into your slot. One slot per runner.
--- Living orbs and their pools (runner, holder) are PR 2 of the build order (ghosts-v2-proposal.md §12).
+-- "living" orbs are for the living (H19); the pools (runner, holder, ghost) are shared/Items.POOLS.
 local Config = require(script.Parent.Config)
+local Items = require(script.Parent.Items)
 
 local Orbs = {}
 
@@ -18,15 +19,10 @@ export type State = {
 	held: { [number]: string },    -- per runner id: the one item in its slot
 }
 -- One runner as the server last recorded it: (x, y) now, (px, py) the sample before, if any (the path counts).
-export type Taker = { id: number, x: number, y: number, px: number?, py: number?, ghost: boolean }
+export type Taker = { id: number, x: number, y: number, px: number?, py: number?, ghost: boolean,
+	holder: boolean? }
 -- What changed: an orb came back (up = true), or `by` took it and rolled `item` (up = false).
 export type Event = { spot: number, up: boolean, by: number?, item: string? }
-
--- The pools, { item, weight } rows (rule 39). The ghost pool is the hex alone until PRs 2 and 4 add crate, trap, ice,
--- fixture, boost pad and boost grant (weights in ghosts-v2-proposal.md §3, where the hex is 8 in 100: rare).
-Orbs.POOLS = {
-	ghost = { { "hex", 1 } },
-} :: { [string]: { { any } } }
 
 function Orbs.new(spots: { Spot }, now: number): State
 	return { spots = spots, takenAt = {}, up = {}, firstAt = now + Config.ORB_FIRST, held = {} }
@@ -41,33 +37,16 @@ end
 -- Up at `now`, with `ghosts` ghosts in the round NOW: the respawn is recomputed every frame, so a new ghost brings a
 -- waiting ghost orb back sooner. An orb whose kind has no pool yet is never up (nobody could take it).
 function Orbs.isUp(o: State, i: number, now: number, ghosts: number): boolean
-	if now < o.firstAt or Orbs.POOLS[o.spots[i].kind] == nil then return false end
+	if now < o.firstAt or Items.poolFor(o.spots[i].kind) == nil then return false end
 	local t = o.takenAt[i]
 	return t == nil or now >= t + Orbs.respawnTime(o.spots[i].kind, ghosts)
 end
 
--- One axis of the slab test: narrows [t0, t1] to where the moving point a -> b is within h of c; nil if never.
-local function slab(a: number, b: number, c: number, h: number, t0: number, t1: number): (number?, number?)
-	local d = b - a
-	if math.abs(d) < 1e-9 then
-		if math.abs(a - c) > h then return nil, nil end
-		return t0, t1
-	end
-	local u, v = (c - h - a) / d, (c + h - a) / d
-	if u > v then u, v = v, u end
-	t0, t1 = math.max(t0, u), math.min(t1, v)
-	if t0 > t1 then return nil, nil end
-	return t0, t1
-end
-
 -- Does a runner box moving from (px, py) to (x, y) touch the orb's square on the way? The whole path between two of
--- the server's samples counts, so a dash (4 studs a snapshot) cannot skip over an orb.
+-- the server's samples counts, so a dash (4 studs a snapshot) cannot skip over an orb (Items.swept, → N14).
 function Orbs.touches(spot: Spot, x: number, y: number, px: number?, py: number?): boolean
-	local hx = Config.RUNNER_WIDTH / 2 + Config.ORB_SIZE / 2
-	local hy = Config.RUNNER_HEIGHT / 2 + Config.ORB_SIZE / 2
-	local t0, t1 = slab(px or x, x, spot.x, hx, 0, 1)
-	if t0 == nil or t1 == nil then return false end
-	return (slab(py or y, y, spot.y, hy, t0, t1)) ~= nil
+	return Items.swept(spot.x, spot.y, Config.RUNNER_WIDTH / 2 + Config.ORB_SIZE / 2,
+		Config.RUNNER_HEIGHT / 2 + Config.ORB_SIZE / 2, x, y, px, py)
 end
 
 -- A weighted pick from a pool with an injected random source (rand() in [0, 1)).
@@ -97,7 +76,7 @@ function Orbs.step(o: State, now: number, ghosts: number, takers: { Taker }, ran
 		if up then
 			for _, who in takers do
 				if Orbs.canTake(o, i, who, now, ghosts) and Orbs.touches(spot, who.x, who.y, who.px, who.py) then
-					local item = Orbs.roll(Orbs.POOLS[spot.kind], rand)
+					local item = Orbs.roll(Items.poolFor(spot.kind, who.holder) :: { { any } }, rand) -- rules 39, 43
 					o.takenAt[i], o.held[who.id], up = now, item, false
 					table.insert(events, { spot = i, up = false, by = who.id, item = item })
 					break

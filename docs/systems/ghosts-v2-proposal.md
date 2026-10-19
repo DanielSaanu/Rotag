@@ -2,7 +2,8 @@
 
 **Created:** 2026-10-19 by the heavy agent (handoff H16). **Status: ADOPTED 2026-10-19, this is the spec** (DESIGN §1,
 §2, §3 rules 37-51, §6.2, §6.8). **PR 1 built 2026-10-19 (H18)**: no comeback, ghost orbs, the hex; as built, with the
-decisions taken while building, in [ghosts.md](ghosts.md). PRs 2-6 (§12) not built.
+decisions taken while building, in [ghosts.md](ghosts.md). **PR 2 built 2026-10-19 (H19)**: living orbs, Use, the holds;
+as built in [items.md](items.md). PRs 3-6 (§12) not built.
 
 **Danzo's decisions (2026-10-19), which override the proposal text below wherever they differ:**
 - Ruleset 1, "orbs for everyone". §1/§2 now say "the next round is their way back".

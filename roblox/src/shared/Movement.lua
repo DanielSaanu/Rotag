@@ -8,8 +8,11 @@ local Config = require(script.Parent.Config)
 local Movement = {}
 
 -- moveX is the raw stick or keys (-1..1); the presses are edges (true on the frame the button went down).
+-- hold (H19, DESIGN §3 rule 44, docs/systems/items.md): "stumble" carries on at STUMBLE_SPEED x run speed toward
+-- holdDir, "freeze" slides with no input as the speed bleeds to 0 over holdLeft seconds, "trap" pins. No steer, jump or
+-- dash in any of them; a dash in progress ends.
 export type Input = { moveX: number, jumpPressed: boolean, jumpHeld: boolean, dashPressed: boolean, touch: boolean?,
-	speedMult: number? }
+	speedMult: number?, hold: string?, holdDir: number?, holdLeft: number? }
 -- Distances in studs from the runner's collider to the nearest surface on each side, nil if nothing is in reach.
 -- ground is feet-to-floor (negative when sunk into it), ceiling head-to-roof, walls side-to-wall.
 export type Contacts = { ground: number?, ceiling: number?, wallLeft: number?, wallRight: number? }
@@ -93,6 +96,13 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	s.events = ev
 	local scale = if input.touch then Config.TOUCH_WINDOW_SCALE else 1
 	local moveX = Movement.axis(input.moveX)
+	local hold = input.hold
+	local jumpPressed, jumpHeld, dashPressed = input.jumpPressed, input.jumpHeld, input.dashPressed
+	if hold then
+		moveX, jumpPressed, jumpHeld, dashPressed = 0, false, false, false
+		s.dashTime, s.jumpHold, s.wallForce = 0, 0, 0
+	end
+	local vx0 = s.vx -- the speed a freeze slides on (H19)
 	s.dashCooldown = math.max(0, s.dashCooldown - dt)
 	s.wallForce = math.max(0, s.wallForce - dt)
 	if s.wallForce > 0 then moveX = s.wallForceDir end
@@ -117,14 +127,16 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	if (touchL or touchR) and not s.grounded then refresh(s) end
 
 	-- 2. Buffer the jump press: it stays live for JUMP_BUFFER and fires the first frame a jump is possible.
-	if input.jumpPressed then
+	if jumpPressed then
 		s.jumpBuffer = Config.JUMP_BUFFER * scale
+	elseif hold then
+		s.jumpBuffer = 0 -- a press made before the hold does not fire when it ends
 	else
 		s.jumpBuffer = math.max(0, s.jumpBuffer - dt)
 	end
 
 	-- 3. Dash: horizontal, toward the stick or else the way we face. Gravity is off while it lasts.
-	if input.dashPressed and s.dashes > 0 and s.dashCooldown <= 0 then
+	if dashPressed and s.dashes > 0 and s.dashCooldown <= 0 then
 		local dir = if moveX ~= 0 then moveX else s.facing
 		s.dashes -= 1
 		s.dashTime = Config.DASH_TIME
@@ -178,16 +190,25 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		end
 		if not s.grounded then
 			local g = Config.GRAVITY
-			if input.jumpHeld and math.abs(s.vy) < Config.HALF_GRAVITY_BELOW then g *= 0.5 end
+			if jumpHeld and math.abs(s.vy) < Config.HALF_GRAVITY_BELOW then g *= 0.5 end
 			local pushing = (touchL and moveX < 0) or (touchR and moveX > 0)
 			s.sliding = pushing and s.vy <= 0
 			local maxFall = if s.sliding then Config.WALL_SLIDE_MAX else Config.MAX_FALL
 			s.vy = approach(s.vy, -maxFall, g * dt)
 			if s.jumpHold > 0 then
-				if input.jumpHeld then s.vy = math.max(s.vy, s.holdSpeed) else s.jumpHold = 0 end
+				if jumpHeld then s.vy = math.max(s.vy, s.holdSpeed) else s.jumpHold = 0 end
 				s.jumpHold = math.max(0, s.jumpHold - dt)
 			end
 		end
+	end
+	-- 5b. A hold (H19) overrides the run: gravity above still applies to stumble and freeze; a trap pins.
+	if hold == "trap" then
+		s.vx, s.vy = 0, 0
+	elseif hold == "stumble" then
+		s.vx = (if (input.holdDir or 0) ~= 0 then sign(input.holdDir :: number) else s.facing)
+			* Config.RUN_SPEED * Config.STUMBLE_SPEED
+	elseif hold == "freeze" then
+		s.vx = approach(vx0, 0, math.abs(vx0) * dt / math.max(input.holdLeft or dt, dt))
 	end
 
 	-- 6. Surfaces stop what pushes into them, so a stored speed never drives the part into a wall or a roof.

@@ -24,7 +24,55 @@ export type State = {
 	suspect: boolean, -- a violation since the last clean MOVE_CLEAR_TIME: samples are not trusted for a tag
 	clearAt: number, -- when suspect ends if nothing else goes wrong
 	trustX: number, trustY: number, -- the last position seen trusted with full budgets: where a snap-back puts it
+	hold: { number }?, holdFrom: number?, holdUntil: number?, -- H19: the refill rates while a hold is in force
+	holdCap: number?, -- and the x budget's cap for it (QA round 1)
 }
+
+-- H19 (DESIGN §3 rule 44, trust.md §10; QA round 1 tightened it): while a hold is in force the budgets REFILL at the
+-- hold's allowance { x, up, down }. A trap pins; a stumble runs at half speed (a rise in progress and a fall go on); a
+-- freeze slides on the speed `v` the victim had, bleeding to 0, which averages v / 2: its x refill is v / 2 +
+-- HOLD_SLACK (the 0 below is replaced). And the x budget DROPS when the hold lands to what lateness can honestly cost:
+-- the victim's client hears of it a ping later and runs on at v until then, so v x HOLD_GRACE + HOLD_SLACK, not the
+-- free 24-stud burst (with the full burst a client could ignore a whole freeze from a run, QA round 1).
+MoveCheck.HOLD_RATES = {
+	trap = { 0, 0, 0 },
+	stumble = { Config.RUN_SPEED * Config.STUMBLE_SPEED, Config.JUMP_SPEED, Config.MAX_FALL },
+	freeze = { 0, Config.JUMP_SPEED, Config.MAX_FALL },
+} :: { [string]: { number } }
+
+-- Hold this runner to `kind`'s allowance from `from` (the hold's start) to `untilT`. `speed`: its horizontal speed as
+-- the SERVER last measured it (MoveCheck.recentSpeed over its own samples; nil = unknown, read as the dash speed, the
+-- most lenient). Unknown kinds change nothing.
+function MoveCheck.hold(s: State, kind: string, from: number, untilT: number, speed: number?)
+	local rates = MoveCheck.HOLD_RATES[kind]
+	if not rates then return end
+	local v = math.min(math.abs(speed or MoveCheck.RATE_X), MoveCheck.RATE_X)
+	local rx = if kind == "freeze" then v / 2 + Config.HOLD_SLACK else rates[1]
+	s.hold, s.holdFrom, s.holdUntil = { rx, rates[2], rates[3] }, from, untilT
+	s.holdCap = v * Config.HOLD_GRACE + Config.HOLD_SLACK -- the x cap for the whole hold: standing still never refills
+	s.bx = math.min(s.bx, s.holdCap :: number) -- past it (else stand 0.35 s, then ignore the rest of a freeze)
+end
+
+-- A runner's horizontal speed from the server's OWN samples ({ t, x } oldest first): the distance over the last
+-- `window` seconds (default 0.1) divided by the time. Never the client's reported velocity (a cheat would report a
+-- high one to widen its own allowance). nil with fewer than two samples.
+function MoveCheck.recentSpeed(samples: { { t: number, x: number } }, window: number?): number?
+	local last = samples[#samples]
+	if not last then return nil end
+	local w = window or 0.1
+	local first = nil
+	for i = #samples - 1, 1, -1 do
+		first = samples[i]
+		if last.t - samples[i].t >= w then break end
+	end
+	if not first or last.t <= first.t then return nil end
+	return math.abs(last.x - first.x) / (last.t - first.t)
+end
+
+-- The hold ended early (a trap pried open at `t`).
+function MoveCheck.release(s: State, t: number)
+	if s.holdUntil then s.holdUntil = math.min(s.holdUntil, t) end
+end
 
 local FULL = 0.01 -- studs: a budget this close to its cap counts as full (float dust)
 
@@ -49,9 +97,16 @@ function MoveCheck.step(s: State, x: number, y: number, t: number): (boolean, st
 	local dx, dy = x - s.x, y - s.y
 	s.x, s.y, s.t = x, y, t
 	-- Refill and spend together, then cap: a step from a full budget may move BURST plus what its own time earned.
-	s.bx = math.min(cap(MoveCheck.RATE_X), s.bx + MoveCheck.RATE_X * dt - math.abs(dx))
-	s.bu = math.min(cap(MoveCheck.RATE_UP), s.bu + MoveCheck.RATE_UP * dt - math.max(dy, 0))
-	s.bd = math.min(cap(MoveCheck.RATE_DOWN), s.bd + MoveCheck.RATE_DOWN * dt - math.max(-dy, 0))
+	local rx, ru, rd = MoveCheck.RATE_X, MoveCheck.RATE_UP, MoveCheck.RATE_DOWN
+	local h = s.hold
+	local capX = cap(MoveCheck.RATE_X)
+	if h and t >= (s.holdFrom :: number) and t <= (s.holdUntil :: number) then
+		rx, ru, rd = h[1], h[2], h[3]
+		capX = math.min(capX, s.holdCap :: number)
+	end
+	s.bx = math.min(capX, s.bx + rx * dt - math.abs(dx))
+	s.bu = math.min(cap(MoveCheck.RATE_UP), s.bu + ru * dt - math.max(dy, 0))
+	s.bd = math.min(cap(MoveCheck.RATE_DOWN), s.bd + rd * dt - math.max(-dy, 0))
 	local axis, over = nil, 0
 	if s.bx < -over then axis, over = "x", -s.bx end
 	if s.bu < -over then axis, over = "up", -s.bu end

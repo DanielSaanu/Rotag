@@ -63,12 +63,12 @@ function Orbs.step(r: Tag.Round, now: number, history: { [number]: { Tag.Sample 
 		if s and not s.untrusted and present(id) then
 			local path = p ~= nil and not p.untrusted
 			table.insert(takers, { id = id, x = s.x, y = s.y, px = if path then p.x else nil, py = if path then p.y else nil,
-				ghost = Ghost.isGhost(r, id) })
+				ghost = Ghost.isGhost(r, id), holder = r.it == id }) -- the holder rolls its own pool (rule 43)
 		end
 	end
 	for _, e in Rules.step(o, now, Ghost.count(r, present), takers, rand) do
 		if e.by then
-			log(("%s took ghost orb %d: %s"):format(tostring(e.by), e.spot, tostring(e.item)))
+			log(("%s took %s orb %d: %s"):format(tostring(e.by), o.spots[e.spot].kind, e.spot, tostring(e.item)))
 		end
 		if remote then remote:FireAllClients({ kind = "orb", spot = e.spot, up = e.up, by = e.by, item = e.item }) end
 	end

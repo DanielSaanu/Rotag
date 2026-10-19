@@ -27,7 +27,48 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-_None._
+### H19 — Build ghosts v2 PR 2: living orbs, Use, the holds (crate, bear trap, ice beam) — 2026-10-19 16:47 — OPEN
+- **Trigger:** 2 (new `shared/Items.lua`; `shared/Movement.lua` gains a hold input; `shared/MoveCheck.lua` budget shrinks
+  to the hold's allowance; `shared/Orbs.lua` pools move to Items), 3 (new remote `UseItem`, client → server, one small
+  integer; what the server trusts about a use, a hold and a pry), 6 (the movement loop runs the hold every frame).
+- **Doc:** `docs/systems/ghosts-v2-proposal.md` §12 item 2 (the PR spec), §3 (the abilities), §4 (holds, casting and the
+  dash), §8 (trust); `docs/DESIGN.md` §3 rules 41-45 (41's per-target ward, 42 orbs, 43 the living pools, 44 holds,
+  45 dash i-frames); `docs/systems/ghosts.md` (PR 1 as built); `docs/systems/movement.md`, `docs/systems/trust.md`;
+  `docs/qa/ghosts-v2-core-summary.md` (what PR 1's QA deferred to this PR).
+- **Observed:** Danzo (2026-10-19): "a build 2". Option (a) for the hex cadence: the stream is accepted for PR 1 and
+  THIS PR fixes it by diluting the ghost pool (crate, trap, ice join the hex). PR 1 is pushed at d4f746b; QA 7/7/8.
+- **Evidence:** `shared/Orbs.lua` (ghost pool = hex only, `Orbs.roll` with injected rand), `server/Orbs.lua`,
+  `client/Items.lua` (orbs, held icons, slot readout), `shared/Movement.lua`, `shared/MoveCheck.lua`, `server/MoveGuard`;
+  `server/Match.lua` 372/400 lines (new server logic in NEW modules, Match only wires); `client/Hud.lua` ~264,
+  `client/Client.client.lua` ~254 (watch the ceiling in `test/structure.test.js`).
+- **Routine session's read (guess):** follow §12 item 2 to the letter. Carried in from PR 1's QA (summary, "Deferred"):
+  a MoveCheck test pinning that an orb pickup on a tolerated teleport is bounded by the same ~45 studs as a tag; the
+  ward halo flashing red ~0.3 s at ward end (HUD); reset the halo colour on hide; pick the item palette so orb, hex,
+  crate, trap and ice read apart. Danzo's decided numbers: trap 1 s cap OR 3 presses (key mash or clicks on keyboard, 3
+  taps anywhere on touch); crate stumble 0.7 s; ice freeze 1 s; 0.5 s immunity after a hold; an item started before a
+  hold still goes off, none can start during one; dash i-frames 0.2 s dodge aimed abilities (ice beam, hex) and carry
+  you OVER a bear trap, never THROUGH a crate; a trapped runner can still be tagged (holds never stop a tag). Living
+  pool: runners roll crate/trap/ice; the holder rolls the ice beam first (rule 43). Use binding minimal for now: E, V,
+  RB / R1, left click, an ITEM touch button (the full table is PR 3). The Studio MCP is available; the dummies should
+  pick up and use living items too, or at least walk into placed ones, so a solo test shows a hold.
+- **Decision needed:** build it. Write `docs/qa/ghosts-v2-items.md` (goals, out of scope, what Danzo should feel) BEFORE
+  starting. Sourcemap before/after, rojo build, npm test + lint:luau, links, line ceiling; mutation-check the new pure
+  tests. Smoke-test in Studio via the MCP if `rojo serve` is synced (a new remote needs a restart → T6: if `UseItem` is
+  missing in Studio, say so and stop at the tests). Update ghosts.md (or split: a new `docs/systems/items.md` for the
+  items and holds, ghosts.md kept for ghosts), the remotes table in `docs/systems/README.md`, the `roblox/src/*/README.md`
+  files, INDEX.md, one worklog line. Leave H19 OPEN with "Built, waiting on QA loop". Do NOT commit.
+- **Blocked routine work:** the QA loop for this PR, until built.
+- **Built, waiting on QA loop** (heavy agent, 2026-10-19; not committed). Detail: `docs/systems/items.md` (§3 trust, §5
+  decisions, §8 verification), `docs/systems/trust.md` §10, rule N15. New `shared/Items.lua`, `server/Items.lua`,
+  `client/Use.lua`, remote `UseItem`; tests `items.test.luau` + movement / move_check / orbs / ghost / config additions;
+  npm test, lint, rojo build green; mutation 40/41 (the one left is equivalent). Studio connected but `rojo serve`
+  lacks `Remotes.UseItem` (T6): Danzo restarts it, then the QA loop on `docs/qa/ghosts-v2-items.md`.
+- **QA round 1: 7/10; both FIXes applied** (the pry desync; a freeze not enforced): see "Builder decisions" in
+  `docs/qa/ghosts-v2-items-round1.md`, trust.md §10, N15 rewritten. Tests, lint and build green; mutation 47/50 (3
+  equivalent). The fixes have not been played yet. Next: round 2.
+- **Resolution draft:** "Built as §12 item 2 with Danzo's numbers; pools moved to `shared/Items` (the hex is 1 ghost
+  roll in 5 until PR 4); holds enforced on the server through `MoveCheck.hold` (cap kept, refill lowered, from a 0.3 s
+  grace: N15); i-frames from the server's own dash record with the cooldown enforced; QA <scores>. → items.md."
 
 ## Resolved
 

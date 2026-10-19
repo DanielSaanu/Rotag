@@ -7,6 +7,7 @@
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService") -- the trap line says "tap" on touch (H19 QA round 1)
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Others = require(script.Parent:WaitForChild("Others")) -- the IT marker sits on the DRAWN runner (H13)
 local Items = require(script.Parent:WaitForChild("Items")) -- what the local ghost holds (H18)
@@ -26,6 +27,9 @@ local gui, fuseLabel, statusLabel, popLabel, countLabel = nil, nil, nil, nil, ni
 local halves: { BasePart } = {} -- the solid triangle's two wedges, then the halo's two
 local popAt, goAt, wasWaiting = -math.huge, -math.huge, false
 local GHOST_BLUE, POP_GOLD = Color3.fromRGB(170, 215, 255), Color3.fromRGB(255, 210, 90)
+local HALO, WARD_END = Color3.fromRGB(255, 90, 60), Color3.fromRGB(255, 20, 20) -- H19: the halo, and its flash
+local WARD_FLASH = 0.3 -- seconds the halo flashes red as the ward ends (PR 1's QA: "hexes are back" is readable)
+local wasWarded, flashUntil = false, -math.huge
 
 local function label(parent: Instance, y: number, h: number, size: number): TextLabel
 	local l = Instance.new("TextLabel")
@@ -94,10 +98,11 @@ end
 -- Point the triangle down at `at` (a world position), or hide it. Each wedge's right angle goes to the top centre:
 -- Ry(+-90) turns the wedge's Y-Z triangle to face the camera, Rz(180) flips it so the point is at the bottom.
 local FLIP = CFrame.Angles(0, 0, math.pi)
-local function placeMarker(at: Vector3?, pulse: number, warded: boolean?)
+local function placeMarker(at: Vector3?, pulse: number, warded: boolean?, flash: boolean?)
 	for i, p in halves do
 		if not at then
 			p.CFrame = HIDDEN
+			if i > 2 then p.Color = HALO end -- H19: a hidden marker comes back in its own colour, never the ward's
 		else
 			local scale = if i <= 2 then 1 else 1.5
 			local side = if i % 2 == 1 then 1 else -1
@@ -107,7 +112,8 @@ local function placeMarker(at: Vector3?, pulse: number, warded: boolean?)
 				* CFrame.Angles(0, side * math.pi / 2, 0)
 			if i > 2 then
 				p.Transparency = 0.55 + 0.3 * pulse
-				p.Color = if warded then GHOST_BLUE else Color3.fromRGB(255, 90, 60) -- the ward's shimmer (rule 41)
+				p.Color = if flash then WARD_END elseif warded then GHOST_BLUE else HALO -- the ward's shimmer (rule 41)
+				if flash then p.Transparency = 0.15 end
 			end
 		end
 	end
@@ -192,7 +198,7 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	if now - popAt > POP_TIME then popLabel.TextColor3 = POP_GOLD end
 	if not state then
 		fuseLabel.Text, statusLabel.Text = "", "waiting for the round"
-		placeMarker(nil, 0)
+		placeMarker(nil, 0) wasWarded = false
 		return
 	end
 	local inRound = table.find(state.alive, me) ~= nil
@@ -205,7 +211,7 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		statusLabel.Text = if state.winner == me then "you win the round!"
 			elseif state.winner then (Hud.nameOf(state.winner) .. " wins the round")
 			elseif state.held then "waiting for players" else "round over"
-		placeMarker(nil, 0)
+		placeMarker(nil, 0) wasWarded = false
 		return
 	end
 	local mine = state.it == me
@@ -215,6 +221,11 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		statusLabel.Text = "you're it: wait for GO"
 	elseif frozenLeft > 0 and inRound then
 		statusLabel.Text = ("%s is it: run!"):format(Hud.nameOf(state.it))
+	elseif Items.holdOf(me) then -- H19: what holds you, and for a trap how to get out
+		local h = Items.holdOf(me) :: any
+		statusLabel.Text = if h.kind == "trap" then ("TRAPPED: %s  %d/%d"):format(
+				if UserInputService.TouchEnabled then "tap anywhere" else "mash any key", h.presses, Config.TRAP_PRESSES)
+			elseif h.kind == "freeze" then "FROZEN" else "STUMBLE"
 	elseif myGhost then
 		statusLabel.Text = ghostLine(state, me)
 	elseif not inRound and type(state.spectating) == "table" and table.find(state.spectating, me) then
@@ -225,8 +236,11 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		statusLabel.Text = ""
 	end
 	local warded = (state.ward or 0) - (now - (state.at or now)) > 0 and #state.ghosts > 0
+	if wasWarded and not warded then flashUntil = now + WARD_FLASH end
+	wasWarded = warded
 	local holder = if state.it then rootOf(state.it) else nil
-	placeMarker(holder and Others.positionOf(holder), 0.5 + 0.5 * math.sin(now * MARKER_PULSE * 2 * math.pi), warded)
+	placeMarker(holder and Others.positionOf(holder), 0.5 + 0.5 * math.sin(now * MARKER_PULSE * 2 * math.pi), warded,
+		now < flashUntil)
 end
 
 return Hud

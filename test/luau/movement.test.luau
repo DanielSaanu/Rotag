@@ -266,4 +266,67 @@ do -- the ceiling ends the rise
 	assert(s.jumpHold == 0, "a bonk ends the variable jump")
 end
 
+-- H19, DESIGN §3 rule 44: the holds, driven through step() the way client/Use drives them (input.hold).
+local function held(kind, t, extra)
+	local inp = input(t)
+	inp.hold = kind
+	for k, v in extra or {} do (inp :: any)[k] = v end
+	return inp
+end
+
+do -- a trap pins: no run, jump or dash moves you, and a press made during it does not fire after it
+	local s = standing(FLOOR, 0)
+	frames(FLOOR, s, 20, input({ moveX = 1 }))
+	local x = s.x
+	for _ = 1, 30 do
+		local ev = tick(FLOOR, s, held("trap", { moveX = 1, jump = true, dash = true }))
+		assert(not ev.jump and not ev.dash, "no jump or dash while trapped")
+	end
+	assert(near(s.x, x) and s.vx == 0 and s.vy == 0, "pinned where it was caught")
+	assert(not tick(FLOOR, s, input()).jump, "the buffered press is dropped, not fired when the trap lets go")
+	local a = Movement.new(0, 20) -- caught in the air (falling onto a trap): pinned there, gravity too (Q5: not the floor)
+	a.vy = -30
+	for _ = 1, 10 do tick(FLOOR, a, held("trap")) end
+	assert(near(a.y, 20) and a.vy == 0, "pinned in the air")
+end
+
+do -- a jump pressed just BEFORE a hold does not fire when it ends (the buffer is cleared, not left to run out)
+	local function pressThenTrap(trapFrames)
+		local s = Movement.new(0, HH + 0.5)
+		s.airJumps, s.vy = 0, -5 -- just above the floor, falling, no double jump: the press can only be buffered
+		assert(not tick(FLOOR, s, input({ jump = true })).jump, "buffered, not fired")
+		for _ = 1, trapFrames do tick(FLOOR, s, held("trap")) end
+		for _ = 1, 10 do if tick(FLOOR, s, input()).jump then return true end end
+		return false
+	end
+	assert(pressThenTrap(0), "control: with no hold the buffered press fires on landing")
+	assert(not pressThenTrap(1), "one frame of trap clears it")
+end
+
+do -- a stumble carries on the way you were going at half run speed, whatever the stick says; it ends a dash
+	local s = standing(FLOOR, 0)
+	frames(FLOOR, s, 20, input({ moveX = 1 }))
+	for _ = 1, 20 do tick(FLOOR, s, held("stumble", { moveX = -1, jump = true }, { holdDir = 1 })) end
+	assert(near(s.vx, Config.RUN_SPEED * Config.STUMBLE_SPEED) and s.grounded, "half run speed, forward, no jump")
+	local d = standing(FLOOR, 0)
+	tick(FLOOR, d, input({ dash = true, moveX = 1 }))
+	assert(d.dashTime > 0, "dashing")
+	tick(FLOOR, d, held("stumble", {}, { holdDir = 1 }))
+	assert(d.dashTime == 0 and near(d.vx, Config.RUN_SPEED * Config.STUMBLE_SPEED), "a stumble ends the dash")
+end
+
+do -- a freeze slides on the speed it caught you with, bleeding linearly to 0 over the hold, with no input
+	local s = standing(FLOOR, 0)
+	frames(FLOOR, s, 20, input({ moveX = 1 }))
+	local v0 = s.vx
+	local n = math.floor(Config.FREEZE_TIME / DT + 0.5)
+	local half = 0
+	for i = 1, n do
+		tick(FLOOR, s, held("freeze", { moveX = -1, jump = true }, { holdLeft = Config.FREEZE_TIME - (i - 1) * DT }))
+		if i == n // 2 then half = s.vx end
+	end
+	assert(near(half, v0 / 2, 0.01), ("half the speed at half time, saw %.2f of %.2f"):format(half, v0))
+	assert(near(s.vx, 0, 1e-6) and s.x > 0, "slid forward, and stopped as the freeze ends")
+end
+
 print("movement ok")

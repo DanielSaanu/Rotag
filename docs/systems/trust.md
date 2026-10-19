@@ -240,3 +240,32 @@ out to be constant, that weakens the speed check, and the counts would show it.
 
 **The choppiness:** handled on the drawing side, players.md §3 "The draw trail" (`Config.OTHERS_DRAW_DELAY`, cosmetic,
 no trust change; the claim still tests the replicated root).
+
+## 10. Holds: the budget shrinks to the hold (H19, 2026-10-19; tightened by QA round 1)
+
+A crate, a trap or an ice beam puts its victim in a hold ([items.md](items.md)); the victim's client applies it. When
+the server writes the hold, `MoveGuard.hold` calls `MoveCheck.hold` with the victim's horizontal speed `v` measured from
+the SERVER's own samples (`MoveCheck.recentSpeed`, the last 0.1 s; never the client's reported velocity, which a cheat
+would raise to widen its own allowance; unknown = the dash speed, the lenient side). For the whole hold:
+
+- **The x cap drops to what lateness can honestly cost:** `v x HOLD_GRACE + HOLD_SLACK` (45 x 0.3 + 2 = 15.5 studs for a
+  runner at run speed), instead of the free 24-stud burst. The victim's client hears of the hold a ping later and runs
+  on at `v` until then; that is all the cap forgives. It stays the cap for the whole hold, so standing still never
+  banks budget for later in it.
+- **The x refill is the hold's allowance:** trap 0; stumble half the run speed (22.5); freeze `v / 2 + HOLD_SLACK`
+  (a slide from `v` bleeding linearly to 0 averages `v / 2`; 24.5 from a run). Up and down keep their H19 rates
+  (trap 0 / 0; stumble and freeze the jump speed and the fall cap) and their caps.
+- A pry ends it early (`MoveCheck.release`).
+
+**Measured** (`move_check.test.luau`, all from a run at 45): an honest client that obeys a trap, a freeze or a stumble
+0.3 s late is never flagged, nor an honest freeze slide from 140 heard at once. Ignoring a trap is caught **0.34 s**
+in; ignoring a freeze **0.76 s** in (inside the 1 s freeze); standing 0.4 s inside a freeze and then dashing 0.2 s is
+caught; ignoring a stumble is caught **0.68 s** in, on the last frames of its 0.7 s.
+
+**What it still cannot catch, in numbers.** Inside a freeze from a run a client may cover at most the cap plus the
+refill, ~15.5 + 24.5 = **40 studs** over the second, where an honest late client covers about 36 (13.5 before it hears,
+~22.5 sliding): it can drift or steer within that, not run free. Inside a stumble, ~15.5 + 22.5 x 0.7 = 31 studs against
+an honest ~22. **The honest edge:** a victim whose client hears of a hold more than `HOLD_GRACE` (0.3 s) late while
+running is flagged and snapped back; at today's Studio delays that is far off, but a live server with very high ping
+would need `HOLD_GRACE` from the victim's measured ping (items.md, expansion). The first H19 version kept the full burst
+and a fixed freeze refill of 60, so a whole freeze from a run went unflagged (QA round 1); learnings N15 records why.

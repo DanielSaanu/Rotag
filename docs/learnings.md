@@ -30,7 +30,7 @@ format, its world sim) were left behind.
 
 - [`A — Art`](learnings/art.md): **A** — A1, …, A5
 - [`S — Shared Luau`](learnings/shared-luau.md): **S** — S1, …, S12
-- [`N — Networking and fairness`](learnings/networking.md): **N** — N1, …, N14
+- [`N — Networking and fairness`](learnings/networking.md): **N** — N1, …, N15
 - [`T — Tooling`](learnings/tooling.md): **T** — T1, …, T12
 - [`G — Git and generated files`](learnings/git.md): **G** — G1, …, G4
 - [`Q — QA loop and review`](learnings/qa.md): **Q** — Q1, …, Q5

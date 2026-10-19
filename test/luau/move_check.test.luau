@@ -163,4 +163,110 @@ do -- a teleport as the SERVER sees it (Studio 2026-10-12, a +60 client CFrame w
 	assert(not any, "a smoothed teleport of 32 studs passes (trust.md §3)")
 end
 
+do -- carried from PR 1's QA: an orb pickup on a tolerated teleport is bounded like a tag, ~45 studs (trust.md §3).
+	-- The server's Orbs.step skips an untrusted sample as either end of the path (server/Orbs), as here.
+	local Orbs = __require("Orbs")
+	local xs = { 14.56, 15.21, 16.28, 17.64, 19.69, 22.73, 26.57, 30.97, 35.49, 40.65, 46.57, 51.96, 57.61, 62.56 }
+	local function taken(orbX)
+		local spot = { x = orbX, y = 1.7, kind = "ghost" }
+		local c = MoveCheck.new(xs[1], 1.7, 0)
+		for _ = 1, 30 do MoveCheck.step(c, xs[1], 1.7, c.t + DT) end
+		local px: number? = xs[1]
+		for i = 2, #xs do
+			MoveCheck.step(c, xs[i], 1.7, c.t + DT)
+			if c.suspect then
+				px = nil
+			else
+				if Orbs.touches(spot, xs[i], 1.7, px, if px then 1.7 else nil) then return true end
+				px = xs[i]
+			end
+		end
+		return false
+	end
+	assert(taken(xs[1] + 44), "an orb 44 studs away is taken by the tolerated part of the teleport")
+	assert(not taken(xs[1] + 47.5) and not taken(xs[1] + 50), "one 47.5 or 50 studs away is not: the step that reaches it is caught")
+end
+
+do -- H19, rule 44, tightened by QA round 1: when a hold lands the x budget DROPS to what lateness can honestly cost
+	-- (speed x HOLD_GRACE + HOLD_SLACK) and the refill becomes the hold's allowance (a freeze: half the speed it caught,
+	-- + HOLD_SLACK). Round 1 found the old rule (full 24-stud burst, freeze refill 60) let a client ignore a whole freeze.
+	local Y, G = 2, Config.HOLD_GRACE
+	-- 1 s at run speed, then a hold of `kind` lands (t = 1, measured speed `speed`, default the run speed); `vel(d)` is
+	-- this client's speed d seconds after it landed. `kind` nil: no hold (the control). Returns when flagged, or nil.
+	local function ride(kind: string?, len: number, vel: (number) -> number, speed: number?, pryAt: number?): number?
+		local c = MoveCheck.new(0, Y, 0)
+		local x, t, held = 0, 0, false
+		while t < 3 do
+			t += DT
+			if kind and not held and t >= 1 then
+				MoveCheck.hold(c, kind, t, t + len, speed or Config.RUN_SPEED)
+				held = true
+			end
+			if pryAt and t >= 1 + pryAt then MoveCheck.release(c, 1 + pryAt) end
+			x += (if t < 1 then Config.RUN_SPEED else vel(t - 1)) * DT
+			if not MoveCheck.step(c, x, Y, t) then return t - 1 end
+		end
+		return nil
+	end
+	local R = Config.RUN_SPEED
+	local function run() return R end
+	-- An honest client hears of the hold G late (running on at full speed till then), then obeys it for `len` of its own.
+	local function honest(len: number, during: (number) -> number)
+		return function(d) return if d < G then R elseif d < G + len then during(d - G) else R end
+	end
+	local cap = R * G + Config.HOLD_SLACK
+
+	-- The trap: pinned.
+	assert(ride("trap", Config.TRAP_TIME, honest(Config.TRAP_TIME, function() return 0 end)) == nil,
+		"an honest client that hears of the trap a grace late: never flagged")
+	local caught = ride("trap", Config.TRAP_TIME, run)
+	assert(caught and near(caught, cap / R, 2 * DT),
+		("ignoring a trap is caught %.2f s in (expected ~%.2f)"):format(caught or -1, cap / R))
+	assert(ride(nil, 0, run) == nil, "control (Q5): with no hold the same run is legal")
+	assert(ride("trap", Config.TRAP_TIME, function(d) return if d < 0.1 or d >= 0.4 then R else 0 end, nil, 0.4) == nil,
+		"pinned at 0.1, pried open at 0.4: running again is legal")
+
+	-- The freeze: sliding from the speed it caught, bleeding to 0 over FREEZE_TIME.
+	local function slide(v: number) return function(d) return v * (1 - d / Config.FREEZE_TIME) end end
+	assert(ride("freeze", Config.FREEZE_TIME, honest(Config.FREEZE_TIME, slide(R))) == nil,
+		"an honest freeze from a run, heard a grace late: never flagged")
+	local fast = Config.DASH_SPEED + Config.JUMP_H_BOOST
+	assert(ride("freeze", Config.FREEZE_TIME, slide(fast), fast) == nil,
+		"an honest freeze slide from a jump out of a dash (140), heard at once: never flagged")
+	local iced = ride("freeze", Config.FREEZE_TIME, run)
+	local iceExpect = cap / (R - (R / 2 + Config.HOLD_SLACK))
+	assert(iced and iced < Config.FREEZE_TIME and near(iced, iceExpect, 2 * DT),
+		("ignoring a freeze from a run is caught %.2f s in, before it ends (expected ~%.2f)"):format(iced or -1, iceExpect))
+
+	-- Standing still does not bank budget for later in the hold: the dropped cap holds for the whole of it. Without it,
+	-- a client could stand through part of a freeze, let the budget refill to the full burst, then dash.
+	local banked = ride("freeze", Config.FREEZE_TIME, function(d)
+		return if d >= 0.4 and d < 0.6 then Config.DASH_SPEED else 0 end)
+	assert(banked and banked < 0.6, "stand 0.4 s inside a freeze, then dash 0.2 s: caught")
+
+	-- The stumble: half run speed, the way it was going. The allowance itself, over a hold far longer than a stumble.
+	assert(ride("stumble", 5, honest(5, function() return R * Config.STUMBLE_SPEED end)) == nil,
+		"an honest stumble at half speed (held 5 s): never flagged")
+	-- The limit, pinned as a measurement (trust.md §10): ignoring a 0.7 s stumble at full run speed spends the dropped
+	-- cap at 22.5 studs/s, 0.69 s: caught on the stumble's last frame, about the same moment it would have ended anyway.
+	local tripped = ride("stumble", Config.STUMBLE_TIME, run)
+	print(("    ignoring a stumble from a run: caught %s s in (the stumble is %.1f s)"):format(
+		if tripped then ("%.3f"):format(tripped) else "never", Config.STUMBLE_TIME))
+	assert(tripped == nil or tripped >= Config.STUMBLE_TIME - 2 * DT,
+		"a stumble ignored is caught no sooner than its end: the measured edge")
+end
+
+do -- the speed a hold is judged from comes from the SERVER's own samples, over the last 0.1 s
+	local h = {}
+	for i = 0, 30 do table.insert(h, { t = i * DT, x = Config.RUN_SPEED * i * DT }) end
+	assert(near(MoveCheck.recentSpeed(h) :: number, Config.RUN_SPEED, 1e-6), "running: the run speed")
+	for i = 31, 40 do table.insert(h, { t = i * DT, x = h[31].x }) end
+	assert((MoveCheck.recentSpeed(h) :: number) < 1, "stopped for the last 0.1 s: about 0, not the run before")
+	assert(MoveCheck.recentSpeed({ { t = 0, x = 0 } }) == nil and MoveCheck.recentSpeed({}) == nil, "too few samples: nil")
+	local c = MoveCheck.new(0, 2, 0)
+	MoveCheck.hold(c, "trap", 0, 1, nil)
+	assert(near(c.holdCap :: number, MoveCheck.RATE_X * Config.HOLD_GRACE + Config.HOLD_SLACK),
+		"an unknown speed is read as the dash speed (the most lenient cap)")
+end
+
 print("move_check: ok")

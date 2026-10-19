@@ -9,6 +9,9 @@ local UserInputService = game:GetService("UserInputService")
 local Controls = {}
 
 local jumpHeld, jumpPressed, dashPressed = false, false, false
+-- H19 (docs/systems/items.md §6): Use (E, V, RB / R1, left click, the ITEM button), and every press of anything (key,
+-- click, pad button, a tap anywhere) counted for prying a bear trap open. The full controls table is PR 3.
+local usePressed, presses = false, 0
 local usingTouch = UserInputService.TouchEnabled
 local playerControls = nil -- Roblox's ControlModule, if it loaded
 
@@ -33,6 +36,17 @@ local function bindKeys()
 		if state == Enum.UserInputState.Begin then onDash(true) end
 		return Enum.ContextActionResult.Sink
 	end, false, high, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift, Enum.KeyCode.ButtonX)
+	ContextActionService:BindActionAtPriority("RotagUse", function(_, state, input)
+		if state == Enum.UserInputState.Begin then usePressed = true end
+		-- A click passes on (GUI buttons and Roblox's own mouse handling still see it); the keys are ours.
+		return if input.UserInputType == Enum.UserInputType.MouseButton1 then Enum.ContextActionResult.Pass
+			else Enum.ContextActionResult.Sink
+	end, false, high, Enum.KeyCode.E, Enum.KeyCode.V, Enum.KeyCode.ButtonR1, Enum.UserInputType.MouseButton1)
+	UserInputService.InputBegan:Connect(function(input)
+		local t = input.UserInputType
+		if t == Enum.UserInputType.Keyboard or t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch
+			or t == Enum.UserInputType.Gamepad1 then presses += 1 end
+	end)
 end
 
 -- A touch button that reports down and up. The release is also caught on UserInputService, because a thumb that
@@ -90,6 +104,9 @@ local function buildTouchButtons(playerGui: PlayerGui)
 	gui.Parent = playerGui
 	touchButton(gui, "Jump", "JUMP", UDim2.new(1, -24, 1, -24), 96, onJump)
 	touchButton(gui, "Dash", "DASH", UDim2.new(1, -136, 1, -72), 76, onDash)
+	touchButton(gui, "Item", "ITEM", UDim2.new(1, -40, 1, -136), 64, function(down) -- H19: above jump, off the middle
+		if down then usePressed = true end
+	end)
 	UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(function()
 		gui.Enabled = UserInputService.TouchEnabled
 	end)
@@ -139,8 +156,10 @@ function Controls.read(humanoid: Humanoid?)
 		jumpHeld = jumpHeld,
 		dashPressed = dashPressed,
 		touch = usingTouch,
+		usePressed = usePressed, -- H19: client/Use reads these two and strips them before Movement sees the input
+		presses = presses,
 	}
-	jumpPressed, dashPressed = false, false
+	jumpPressed, dashPressed, usePressed, presses = false, false, false, 0
 	return input
 end
 

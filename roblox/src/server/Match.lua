@@ -13,6 +13,7 @@ local Ghost = require(Shared:WaitForChild("Ghost"))
 local Bots = require(script.Parent:WaitForChild("Bots"))
 local Ghosts = require(script.Parent:WaitForChild("Ghosts"))
 local Orbs = require(script.Parent:WaitForChild("Orbs"))
+local Items = require(script.Parent:WaitForChild("Items")) -- H19: Use, items, holds (docs/systems/items.md)
 local Runners = require(script.Parent:WaitForChild("Runners"))
 local Arena = require(script.Parent:WaitForChild("Arena"))
 local MoveGuard = require(script.Parent:WaitForChild("MoveGuard"))
@@ -151,6 +152,7 @@ local function startRound(now: number)
 	round = Tag.newRound(ids, starter, now)
 	ghostState = Ghost.new()
 	Orbs.reset(now) -- every orb down until ORB_FIRST, every slot empty, a sync to every client (H18)
+	Items.reset() -- nothing in the world, nobody held (H19)
 	table.clear(pending)
 	Ghosts.reset()
 	log(("round %d: %d runner(s), %s is it with %ds"):format(roundNo, #ids, tostring(starter), Config.FUSE_START))
@@ -274,7 +276,7 @@ local function sample(now: number)
 				local p = root.Position
 				x, y = p.X, p.Y
 			end
-			local s: Tag.Sample = { t = now, x = x, y = y }
+			local s: Tag.Sample = { t = now, x = x, y = y, iframe = Snapshots.iframed(id, now) or nil } -- H19: rule 45
 			MoveGuard.observe(id, root, s) -- the speed check (H12, trust.md): may mark s untrusted for a claim
 			table.insert(h, s)
 			if #h > HISTORY then table.remove(h, 1) end
@@ -295,6 +297,8 @@ local function step(dt: number)
 		Ghosts.judge(now)
 		Bots.hexes(r, ghostState, Orbs.current(), now, history, Ghosts.land)
 		Orbs.step(r, now, history, present)
+		Bots.uses(r, now, history, Orbs.current()) -- H19: then the things in the world against the living
+		Items.step(r, now, present)
 		local out = Tag.tick(r, now) -- no comeback (H16): the burnt-out holder is a ghost for the rest of the round
 		if out then
 			log(("%s's fuse ran out, %s"):format(tostring(out), if r.over then ("round over, winner " .. tostring(r.winner))
@@ -312,7 +316,10 @@ end
 function Match.start(tagName: string)
 	stateRemote, verdictRemote, claimRemote = remote("MatchState"), remote("TagVerdict"), remote("TagClaim")
 	readyRemote = remote("Ready")
-	Orbs.start(remote("ItemEvent"), Arena.GHOST_ORBS)
+	local itemEvent = remote("ItemEvent")
+	Orbs.start(itemEvent, Arena.ORBS)
+	Items.start(remote("UseItem"), itemEvent, { round = function() return round end, ghosts = function() return ghostState end,
+		history = history, facing = function(id) return Bots.facing(id) or Snapshots.facingOf(id) end })
 	Ghosts.start(remote("GhostClaim"), remote("GhostVerdict"), { round = function() return round end,
 		ghosts = function() return ghostState end, orbs = Orbs.current, history = history,
 		changed = function() dirty = true end })
@@ -340,6 +347,7 @@ function Match.start(tagName: string)
 		end
 		sendState(os.clock(), player)
 		Orbs.syncTo(player)
+		Items.syncTo(player)
 	end
 	Players.PlayerAdded:Connect(onPlayer)
 	for _, player in Players:GetPlayers() do onPlayer(player) end

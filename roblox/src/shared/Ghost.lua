@@ -14,10 +14,11 @@ local Ghost = {}
 
 export type Ghosts = {
 	wardUntil: number, -- no hex from ANY ghost before this (rule 40: the shared ward)
+	wards: { [number]: number }, -- per runner: no ghost's AIMED ability (ice beam, hex) lands before this (rule 41, H19)
 }
 
 function Ghost.new(): Ghosts
-	return { wardUntil = -math.huge }
+	return { wardUntil = -math.huge, wards = {} }
 end
 
 -- In this round and eliminated. A runner who joined after the round began is not a ghost (it is not in r.alive).
@@ -50,6 +51,7 @@ function Ghost.canHex(r: Tag.Round, g: Ghosts, o: Orbs.State, ghost: number, tar
 	if r.it ~= target then return false, "target is not it" end
 	if Tag.frozen(r, now) then return false, "holder frozen" end
 	if now < g.wardUntil then return false, "warded" end
+	if now < (g.wards[target] or -math.huge) then return false, "target warded (a ghost's ice hit it)" end
 	if Tag.fuseLeft(r, now) <= 0 then return false, "fuse out" end
 	return true, nil
 end
@@ -61,6 +63,8 @@ function Ghost.hex(r: Tag.Round, g: Ghosts, o: Orbs.State, ghost: number, now: n
 	local drained = math.min(Config.SPOOK_DRAIN, left)
 	r.fuse, r.since = left - drained, now
 	g.wardUntil = now + Config.GHOST_WARD
+	local holder = r.it
+	if holder then g.wards[holder] = now + Config.GHOST_WARD end -- rule 41: also safe from ghosts' ice beams
 	Orbs.use(o, ghost)
 	return r.fuse, drained
 end

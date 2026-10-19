@@ -9,7 +9,9 @@ local Tag = require(Shared:WaitForChild("Tag"))
 local Ghost = require(Shared:WaitForChild("Ghost"))
 local OrbRules = require(Shared:WaitForChild("Orbs"))
 local Config = require(Shared:WaitForChild("Config"))
+local ItemRules = require(Shared:WaitForChild("Items"))
 local Dummy = require(script.Parent:WaitForChild("Dummy"))
+local Items = require(script.Parent:WaitForChild("Items")) -- H19: dummies use what they roll, and stop while held
 
 local Bots = {}
 Bots.ids = {} :: { [number]: boolean } -- for Tag.readyToStart: never waited for
@@ -64,10 +66,38 @@ function Bots.move(r: Tag.Round?, dt: number, now: number, history: { [number]: 
 					if ox and math.abs(ox - x) < best then chase, best = ox, math.abs(ox - x) end
 				end
 			elseif r.alive[id] == false then
-				chase = if o and o.held[id] == "hex" then lastX(history, r.it) else orbX(o, x)
+				chase = if o and o.held[id] ~= nil then lastX(history, r.it) else orbX(o, x) -- any item: to the holder
 			end
 		end
-		Dummy.step(d, dt, chase, r ~= nil and r.it == id and Tag.frozen(r, now))
+		-- A held dummy stands still for any hold (it is a stand-in, not a body that stumbles or slides).
+		Dummy.step(d, dt, chase, (r ~= nil and r.it == id and Tag.frozen(r, now)) or Items.held(id, now))
+	end
+end
+
+-- A dummy's facing (server/Items puts its crate behind it and its beam ahead); nil for anyone else.
+function Bots.facing(id: number): number?
+	local d = list[id]
+	return d and d.facing
+end
+
+-- H19, after the orbs: a dummy holding a crate, trap or ice uses it once a living PLAYER is within ICE_LENGTH, turning
+-- to face that player first, so a solo test shows holds. Through server/Items.press: the same rules as a player's Use.
+function Bots.uses(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample } }, o: OrbRules.State?)
+	if not (r and o) or r.over then return end
+	for id, d in list do
+		local item = o.held[id]
+		local x = lastX(history, id)
+		local frozen = r.it == id and Tag.frozen(r, now) -- would only log "frozen" every frame
+		if item and item ~= "hex" and x and not frozen and not Items.held(id, now) then
+			for _, other in r.order do
+				local ox = if r.alive[other] and not Bots.isBot(other) then lastX(history, other) else nil
+				if ox and math.abs(ox - x) <= Config.ICE_LENGTH then
+					d.facing = if ox >= x then 1 else -1
+					Items.press(id, now)
+					break
+				end
+			end
+		end
 	end
 end
 
@@ -94,7 +124,7 @@ function Bots.hexes(r: Tag.Round?, g: Ghost.Ghosts?, o: OrbRules.State?, now: nu
 	for id in list do
 		if Ghost.canHex(r, g, o, id, it, now) then
 			local ha, hb = history[id], history[it]
-			if ha and hb and Tag.confirm(ha, hb, now, 0) then land(r, g, o, id, now) return end
+			if ha and hb and Tag.confirm(ha, ItemRules.undodged(hb), now, 0) then land(r, g, o, id, now) return end
 		end
 	end
 end

@@ -9,6 +9,8 @@ here) are in git at `df94334`; DESIGN §6.1 keeps their one-line summary.
 **Status:** built, not yet QA'd. Rules tested outside Studio (`ghost.test.luau`, `orbs.test.luau`, mutation-checked, §8).
 Server path seen in Studio solo Play with three dummies (§8). **Not yet seen: anything on a client** (orbs, the item
 over heads, the slot readout, a player's own hex): the running `rojo serve` predates `Remotes.ItemEvent` (→ T6).
+QA'd 7/7/8 since ([`../qa/ghosts-v2-core-summary.md`](../qa/ghosts-v2-core-summary.md)). **PR 2 (H19)** added living
+orbs, Use and the holds, the ghosts' crate, trap and ice, and the per-target ward: [items.md](items.md).
 
 ## 1. The rules (DESIGN §3 rules 37-42) and their numbers
 
@@ -21,8 +23,9 @@ over heads, the slot readout, a player's own hex): the running `rojo serve` pred
   ghosts)` = 10 / (1 + 0.5 n) s: 10, 6.7, 5, 4 for 0-3 ghosts, **recomputed every frame with the ghost count now**
   (a new ghost brings a waiting orb back sooner; the spec says only "respawn 10 s / (1 + 0.5 x ghosts)").
 - **One slot (rule 42).** Touch an orb that is up with an empty slot and the server rolls the orb's pool into it; a
-  full slot passes through and leaves the orb up. Ghost pool today: **the hex alone** (PRs 2 and 4 add crate, trap,
-  ice, fixture, boost pad, boost grant at the §3 weights, where the hex is 8 in 100).
+  full slot passes through and leaves the orb up. Ghost pool: the hex alone in PR 1; since PR 2 (H19) crate 12, trap
+  10, ice 10, hex 8, so the hex is 1 roll in 5; PR 4 adds fixture, boost pad, boost grant (hex 8 in 100). Pools:
+  `shared/Items.POOLS` ([items.md](items.md) §1).
 - **The hex (rule 40).** A ghost holding a hex that touches the holder takes `SPOOK_DRAIN` **3 s** off the fuse (never
   below 0) and its slot empties. No per-ghost cooldown (H15's `SPOOK_COOLDOWN` is gone): holding a hex is the limit.
   After any hex, **no ghost** may hex for `GHOST_WARD` **6 s** (the shared ward), and none while the holder is frozen.
@@ -38,7 +41,7 @@ ghost leaving lowers the count and delays a waiting orb slightly. Pinned in `orb
 | Piece | Where | Side |
 |---|---|---|
 | Who is a ghost, `count`, `canHex`, `hex` (drain, shared ward, empties the slot), `wardLeft` | `shared/Ghost.lua` (pure, tested) | both |
-| Orb spots, `isUp`, the respawn formula, one slot, `touches` (the path between two samples), `roll` (injected random source), `step`, `use`, `POOLS` | `shared/Orbs.lua` (pure, tested) | both |
+| Orb spots, `isUp`, the respawn formula, one slot, `touches` (the path between two samples), `roll` (injected random source), `step`, `use` (pools: `shared/Items`, H19) | `shared/Orbs.lua` (pure, tested) | both |
 | The orb state per round; touches judged on the server's own record each frame; rolls with `math.random`; `ItemEvent` out | `server/Orbs.lua` | server |
 | `GhostClaim` judged like `TagClaim` (now the hex's claim); `GhostVerdict`; the `MatchState` ghost rows | `server/Ghosts.lua` | server |
 | Wiring and the frame order (§5); `MatchState.ghosts / ward` | `server/Match.lua` | server |
@@ -92,7 +95,7 @@ at every round start keep a client exact without a once-a-second resend.
   the S12 key for anything tied to one holder, and PR 2's per-target rules may need it. Its test stays, unchanged, as the
   ghost test's last block.
 - **`SPOOK_DRAIN` kept its name** (the proposal's decision), now the hex's drain. `GhostClaim`/`GhostVerdict` kept theirs.
-- **The ghost pool lives in `shared/Orbs.POOLS`** for now; PR 2's `shared/Items.lua` takes the pools and weights.
+- **The ghost pool lived in `shared/Orbs.POOLS`** for PR 1; PR 2 (H19) moved every pool to `shared/Items.POOLS`.
 - **The server rolls with `math.random`** (seeded by Roblox per server), not `Random.new()`: same quality for a pick,
   and the Luau lint knows it (`Random` is a Roblox global it flags).
 - **The held item floats at 5 studs over the runner's centre**, above the IT marker's halo, so a living holder's item
