@@ -87,7 +87,13 @@
       **Danzo (2026-10-19): a.** Then "build 2": H19 opened for PR 2.
 - [ ] **Danzo: Play the checklist** in the summary (keyboard, then the phone preset, then a two-player hex). The
       reviewer could not drive a human's hex; Claude saw dummies do it.
-- [ ] **Next (2026-10-19):** PR 1 done and pushed. Build on in the PR order of
+- [x] **PR 2 (H19) built and QA'd 7 → 8/10 (2026-10-19), pushed.** Living orbs, Use (E / V / RB / click / ITEM
+      button), crate stumble, bear trap, ice beam, dash i-frames, per-target ward; ghost pool diluted (hex 1 in 5). Two
+      fairness holes closed on the way (pry desync, unenforced freeze). Summary and Danzo's checklist:
+      `docs/qa/ghosts-v2-items-summary.md`. Solo knob: `Config.STUDIO_DUMMY_TAGS = false` to get held.
+- [ ] **Danzo: Play the PR 2 checklist.** Nobody has pried a trap by hand yet. Two calls: "own traps safe" if being
+      caught by your own trap feels cheap; and do 1 s freeze / half-speed stumble feel fair.
+- [ ] **Next (2026-10-19):** PRs 1-2 done and pushed. Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
       (heavy guess 150 s, not in DESIGN).
