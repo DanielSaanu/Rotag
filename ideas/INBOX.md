@@ -100,6 +100,12 @@
 - [ ] **/design brief (Danzo, 2026-10-19):** item art WITH animation: orbs spin or shine, a shatter effect on collect;
       the trap snaps shut, crates break away; player poses for stuck (trapped), stumbling, frozen-sliding.
       Brief: `docs/briefs/items-art.md`.
+- [x] **PR 3 (controls) built and QA'd 7 → 8/10 (2026-10-22), pushed.** Both keyboard schemes at once (Space / Shift /
+      W / E + mouse; Z / X / C / V, ↑), pad, four touch buttons wrapping the corner (GRAPPLE hidden until its PR, ITEM
+      only while holding a usable item, with its icon), pry on action presses never Shift, the trap line names the
+      device's input. Summary and Danzo's checklist: `docs/qa/controls-summary.md`.
+- [ ] **Danzo: Play the PR 3 checklist** (keyboard, then the phone preset, then a pad if one is to hand). The calls:
+      W / ↑ as grapple, mouse binds, pry anywhere; is ITEM reachable with the thumb; does the d-pad move you.
 - [ ] **Next (2026-10-19):** PRs 1-2 done and pushed. Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
