@@ -41,9 +41,14 @@ local playerControls = nil -- Roblox's ControlModule, if it loaded
 local buttons: { [string]: TextButton } = {} -- the touch buttons by verb
 local itemImage: ImageLabel? = nil -- the ITEM button's icon, when the sheet has one
 
-local function onJump(down: boolean)
-	if down and not jumpHeld then jumpPressed = true end
-	jumpHeld = down
+-- The jump hold is per source (each key, pad button, or the JUMP button): releasing Z while Space is still down must
+-- not cut a variable jump short (QA r2). A press is latched when the first source goes down.
+local jumpSources: { [any]: boolean } = {}
+local function onJump(down: boolean, source: any?)
+	jumpSources[source or "touch"] = if down then true else nil
+	local was = jumpHeld
+	jumpHeld = next(jumpSources) ~= nil
+	if jumpHeld and not was then jumpPressed = true end
 end
 
 local function onDash(down: boolean)
@@ -69,11 +74,11 @@ local function bindKeys()
 		local on = ON[verb]
 		ContextActionService:BindActionAtPriority("Rotag" .. verb, function(_, state, input)
 			if state == Enum.UserInputState.Begin then
-				on(true)
+				on(true, input.KeyCode)
 				if input.KeyCode ~= K.LeftShift and input.KeyCode ~= K.RightShift then presses += 1 end
 				if input.UserInputType == U.Keyboard then schemeB = SCHEME_B[input.KeyCode] == true end
 			elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
-				on(false)
+				on(false, input.KeyCode)
 			end
 			return if PASS[input.UserInputType] then Enum.ContextActionResult.Pass else Enum.ContextActionResult.Sink
 		end, false, high, table.unpack(keys))
@@ -225,7 +230,7 @@ function Controls.start(player: Player)
 		local name = t.Name
 		if t == U.Touch then device = "touch"
 		elseif string.sub(name, 1, 7) == "Gamepad" then device = "pad"
-		elseif t == U.Keyboard or string.sub(name, 1, 5) == "Mouse" then device = "keys" end
+		elseif t == U.Keyboard or string.sub(name, 1, 11) == "MouseButton" then device = "keys" end -- not a mouse move (QA r2)
 		usingTouch = device == "touch"
 	end)
 end

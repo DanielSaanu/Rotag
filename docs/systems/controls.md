@@ -35,11 +35,11 @@ habit, ZXCV under the left hand). That pair is also the left/right-hand variant.
 
 | Verb | Keyboard A: WASD (+ mouse) | Keyboard B: arrows + ZXCV | Controller (Xbox / PlayStation) | Touch |
 |---|---|---|---|---|
-| Move | A / D | ← / → | left stick or d-pad | Roblox's thumbstick, bottom-left |
+| Move | A / D | ← / → | left stick (d-pad untested: Danzo's pad test; a d-pad term in `moveX` if he wants it, QA r2) | Roblox's thumbstick, bottom-left |
 | Jump | **Space** (kept) | **Z** | **A / Cross** (kept) | JUMP, 96 px, bottom-right corner (kept) |
 | Dash | **Left/Right Shift** (kept) | **X** | **X / Square** (kept), B / Circle too | DASH, 76 px, up-left of JUMP (kept) |
 | Grapple (ghost: rotate) | **W**, or right mouse button | **C**, or ↑ | **RT / R2** (hold) | GRAPPLE, 76 px, above JUMP; ROTATE for a ghost holding a piece, hidden otherwise |
-| Use item | **E**, or left mouse button | **V** | **RB / R1**, LT / L2 too | ITEM, 76 px, above DASH and left of GRAPPLE (QA r1: "left of DASH" reached the lower-middle on a 667 px phone, rule 23), shows the held item's icon; hidden when the slot is empty |
+| Use item | **E**, or left mouse button (a click anywhere, even on the HUD: guard it with the first clickable UI, QA r2) | **V** | **RB / R1**, LT / L2 too | ITEM, 76 px, above DASH and left of GRAPPLE (QA r1: "left of DASH" reached the lower-middle on a 667 px phone, rule 23), shows the held item's icon; hidden when the slot is empty |
 | Pry the trap | Space / E / W or clicks, 3 times | Z / X / C / V, 3 times | any face button or trigger, 3 times | 3 taps anywhere (the status line says "tap anywhere") |
 | Down (reserved) | S | ↓ | stick down | — |
 
