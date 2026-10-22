@@ -7,10 +7,10 @@
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService") -- the trap line says "tap" on touch (H19 QA round 1)
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Others = require(script.Parent:WaitForChild("Others")) -- the IT marker sits on the DRAWN runner (H13)
 local Items = require(script.Parent:WaitForChild("Items")) -- what the local ghost holds (H18)
+local Controls = require(script.Parent:WaitForChild("Controls")) -- the trap line names the device's pry input (PR 3)
 
 local Hud = {}
 
@@ -222,7 +222,7 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	elseif Items.holdOf(me) then -- H19: what holds you, and for a trap how to get out. Above the tag-freeze line: a
 		local h = Items.holdOf(me) :: any -- hold lands next to a tag and is shorter than the 1.5 s freeze (QA round 2)
 		statusLabel.Text = if h.kind == "trap" then ("TRAPPED: %s  %d/%d"):format(
-				if UserInputService.TouchEnabled then "tap anywhere" else "mash any key", h.presses, Config.TRAP_PRESSES)
+				Controls.pryHint(), h.presses, Config.TRAP_PRESSES)
 			elseif h.kind == "freeze" then (if mine then "FROZEN: can't tag" else "FROZEN") else "STUMBLE" -- H20
 	elseif frozenLeft > 0 and inRound then
 		statusLabel.Text = ("%s is it: run!"):format(Hud.nameOf(state.it))

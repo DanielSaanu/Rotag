@@ -214,6 +214,10 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	local st = Tagging.state()
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))
+	-- PR 3 (controls.md §2): the ITEM touch button only while Use would fire (a hex is used by touch); the GRAPPLE /
+	-- ROTATE button stays hidden until the living grapple and the ghost's piece exist (the grapple PR, PR 4).
+	local held = Items.held(player.UserId)
+	Controls.buttons(if held ~= nil and held ~= "hex" and not (st ~= nil and st.over == true) then held else nil, nil)
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
 	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	Arrows.update(Tagging.me(), Tagging.state())

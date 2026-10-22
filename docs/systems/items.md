@@ -151,8 +151,10 @@ a late joiner then gets a `put` per live thing and a `hold` per live hold. `UseI
 | Everyone | Gold living orbs (bright to the living), pale ghost orbs (bright to ghosts); crates, traps and beams where the server put them; each held item's icon over its holder's drawn head; a jaw at a trapped runner's feet, ice around a frozen one |
 | The local runner | `ITEM: CRATE` etc. top left (living too, now); while held, the status line says `TRAPPED: mash any key 1/3`, `FROZEN` or `STUMBLE`; the IT halo flashes red 0.3 s as a ghost ward ends |
 
-Use: **E, V, RB / R1, left click**, and an **ITEM** touch button (64 px, above JUMP, out of the lower middle). Pry:
-any key, click, pad button or tap. The full table is PR 3 ([controls.md](controls.md)).
+Use: **E, V, RB / R1, LT / L2, left click**, and an **ITEM** touch button (76 px, above DASH, out of the lower
+middle; shown only while the slot holds something Use can fire, with the item's icon). Pry: any bound action key
+(never Shift or a steering key), click, pad button (Y and L1 count too) or a tap anywhere (a joystick touch counts
+as a tap: harmless); the status line names the device's input (`Controls.pryHint`). The full table: [controls.md](controls.md) (PR 3, built 2026-10-22).
 
 ## 7. The knobs (`shared/Config.lua`)
 
@@ -181,14 +183,14 @@ rule 11 (no hold over ~1 s).
   no pool never up. The first run missed four: a fixture was doing the rule's job each time (→ Q5); each got an
   assertion only the rule can produce. **Not caught:** "a beam never hits its user", an equivalent mutant while
   `OWNER_SAFE` (0.5) >= `ICE_LIFE` (0.5): the owner rule covers it. Kept explicit for when either number changes.
-- **QA round 1 (7/10, [`../qa/ghosts-v2-items-round1.md`](../qa/ghosts-v2-items-round1.md)), fixes re-checked:** 50
+- **QA round 1 (7/10, [`../qa/archive/ghosts-v2-items-round1.md`](../qa/archive/ghosts-v2-items-round1.md)), fixes re-checked:** 50
   mutations, 47 caught. New and caught: no gap during a trap, only a trap waives it, the gap outside one (a bunched-
   presses test), the freeze refill from the measured speed, the cap from the speed, the dropped cap kept for the whole
   hold (a stand-then-dash test, added because the first re-run missed it), `recentSpeed`'s window, an unknown speed read
   leniently. Not caught, both equivalent in the server: "the budget drops when the hold lands" (the in-hold cap clamps
   it on the next sample anyway) and "the hold starts at its first sample" (`>=` vs `>`: the server applies a hold after
   that frame's sample, so no sample sits on the start). Plus the beam-user one above.
-- **QA round 2 (8/10, target met, [`../qa/ghosts-v2-items-round2.md`](../qa/ghosts-v2-items-round2.md)):** 54
+- **QA round 2 (8/10, target met, [`../qa/archive/ghosts-v2-items-round2.md`](../qa/archive/ghosts-v2-items-round2.md)):** 54
   mutations, 51 caught (the same 3 equivalents). New and caught: the full burst after a hold (a dash-jump-out-of-a-trap
   test that asserts the margin, since it first passed by 0.49 studs without the rule), a trapped runner never rises,
   drops rather than hangs, stays pinned across, and its fall is legal (a trap set in mid-air, 40 studs: the first

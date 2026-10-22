@@ -222,12 +222,14 @@ camera scripts reset them on spawn.
   at Play start in a probe, and keys sent in the first seconds were not seen by `UserInputService` at all). The best
   explanation of Danzo's "click and release" (not confirmed: the MCP injects keys, it cannot reproduce focus): click
   into the game view once after pressing Play.
-- **Jump:** Space, gamepad A, the touch JUMP button. **Dash:** Left or Right Shift, gamepad X, the touch DASH button.
-  Bound at High priority with `Sink`, so Space never reaches Roblox's jump and Shift never toggles shift-lock (the
-  server also turns `EnableMouseLockOption` off).
-- **Touch buttons:** a `ScreenGui` shown only when `TouchEnabled`. JUMP is 96 px in the bottom-right corner, DASH 76 px
-  up and to its left; the default joystick is bottom-left, so the lower-middle is clear (rules 22–23). Presses are
-  latched between frames so a quick tap is never lost; a thumb sliding off a button still releases it.
+- **Jump:** Space or Z, pad A, the JUMP button. **Dash:** Shift or X, pad X or B, DASH. **Grapple** (unread until
+  its PR): W, C, ↑, right click, RT. **Use:** E, V, left click, RB, LT, ITEM. The table and why: [controls.md](controls.md)
+  (PR 3). High priority with `Sink`: Space never reaches Roblox's jump, Shift never shift-lock (the server also turns
+  `EnableMouseLockOption` off); clicks pass on so GUI buttons still see them.
+- **Touch buttons:** a `ScreenGui` shown only when `TouchEnabled`, four in an arc around the right thumb: JUMP 96 px in
+  the bottom-right corner, DASH 76 px up-left of it, GRAPPLE (ROTATE for a ghost) above JUMP, ITEM left of DASH; the
+  last two only while useful (`Controls.buttons`, each frame). The joystick is bottom-left, so the lower-middle is
+  clear (rules 22–23). Presses are latched between frames so a quick tap is never lost; a thumb sliding off still releases.
 
 ## 6. How the runner is drawn (decided, H1)
 
