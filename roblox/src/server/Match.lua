@@ -18,6 +18,7 @@ local Runners = require(script.Parent:WaitForChild("Runners"))
 local Arena = require(script.Parent:WaitForChild("Arena"))
 local MoveGuard = require(script.Parent:WaitForChild("MoveGuard"))
 local Snapshots = require(script.Parent:WaitForChild("Snapshots"))
+local Walls = require(script.Parent:WaitForChild("Walls")) -- H24: the closing walls (endgame.md §7)
 
 local Match = {}
 
@@ -79,6 +80,7 @@ local function snapshot(now: number)
 		if rootOf(id) and not (r and table.find(r.order, id)) then table.insert(spectating, id) end
 	end
 	local ghosts, ward = Ghosts.state(r, ghostState, now, present)
+	local window, outside = Walls.rows(r, now)
 	return {
 		round = roundNo,
 		it = r and r.it,
@@ -93,6 +95,7 @@ local function snapshot(now: number)
 		ghosts = ghosts, -- H18: { { id } } for every present ghost (ghosts.md §4)
 		ward = ward, -- seconds before any ghost may hex again
 		endPhase = r ~= nil and Tag.endPhase(r, now), -- H23, rule 51: the server's call, on its own clock (endgame.md)
+		window = window, outside = outside, -- H24: { x, hw, vx, vhw } or nil; { { id, left } } (endgame.md §7)
 	}
 end
 
@@ -308,6 +311,7 @@ local function step(dt: number)
 				else (tostring(r.it) .. " is it")))
 			dirty = true
 		end
+		if Walls.step(r, now, history, Items.held) then dirty = true end -- after the fuse: a burn-out comes first
 		if r.over then nextRoundAt = now + Config.ROUND_GAP end
 		if Tag.endPhase(r, now) ~= endOn then
 			endOn, dirty = not endOn, true

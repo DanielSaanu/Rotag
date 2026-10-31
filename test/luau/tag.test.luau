@@ -317,4 +317,12 @@ do -- rule 50 (H23): the ignition grows from 0 at IGNITE_AT left to 1 at 0, line
 	end
 end
 
+do -- H24: Tag.eliminate, the one path for a burn-out and a wall kill. A non-holder's death ends a duel: the holder wins
+	local r = Tag.newRound({ A, B, C }, A, 0)
+	assert(Tag.eliminate(r, B, 5) and r.it == A and r.hold == 0 and r.eliminations == 1, "B out; A still it, no hand-over")
+	assert(not Tag.eliminate(r, B, 5), "a ghost cannot be eliminated twice")
+	assert(Tag.eliminate(r, C, 6) and r.over and r.winner == A and r.it == nil and r.hold == 1, "C out: A wins the round")
+	assert(not Tag.eliminate(r, A, 7) and r.alive[A], "nothing after the end")
+end
+
 print("tag ok")

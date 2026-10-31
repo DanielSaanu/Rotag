@@ -12,6 +12,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local ItemRules = require(Shared:WaitForChild("Items"))
 local Dummy = require(script.Parent:WaitForChild("Dummy"))
 local Items = require(script.Parent:WaitForChild("Items")) -- H19: dummies use what they roll, and stop while held
+local Walls = require(script.Parent:WaitForChild("Walls")) -- H24: a dummy outside the walls heads back in
 
 local Bots = {}
 Bots.ids = {} :: { [number]: boolean } -- for Tag.readyToStart: never waited for
@@ -72,6 +73,7 @@ function Bots.move(r: Tag.Round?, dt: number, now: number, history: { [number]: 
 				chase = if o and o.held[id] ~= nil then lastX(history, r.it) else orbX(o, x) -- any item: to the holder
 			end
 		end
+		if r and r.alive[id] then chase = Walls.backIn(id) or chase end -- outside the walls: back in first (H24)
 		-- A held dummy stands still for any hold (it is a stand-in, not a body that stumbles or slides).
 		Dummy.step(d, dt, chase, (r ~= nil and r.it == id and Tag.frozen(r, now)) or Items.held(id, now))
 	end

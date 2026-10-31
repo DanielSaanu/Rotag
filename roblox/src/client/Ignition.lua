@@ -21,13 +21,14 @@ local studio = game:GetService("RunService"):IsStudio()
 
 local prev: any = nil
 
--- One burst at (x, y) on the runner plane: a neon ball that swells and fades, and a ring of sparks.
-function Ignition.burst(x: number, y: number)
+-- One burst at (x, y) on the runner plane: a neon ball that swells and fades, and a ring of sparks. `color`: the
+-- ball's colour (H24: the walls' red for a runner the walls took; the ember orange for a burn-out by default).
+function Ignition.burst(x: number, y: number, color: Color3?)
 	local flash = Instance.new("Part")
 	flash.Name = "RotagBurnOut"
 	flash.Shape = Enum.PartType.Ball
 	flash.Material = Enum.Material.Neon
-	flash.Color = Color3.fromRGB(255, 120, 30)
+	flash.Color = color or Color3.fromRGB(255, 120, 30)
 	flash.Size = Vector3.new(1, 1, 1)
 	flash.Anchored, flash.CanCollide, flash.CanQuery, flash.CanTouch = true, false, false, false
 	flash.CastShadow = false
@@ -51,15 +52,26 @@ function Ignition.burst(x: number, y: number)
 end
 
 -- After every MatchState (client/Tagging's onState). `where(id)` is where this screen draws that runner, or nil.
+-- H24: a runner gone from `alive` that the last state listed OUTSIDE the walls was taken by them: a red burst there
+-- (the holder too). Anyone else gone is the holder's burn-out (orange) or a leave (no body: nothing).
+local WALL_RED = Color3.fromRGB(255, 40, 60)
 function Ignition.state(s: any, where: (number) -> Vector3?)
 	local p = prev
 	prev = s
-	if not (p and p.it and p.round == s.round and not p.over) then return end
-	if table.find(s.alive, p.it) or not table.find(p.alive, p.it) then return end
-	local at = where(p.it)
-	if not at then return end
-	Ignition.burst(at.X, at.Y)
-	if studio then print(("[Rotag] burn-out: %s at (%.1f, %.1f)"):format(tostring(p.it), at.X, at.Y)) end
+	if not (p and p.round == s.round and not p.over) then return end
+	for _, id in p.alive do
+		local walled = false
+		for _, e in (p.outside or {}) do if e.id == id then walled = true end end
+		local at = if table.find(s.alive, id) or not (walled or id == p.it) then nil else where(id)
+		-- a holder whose FUSE ran out while it stood outside burned out: orange, not the walls' red (QA round 1)
+		if walled and id == p.it and type(p.fuse) == "number" and p.fuse <= 0.2 then walled = false end
+		if at then
+			Ignition.burst(at.X, at.Y, if walled then WALL_RED else nil)
+			if studio then
+				print(("[Rotag] %s: %s at (%.1f, %.1f)"):format(if walled then "walled out" else "burn-out", tostring(id), at.X, at.Y))
+			end
+		end
+	end
 end
 
 return Ignition

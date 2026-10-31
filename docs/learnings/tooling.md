@@ -66,3 +66,11 @@ look early, and none of it is the game. Before tuning any netcode on one PC, set
 `%LOCALAPPDATA%\Roblox\GlobalBasicSettings_13_Studio.xml` with Studio closed (the property is RobloxScript-only, so a
 script cannot set it): unfocused windows then run at 60 and the choppiness vanished (H13 run 6). Feel still needs two
 real devices. *(H13, `docs/systems/netcode.md` §2, 2026-10-14.)*
+
+**T13 — Before judging anything on the client in Play, check it is RENDERING: count `RenderStepped` for a second and
+read `workspace.CurrentCamera.ViewportSize`.** In one session the Studio window was maximised and in front, yet the
+Play viewport was 1x1 with 0 render frames: every `BindToRenderStep` body was dead (no Ready sent, no wall drawn,
+`Others`' drawn spots stale), `user_keyboard_input` moved nothing and `screen_capture` timed out, while Heartbeat,
+remotes and the server ran normally. A Play stop/start did not fix it. What still works: the server's and client's
+Output, and the real client modules required in the Client datamodel and driven on Heartbeat from the live remotes
+(`Tagging.start`, then the draw call). Say in the doc that nothing was seen on screen. *(2026-11-01, handoff H24.)*

@@ -204,7 +204,7 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	if phase and not phaseOn then phaseAt = now end
 	phaseOn = phase
 	if phaseLabel then
-		phaseLabel.Text = if not phase then "" else ("%s: everyone +%d%% speed"):format(
+		phaseLabel.Text = if not phase then "" else ("%s: the walls close in  |  +%d%% speed"):format( -- H24
 			if #state.alive <= 2 then "FINAL TWO" else "OVERTIME", math.floor((Config.END_PHASE_SPEED - 1) * 100 + 0.5))
 		phaseLabel.TextTransparency = if now - phaseAt < PHASE_FLASH then 0.6 * (0.5 + 0.5 * math.sin(now * 6 * math.pi))
 			else 0

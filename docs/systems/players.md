@@ -157,6 +157,10 @@ so "D" for the dummy) and a turned square as the pointer. **The holder's is red*
 (out, or waiting for the next round) dimmed. Seen in Play: with the dummy 120 studs right, a white "D" badge at the
 right edge (u 0.957, v 0.533, pointing right). Placeholder UI, not art.
 
+H24 (the closing walls, [endgame.md](endgame.md) §7): the arrows are unchanged. The walls are world parts every
+screen draws at the same place; while one is off this screen a red glow on that screen edge grows as it nears, and
+your own runner outside gets `GET BACK IN` with an arrow home (`client/Walls`). No camera zoom: §2's own camera stands.
+
 ## 5. Decision 3: round-ready, with a 5 s timeout
 
 In Studio the client drew its first frame ~2.5 s after the server started round 1, so the start wait (RUN!/count/GO!)

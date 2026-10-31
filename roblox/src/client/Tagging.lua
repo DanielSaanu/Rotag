@@ -59,6 +59,16 @@ function Tagging.ignition(id: number): number
 	return Tag.ignition(Tagging.fuseLeft())
 end
 
+-- H24: seconds of grace runner `id` has left outside the walls, as the server last said (counted down since), or nil
+-- if the server has it inside. The server decides; this only draws.
+function Tagging.graceLeft(id: number): number?
+	if not state or state.over then return nil end
+	for _, e in state.outside do
+		if e.id == id then return if e.held then e.left else math.max(0, e.left - since()) end -- held: the server paused it
+	end
+	return nil
+end
+
 -- This runner's entry in MatchState.ghosts ({ id }, H18), or nil if it is not a ghost.
 function Tagging.ghost(id: number): any
 	if not state or state.over then return nil end
@@ -146,6 +156,16 @@ function Tagging.start(player: Player, onState: (any) -> (), onVerdict: (any) ->
 					end
 				end
 				s.ghosts = ghosts
+				local w = s.window -- H24: the closing walls (endgame.md §7); absent or malformed reads as none
+				s.window = if type(w) == "table" and type(w.x) == "number" and type(w.hw) == "number" then
+					{ x = w.x, hw = w.hw, vx = tonumber(w.vx) or 0, vhw = math.min(0, tonumber(w.vhw) or 0) } else nil
+				local outside = {}
+				for _, e in (if type(s.outside) == "table" then s.outside else {}) do
+					if type(e) == "table" and type(e.id) == "number" and type(e.left) == "number" then
+						table.insert(outside, { id = e.id, left = e.left, held = e.held == true })
+					end
+				end
+				s.outside = outside
 				s.at = os.clock()
 				state = s
 				onState(s)

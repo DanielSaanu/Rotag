@@ -282,6 +282,12 @@ they stood. The end phase (`Tag.endPhase`: the final two of a round that began w
 120 s) multiplies every living runner's run speed by 1.1 on top of max(ramp, grant); the server decides it and sends
 `MatchState.endPhase`. The speed check needed no change. Detail, numbers and what was seen: [endgame.md](endgame.md).
 
+**H24, the closing walls (PR 5b):** the end phase also opens a server-owned window that closes in; a living runner
+outside it for `WALL_GRACE` (3 s) is eliminated. Every elimination now goes through `Tag.eliminate(r, id, now)`
+(`Tag.tick` calls it for a burn-out): a ghost, `eliminations + 1` (the next fresh fuse shrinks); if it held the fuse,
+the next runner in rotation gets a fresh fuse and the tag freeze and `hold` bumps (→ S12); a non-holder's death leaves
+the holder, its fuse and `hold` alone; the last living runner wins. [endgame.md](endgame.md) §7.
+
 ## Expansion: deficits at scale
 
 - **Position trust** is movement trust (§2): the speed check is built ([trust.md](trust.md), H12); the next rung is input replay (trust.md §8).

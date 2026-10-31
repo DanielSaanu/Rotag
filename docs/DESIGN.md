@@ -1,6 +1,6 @@
 # Parkour Tag (working title): Game Design Notes
 
-_Last updated: 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
+_Last updated: 1 Nov 2026 (H24: rule 3's map shrink built as the closing walls, rules 3 and 51, §6.8; §2 unchanged). 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
 
 This is the design contract. Code and art are judged against it. A change to §2 (locked decisions) or §3 (the
 adopted rules) is escalation trigger 1 (`CLAUDE.md`). Portable principles that are not about this game live in
@@ -77,6 +77,7 @@ Moves should hand speed off to each other:
 1. **No tag-backs.** Freeze the new holder for 1–2 s, or give the passer about 1 s of immunity (Gorilla Tag uses a 5 s freeze).
 2. **Make the fuse readable.** The bomb grows, beeps faster and glows, and the **+5 s** shows on screen at every pass. (When a Mario Party sequel toned down its Hot Bob-omb warnings, the timing became harder to read.)
 3. **Force an ending.** At the final 2 players, shrink the map or speed up the fuse (Bomberman "Hurry Up", TNT Tag deathmatch). Otherwise the final duel drags.
+   *Built (H24, 2026-11-01): the map shrink is the closing walls of rule 51 ([endgame.md](systems/endgame.md) §7).*
 4. **Ramp the chaser.** "It" gets faster the longer a chase lasts, and the boost resets on a tag. Dead by Daylight's Bloodlust works this way. It stops infinite looping.
 5. **Pick the starting holder fairly**, by rotation or by the previous round's leader. Never by pure random.
 6. **Lag-fair tagging.** Check overlap on the client, confirm it on the server, then play a catch-up animation so it looks fair on both screens. Don't rely on Roblox `Touched` alone.
@@ -182,6 +183,11 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
     or a round past `END_PHASE_AFTER`, trial 120 s; H23, [endgame.md](systems/endgame.md)),
     every living runner's top speed is multiplied by `END_PHASE_SPEED` (trial 1.1), alongside rule 3's map shrink;
     the ramp and the grant apply on top. Never during a normal fuse.
+    **The map shrink (H24, SpeedRunners' closing screen in world space):** when the end phase starts, two walls appear
+    just outside the living pack and close over `WALL_CLOSE_TIME` (trial 20 s) to a 48-stud box, their centre easing
+    after the living. They are not solid: a living runner past one has `WALL_GRACE` (trial 3 s, paused while held) to
+    get back in, reset the moment it is, and is eliminated like a burn-out at 0. The server decides on its own position
+    record; every player keeps their own camera (§2). Detail and numbers: [endgame.md](systems/endgame.md) §7.
 
 ---
 
@@ -189,7 +195,7 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
 
 | Game | Take | Avoid |
 |---|---|---|
-| **SpeedRunners** | Grapple and boost kit, items that target leaders, a shrinking screen to force an end | Steep learning curve, weak tutorial, overlong stuns |
+| **SpeedRunners** | Grapple and boost kit, items that target leaders, a shrinking screen to force an end (built as rule 51's closing walls, with a grace instead of an instant kill: H24) | Steep learning curve, weak tutorial, overlong stuns |
 | **Ultimate Chicken Horse** | Late scoring redesign added comeback points after trailing players checked out | Repetition after a few hours |
 | **TowerFall** | One input with multiple uses (dodge), cosmetic-only characters for balance, trails for readability | — |
 | **Duck Game / Stick Fight** | Rounds that last seconds make dying funny, not painful | Dominant weapons, RNG drops that feel unfair |
@@ -234,7 +240,9 @@ No 2D, side-on parkour tag game has made it big on Roblox. The few 2D projects o
 6. **Name.**
 7. **Bots.** Scope for a basic bot that chases, flees and uses abilities.
 8. **Maps** (H16). 3-4 from the start, differing in layout (rule 48): Tower (vertical), Yard (open), Warren (maze),
-   Rooftops (gaps); feels in [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md) §6. Open: which first, and size.
+   Rooftops (gaps); feels in [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md) §6. Open: which first, and size. The map shrink
+   came forward (H24, rule 51's closing walls); each map's data will carry its window bounds (a tall map may shrink
+   vertically too).
 9. ~~**`END_PHASE_AFTER`.**~~ **Resolved-trial 2026-10-31 (H23, heavy; Danzo to confirm):** 120 s, not the
    proposal's 150: the final two normally arrive first (~83-100 s), and a round still 3+ alive at 2:00 ends near 3:00,
    inside the pillar (150 would end near 3:30). Reasoning: [endgame.md](systems/endgame.md) §5.

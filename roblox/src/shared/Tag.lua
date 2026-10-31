@@ -161,28 +161,40 @@ function Tag.pass(r: Round, to: number, now: number): (number, number)
 	return fuse, fuse - left
 end
 
--- Advance the round. Returns the id eliminated this call, if the fuse ran out. The next holder is the next alive
--- runner after the eliminated one in join order (rotation, rule 5) with a fresh, shorter fuse; the round ends when
--- one runner is left (or none, in a round that started with one). The eliminated runner is a ghost for the rest of
--- the round: no comeback (DESIGN §3 rule 38, H16; H15's `back` argument is gone with its rule).
-function Tag.tick(r: Round, now: number): number?
-	local it = r.it
-	if r.over or it == nil or Tag.fuseLeft(r, now) > 0 then return nil end
-	r.alive[it] = false
+-- Eliminate living runner `id` (H24: the one path for a burn-out and the closing walls' grace running out). It is a
+-- ghost for the rest of the round: no comeback (DESIGN §3 rule 38, H16). Every elimination shrinks the next fresh fuse.
+-- If it held the fuse, the next alive runner after it in join order (rotation, rule 5) takes over with a fresh, shorter
+-- fuse and the tag freeze; a non-holder's death leaves the holder and its fuse alone. The round ends when one runner is
+-- left (or none, in a round that started with one). Returns whether anything changed.
+function Tag.eliminate(r: Round, id: number, now: number): boolean
+	if r.over or not r.alive[id] then return false end
+	local wasIt = r.it == id
+	r.alive[id] = false
 	r.eliminations += 1
-	r.hold += 1
 	local left = Tag.aliveCount(r)
 	if left <= 1 then
 		r.over = true
 		r.it = nil
-		r.winner = if left == 1 then Tag.nextStarter(r.order, r.alive, it) else nil
-		return it
+		r.hold += 1
+		r.winner = if left == 1 then Tag.nextStarter(r.order, r.alive, id) else nil
+		return true
 	end
-	r.it = Tag.nextStarter(r.order, r.alive, it)
-	r.fuse = Tag.freshFuse(r.eliminations)
-	r.since = now
-	r.frozenUntil = now + Config.TAG_FREEZE
-	r.chaseFrom = r.frozenUntil
+	if wasIt then
+		r.hold += 1
+		r.it = Tag.nextStarter(r.order, r.alive, id)
+		r.fuse = Tag.freshFuse(r.eliminations)
+		r.since = now
+		r.frozenUntil = now + Config.TAG_FREEZE
+		r.chaseFrom = r.frozenUntil
+	end
+	return true
+end
+
+-- Advance the round. Returns the id eliminated this call, if the holder's fuse ran out (Tag.eliminate does the rest).
+function Tag.tick(r: Round, now: number): number?
+	local it = r.it
+	if r.over or it == nil or Tag.fuseLeft(r, now) > 0 then return nil end
+	Tag.eliminate(r, it, now)
 	return it
 end
 

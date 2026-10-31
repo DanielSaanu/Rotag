@@ -75,6 +75,16 @@ Config.END_PHASE_AFTER = 120      -- rule 51: seconds into a round when the end 
                                   -- come first (H23's pick: a round still 3+ alive here has ~2 lives left, ~3:00)
 Config.END_PHASE_SPEED = 1.1      -- rule 51: in the end phase every living runner's top run speed x this, ramp and
                                   -- grant on top (45 x 1.15 x 1.1 = 56.9: still under the speed check's dash rate)
+-- The closing walls (H24, DESIGN §3 rules 3, 51; docs/systems/endgame.md §7): SpeedRunners' shrinking screen as a
+-- server-owned window in world space. Trial numbers, tuned by hand; the reasons are in endgame.md §7.
+Config.WALL_START_PAD = 8         -- studs: the walls appear this far past the farthest living runner (nobody starts out)
+Config.WALL_START_MIN = 44        -- ... and never nearer the centre than this: ~half a 16:9 screen (85 studs wide)
+Config.WALL_MIN_HW = 24           -- studs: they stop closing here, a 48-stud box (12 tiles), both walls on one screen
+Config.WALL_CLOSE_TIME = 20       -- seconds from appearing to closed, whatever the start width
+Config.WALL_FOLLOW = 8            -- studs/s at most the window's centre drifts after the living (a run is 45: a zone,
+                                  -- not a camera; nobody can drag it)
+Config.WALL_EASE = 0.5            -- 1/s: the centre eases toward the living mean (a 2 s time constant) under that cap
+Config.WALL_GRACE = 3             -- seconds a living runner may be past a wall; reset the moment it is back inside
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart

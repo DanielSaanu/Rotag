@@ -24,6 +24,7 @@ local Use = require(script.Parent:WaitForChild("Use")) -- H19: Use, prying, the 
 local ItemArt = require(script.Parent:WaitForChild("ItemArt")) -- H21: is the hold art in the sheet yet
 local Place = require(script.Parent:WaitForChild("Place")) -- H22: ghost parts, pads, the grant (placement.md)
 local Ignition = require(script.Parent:WaitForChild("Ignition")) -- H23: the burn-out (endgame.md)
+local Walls = require(script.Parent:WaitForChild("Walls")) -- H24: the closing walls (endgame.md §7)
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -230,6 +231,8 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
 	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	Arrows.update(Tagging.me(), Tagging.state(), Tagging.ignition) -- H23: the holder's arrow beats as it ignites
+	Walls.update(st, if c and c.root.Parent and Tagging.isAlive(player.UserId) then c.state.x else nil,
+		Tagging.graceLeft(player.UserId)) -- H24: drawn from MatchState; a ghost is never warned
 end)
 
 -- The sheet ids the server resolved (Remotes.SheetIds, docs/systems/README.md). Nothing waits for them: the runner
@@ -281,6 +284,7 @@ Others.start(player)
 Items.start(player)
 Use.start(player)
 Place.start()
+Walls.start(player)
 -- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
 -- where Others draws each runner (the snapshot stream), as the server judges it.
 Tagging.start(player, function(s) -- H23: a burn-out bursts where this screen draws that runner

@@ -42,3 +42,10 @@ five cooldowns x1.325). *(2026-10-11, handoff H10.)*
 **S12 — State tied to "the current holder" is keyed by a hand-over counter, never by the holder's id.** The ghost mark
 belongs to one hold: A holds, is marked, passes to B, gets the fuse back, and keying by id would revive the stale mark.
 Bump one counter on EVERY path that changes hands (pass, elimination, leave) and test each path. *(2026-10-14, H15, `Round.hold`.)*
+
+**S13 — Anything that follows a moving average (a zone, a camera target, a crowd marker) eases toward it; a speed cap
+alone turns normal sway into a constant wobble.** The closing walls' centre first chased the living mean at its 8
+studs/s cap, so three patrolling dummies swung both walls 16 studs back and forth every few seconds (Studio). Ease
+proportionally (a time constant longer than the sway's period) and keep the cap only for the big moves; pin the
+outcome with a driven sway (a sine of the measured amplitude and period) and watch the old rule fail it.
+*(2026-11-01, handoff H24, `shared/Walls.step`.)*

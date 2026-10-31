@@ -102,6 +102,10 @@ it). Pinned in `tag.test.luau`: a trusted control confirms, the same touch from 
 claimant's earlier trusted samples still count, an untrusted target can still be tagged. The Studio dummy is the
 server's own runner and is not checked (nor is any body with no player, like the stand-in).
 
+**The closing walls (H24, [endgame.md](endgame.md) §7)** judge a runner's newest sample the same way, and an
+untrusted one changes nothing in either direction: a teleport back inside never resets a grace, and a flagged
+"outside" starts none. The snap-back can put a runner back outside (where it last legally was); that is fair.
+
 ## 6. Seen in Studio (2026-10-12, solo Play, one client, the dummy in the round)
 
 - **Honest runs:** two dash-jump key scripts across the map, ~25 tags back and forth with the dummy, a round start
