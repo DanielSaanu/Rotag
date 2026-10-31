@@ -169,7 +169,7 @@ end
 -- A ghost's own line (rules 38-40): out for the round; grab a ghost orb, then a held hex drains on touch.
 local GHOST_ITEM = { -- H22: what a ghost does with a part or the grant (docs/systems/placement.md)
 	fixture = "GHOST: PIECE  |  Use places it ahead, grapple turns it (red: no room)",
-	pad = "GHOST: BOOST PAD  |  Use sets it at your feet, its arrow your way",
+	pad = "GHOST: BOOST PAD  |  Use sets it at your feet; it throws whoever runs over it onward and up",
 	grant = ("GHOST: BOOST  |  touch a runner: +%d%% speed for %gs"):format(Config.GRANT_BOOST * 100, Config.GRANT_TIME),
 }
 local function ghostLine(state: any, me: number): string

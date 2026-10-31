@@ -199,11 +199,12 @@ do -- rule 47: at most FIXTURE_CAP live fixtures per ghost; a 4th fades the olde
 	assert(p.n == 42 and p.count == 4 and mirror.nextN == 42 and p.dir == -1, "a mirror keeps the server's number")
 end
 
-do -- rule 15: a pad launches along its arrow; who touches it (the client launches on ENTERING it)
+do -- rule 15: a pad launches the way the RUNNER is going (Danzo 2026-10-31: no arrow); who touches it (the client
+	-- launches on ENTERING it, passing the runner's travel direction)
 	local vx, vy = Placement.launch(1)
-	assert(vx == Config.PAD_SPEED_X and vy == Config.PAD_SPEED_Y, "right and up")
+	assert(vx == Config.PAD_SPEED_X and vy == Config.PAD_SPEED_Y, "going right: right and up")
 	vx = Placement.launch(-1)
-	assert(vx == -Config.PAD_SPEED_X, "left")
+	assert(vx == -Config.PAD_SPEED_X, "going left: left")
 	local st = Placement.new()
 	local pad = Placement.place(st, A, "pad", nil, 0, 0, 0, 1, 0)
 	assert(Placement.onPad(pad, 4, Y), "a runner standing on it touches it")

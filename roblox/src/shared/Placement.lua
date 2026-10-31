@@ -112,7 +112,8 @@ local function hit(ax0: number, ay0: number, ax1: number, ay1: number, bx0: numb
 end
 
 -- A thing a ghost put in the world. `boxes` flat as above; `untilT` math.huge for a fixture (permanent for the
--- round) until a fourth fades it (`fadeAt`); `dir` a pad's arrow (+1 right, -1 left).
+-- round) until a fourth fades it (`fadeAt`); `dir` the placer's facing when it was put down (kept on the wire; a pad no
+-- longer uses it: it throws a runner the way the runner is going).
 export type Placed = { n: number, owner: number, item: string, shape: string?, rot: number, left: number,
 	bottom: number, dir: number, boxes: { number }, count: number, from: number, untilT: number, fadeAt: number? }
 export type State = { placed: { Placed }, nextN: number }
@@ -224,7 +225,8 @@ function Placement.onPad(p: Placed, x: number, y: number): boolean
 	return hit(x - HW, y - HH, x + HW, y + HH, b[1], b[2], b[3], b[4])
 end
 
--- A pad's launch along its arrow (rule 15; the numbers in Config): x by the arrow, y up.
+-- A pad's launch (rule 15; the numbers in Config): x the way the runner is already going (`dir` is ITS travel
+-- direction, its facing when it stands still; Danzo 2026-10-31: pads throw you onward, they have no arrow), y up.
 function Placement.launch(dir: number): (number, number)
 	return (if dir < 0 then -1 else 1) * Config.PAD_SPEED_X, Config.PAD_SPEED_Y
 end

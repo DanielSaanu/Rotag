@@ -71,9 +71,9 @@ start, stand still 45 s and you are a ghost.
    press E: it hovers on the tile line. On the floor press E: the block lands where the preview was; run into it (a
    wall), jump on it (a floor). Place a 4th: the oldest goes half-see-through for a second, then vanishes.
 3. Walk into the wall-jump shaft holding a piece: the faint red zone shows, the preview is red everywhere in it.
-4. BOOST PAD: press E: a lime slab with an arrow under you, nothing happens. Step off and back on: you are thrown
-   along the arrow and up, with dash and double jump back. **The feel calls:** 100 across / 105 up; run onto a pad
-   from a standstill, then at full sprint against the arrow (the arrow should win), then double-jump at the top.
+4. BOOST PAD: press E: a lime slab under you, nothing happens. Step off and back on: you are thrown the way you were
+   going and up, with dash and double jump back (no arrow since Danzo's call, 2026-10-31). **The feel calls:** 100
+   across / 105 up; run onto a pad at a walk and at full sprint, both ways, then double-jump at the top.
 5. BOOST: as a ghost, touch a living dummy: an orange halo round its figure for 5 s (the box is gone, Danzo 2026-10-31). Living, let a dummy ghost holding BOOST
    touch you: "BOOST +15%  n.ns" on your line and you are faster for 5 s; as the holder late in a chase it changes
    nothing.

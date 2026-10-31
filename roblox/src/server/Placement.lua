@@ -60,18 +60,15 @@ local function part(size: Vector3, at: CFrame, color: Color3, solid: boolean): B
 	return b
 end
 
--- One Part per row run of a fixture (no seam under a runner on its top); a pad's slab and an arrow tilted its way.
+-- One Part per row run of a fixture (no seam under a runner on its top); a pad is one slab (no arrow: it throws a
+-- runner the way it is already going, Danzo 2026-10-31).
 local function build(p: Rules.Placed): { BasePart }
 	local out = {}
 	if p.item == "pad" then
 		local cx, cy = p.left + Config.PAD_W / 2, p.bottom + Config.PAD_H / 2
 		local slab = part(Vector3.new(Config.PAD_W, Config.PAD_H, DEPTH / 2), CFrame.new(cx, cy, 0), PAD_COLOR, false)
 		slab.Name = "Pad"
-		local arrow = part(Vector3.new(3, 0.6, 0.2), CFrame.new(cx, cy + 2, Config.RUNNER_DEPTH / 2 + 0.3)
-			* CFrame.Angles(0, 0, p.dir * math.rad(40)), PAD_COLOR, false)
-		arrow.Name = "PadArrow"
 		table.insert(out, slab)
-		table.insert(out, arrow)
 		return out
 	end
 	for _, row in Rules.ROT[p.shape :: string][p.rot + 1].rows do
@@ -114,7 +111,7 @@ function Placement.place(r: Tag.Round, id: number, item: string, shape: string?,
 	if not ctx then return false, "not started" end
 	if not Ghost.isGhost(r, id) then return false, "only a ghost places parts" end
 	if item == "fixture" and not Rules.valid(shape, rot) then return false, "no shape for this fixture" end
-	if item == "pad" then rot = 0 end -- a pad's arrow is its placer's facing; the rotation is not read for it
+	if item == "pad" then rot = 0 end -- a pad has no rotation; the number is not read for it
 	local left, bottom = Rules.spot(item, shape, rot, x, y, facing)
 	local count = Rules.boxesInto(buf, item, shape, rot, left, bottom)
 	local ok, why = Rules.fits(state, buf, count, static, rows, runnersFor(r, item))

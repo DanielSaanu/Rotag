@@ -343,11 +343,12 @@ local function launched(t, dir)
 	return inp
 end
 
-do -- a pad launches along its arrow and up, off the floor, and refreshes the dash and the double jump
+do -- a pad launches the way the runner is going (client/Place passes that direction) and up, off the floor, and
+	-- refreshes the dash and the double jump
 	local s = standing(FLOOR, 0)
 	local ev = tick(FLOOR, s, launched({ moveX = 1 }, 1))
 	assert(ev.launch and not s.grounded, "launched off the floor")
-	assert(near(s.vx, kept(Config.PAD_SPEED_X)), ("along the arrow: %.2f"):format(s.vx))
+	assert(near(s.vx, kept(Config.PAD_SPEED_X)), ("the launch speed: %.2f"):format(s.vx))
 	assert(near(s.vy, Config.PAD_SPEED_Y - Config.GRAVITY * DT), "up at the launch speed, gravity from this frame")
 	tick(FLOOR, s, input({ moveX = 1 }))
 	assert(not s.grounded, "the next frame does not snap it back to the floor")
@@ -368,7 +369,8 @@ do -- a pad launches along its arrow and up, off the floor, and refreshes the da
 	assert(rise > 11.2 and rise < 11.6, ("a pad's rise (measurement): %.2f"):format(rise))
 end
 
-do -- rule 16: speed already carried along the arrow is kept, never cut; against the arrow the arrow wins
+do -- rule 16: speed already carried the launch's way is kept, never cut; given the other way, the launch wins
+	-- (Movement takes any direction; since Danzo's call a pad always passes the runner's own, so no pad turns you round)
 	local s = standing(FLOOR, 0)
 	tick(FLOOR, s, input({ dash = true, moveX = 1 }))
 	assert(near(s.vx, Config.DASH_SPEED), "dashing right at 120")

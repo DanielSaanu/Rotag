@@ -11,7 +11,7 @@ Use, the holds and the hold budget in [items.md](items.md). QA goals: [../qa/gho
 | Thing | Who | What | Numbers (`shared/Config.lua`) |
 |---|---|---|---|
 | **Fixture** | ghosts | one of the seven tetrominoes, 1-tile (4-stud) cells, rotated in 90° steps on the grapple input, placed one tile ahead of the ghost on the tile grid; permanent for the round; solid to EVERYONE, ghosts included; at most 3 live per ghost: a 4th starts the ghost's oldest fading, solid for 1 s more, then gone | `FIXTURE_CAP` 3, `FIXTURE_FADE` 1, `PLACE_GAP` 4, `PLACE_CLEAR` 4 |
-| **Boost pad** | ghosts | a 2-tile slab at the ghost's feet, its arrow the ghost's facing; lasts 20 s; anyone who ENTERS it, ghosts included, is launched along the arrow (100 studs/s, speed already carried that way is kept) and up (105 studs/s, 2 x `JUMP_SPEED`), with dash and double jump refreshed (rule 15); not solid, not an obstacle | `PAD_W` 8, `PAD_H` 1, `PAD_LIFE` 20, `PAD_SPEED_X` 100, `PAD_SPEED_Y` 105 |
+| **Boost pad** | ghosts | a 2-tile slab at the ghost's feet; lasts 20 s; anyone who ENTERS it, ghosts included, is thrown the way they are already going (100 studs/s, speed already carried is kept; standing still: the way they face) and up (105 studs/s, 2 x `JUMP_SPEED`), with dash and double jump refreshed (rule 15); no arrow, never turns you round (Danzo 2026-10-31); not solid, not an obstacle | `PAD_W` 8, `PAD_H` 1, `PAD_LIFE` 20, `PAD_SPEED_X` 100, `PAD_SPEED_Y` 105 |
 | **Boost grant** | ghosts | used by touch, like the hex: the ghost's path reaches a living runner's box (a tag's reach) and that runner runs +15% for 5 s; a second grant restarts the 5 s, never stacks. On the holder boost = max(ramp, grant) (rule 46): the grant IS the ramp's top, so a granted holder reaches the top sooner, never above | `GRANT_BOOST` 0.15 (= `RAMP_MAX`), `GRANT_TIME` 5 |
 | **The ghost pool** | | fixture 30, pad 15, grant 15, crate 12, trap 10, ice 10, hex 8 (the spec's whole pool; the hex is now 8 in 100) | `Items.POOLS.ghost` |
 
@@ -46,8 +46,8 @@ right wall, floor to 3 tiles above the left wall's top (x 68-96, y 0-48). Real m
 
 ## 3. What the server trusts (DESIGN §3 rule 6, proposal §8)
 
-**`UseItem`'s integer is now read**, for a fixture only: the rotation 0-3 (a pad's arrow is the placer's facing; the
-number is ignored for it). Everything else is the server's: the sender is a ghost of this round, the item is the
+**`UseItem`'s integer is now read**, for a fixture only: the rotation 0-3 (a pad has no rotation; the number is
+ignored for it). Everything else is the server's: the sender is a ghost of this round, the item is the
 SERVER's slot, the shape is the one the server rolled with the orb, the spot is the server's newest TRUSTED sample of
 the ghost and the facing its stream reports (`Placement.spot` from those), and the fit test runs on the server's own
 state and its own record of every runner. A client cannot place from a position the server did not record, place
@@ -100,6 +100,9 @@ progress and a `grant` per live grant. `UseItem` (client → server): `number` 0
 - **A pad someone else placed launches on the first frame it is touched**; only your own pad (set under your feet)
   needs a real entry, off then on (QA round 2). The BOOST line is appended to whatever status line is up; no preview
   between rounds; the preview is a plain part (Neon read white). The grant's box became Look's rim in orange (Danzo).
+- **A pad throws you the way you are already running** (Danzo 2026-10-31, overturning the proposal's "launch along
+  its arrow"): the client passes the runner's travel direction (its facing when still) to `Placement.launch`; the
+  slab has no arrow; the placer's facing still rides on the wire as `dir` but nothing reads it.
 - **Pads launch everyone, ghosts included** (QA round 1 asked): the spec says "anyone may use it" and "pads are map";
   a ghost needs the mobility to reach the holder, and a self-launch spends the pad's 20 s for everyone else.
 - **The ghost line says why the preview is red** ("NO ROOM: map / keep-clear / orb / a piece / a pad / a runner",
@@ -119,7 +122,7 @@ progress and a `grant` per live grant. `UseItem` (client → server): `number` 0
 
 A ghost holding a piece sees it previewed ahead (pale violet; red when the server would refuse) and the keep-clear
 zones faintly red; the GRAPPLE button reads ROTATE; W / C / ↑ / right click / RT turns it. Placed pieces are violet
-blocks, pads lime slabs with a tilted arrow; a fading piece goes half-transparent for its last second. A granted runner
+blocks, pads plain lime slabs; a fading piece goes half-transparent for its last second. A granted runner
 has an orange halo (`Look:boost`: the frozen rim's trick, the frame drawn again behind itself, larger and tinted) and,
 on its own HUD, "BOOST +15%  n.ns" after whatever else the line says. Danzo (2026-10-31): the earlier box behind the
 sprite was ugly, "a glow shouldn't look like that". Over a holder's head: a violet block, a

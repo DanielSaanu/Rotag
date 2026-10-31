@@ -143,7 +143,9 @@ function Place.frame(input: any, s: any, me: number)
 			local was = inside[p.n]
 			inside[p.n] = touching
 			if touching and (was == false or (was == nil and p.owner ~= me)) and not input.hold then
-				input.launchX, input.launchY = Rules.launch(p.dir)
+				-- thrown the way you are already going (standing still: the way you face), never turned round
+				local going = if s.vx > 0.5 then 1 elseif s.vx < -0.5 then -1 else s.facing
+				input.launchX, input.launchY = Rules.launch(going)
 				if studio then print(("[Rotag] pad: launched off pad %d"):format(p.n)) end
 			end
 		end
