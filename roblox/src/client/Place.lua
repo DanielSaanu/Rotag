@@ -19,10 +19,9 @@ local Place = {}
 local RUNNER_TAG = "RotagRunner"
 local HIDDEN = CFrame.new(0, -1e4, 0)
 local Z = Config.RUNNER_DEPTH / 2 + 0.5 -- in front of the runner sprites, like the item icons
--- Plain (SmoothPlastic) for the violet preview and the orange glow: Neon washed them out to white and yellow (QA
--- round 2); Neon stays for the red refusal and the keep-clear zone, which are meant to shout.
+-- Plain (SmoothPlastic) for the violet preview: Neon washed it out to white (QA round 2); Neon stays for the red
+-- refusal and the keep-clear zone, which are meant to shout. The grant's halo is client/Look's rim (Look:boost).
 local OK_COLOR, NO_COLOR = Color3.fromRGB(160, 140, 255), Color3.fromRGB(255, 60, 60)
-local GRANT_COLOR = Color3.fromRGB(255, 110, 20)
 
 local mirror: Rules.State = Rules.new() -- the server's placed parts, by its numbers
 local static: { Rules.Box } = {}
@@ -33,7 +32,6 @@ local rot = 0
 local folder: Folder? = nil
 local cells: { BasePart } = {} -- the preview: four cells (a pad uses the first)
 local zoneParts: { BasePart } = {}
-local glows: { [number]: BasePart } = {}
 local runnerModels: { [Model]: boolean } = {}
 local buf: { number } = {}
 local rows: { { number } } = {}
@@ -58,8 +56,6 @@ local function onEvent(e: any)
 		table.clear(grants)
 		table.clear(inside)
 		table.clear(pieces)
-		for _, g in glows do g:Destroy() end
-		table.clear(glows)
 		if type(e.held) == "table" then
 			for _, h in e.held do
 				if type(h) == "table" and type(h.id) == "number" and type(h.piece) == "string" then pieces[h.id] = h.piece end
@@ -100,7 +96,8 @@ local function onEvent(e: any)
 	end
 end
 
--- The local runner's grant, seconds left (the HUD line) and the run-speed multiplier input (with Tag's ramp: rule 46).
+-- Runner `id`'s grant, seconds left: the HUD line, the run-speed multiplier input (with Tag's ramp: rule 46), and
+-- each runner's halo (Look:boost).
 function Place.grantLeft(id: number): number
 	return math.max(0, (grants[id] or 0) - os.clock())
 end
@@ -181,8 +178,8 @@ local function runnersFor(me: number, x: number, y: number, item: string): numbe
 	return nrows
 end
 
--- Every render frame: the preview (where the server would put it, red where it would refuse), the keep-clear zones
--- while a part is held, and an orange glow on every granted runner.
+-- Every render frame: the preview (where the server would put it, red where it would refuse) and the keep-clear
+-- zones while a part is held. (The grant's halo is drawn by each runner's Look, from Place.grantLeft.)
 function Place.draw(me: number, x: number?, y: number?, facing: number)
 	local item = if x and y then placing(me) else nil
 	if item and x and y then
@@ -223,20 +220,6 @@ function Place.draw(me: number, x: number?, y: number?, facing: number)
 		if z.Transparency ~= want then
 			z.Transparency = want
 			z.CFrame = if item then CFrame.new(z:GetAttribute("At") :: Vector3) else HIDDEN
-		end
-	end
-	local now = os.clock()
-	for model in runnerModels do
-		local id = model:GetAttribute("RunnerId")
-		local root = model:FindFirstChild("HumanoidRootPart")
-		if type(id) == "number" and root and root:IsA("BasePart") and (grants[id] or 0) > now then
-			local g = glows[id] or part(Vector3.new(Config.RUNNER_WIDTH + 1.6, Config.RUNNER_HEIGHT + 1.6, 0.2), GRANT_COLOR, 0.3)
-			glows[id] = g
-			local p = if id == me then root.Position else Others.positionOf(root)
-			g.CFrame = CFrame.new(p.X, p.Y, -Config.RUNNER_DEPTH / 2 - 0.3) -- behind the sprite: a halo, not a box
-		elseif type(id) == "number" and glows[id] then
-			glows[id]:Destroy()
-			glows[id] = nil
 		end
 	end
 end

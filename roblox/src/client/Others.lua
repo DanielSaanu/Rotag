@@ -114,9 +114,10 @@ end
 
 -- Every render frame, after the camera. `ghostMode(id)` (H15): nil for the living, "ready"/"cooling" for a ghost.
 -- `iced(id)` (H21): the ice beam holds it, so its Look draws the frozen rim. `heldOf(id)` (H21): the hold on runner
--- id, or nil (only once the sheet has the hold art), for the streamless runners' poses.
+-- id, or nil (only once the sheet has the hold art), for the streamless runners' poses. `boosted(id)` (H22): the
+-- boost grant is on it, so its Look draws the orange halo.
 function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((number) -> boolean)?,
-	heldOf: ((number) -> any?)?)
+	heldOf: ((number) -> any?)?, boosted: ((number) -> boolean)?)
 	local now = os.clock()
 	for model, d in drawn do
 		if not d.root.Parent or (player and model == player.Character) then
@@ -155,6 +156,7 @@ function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((numb
 		d.look:place(x, y)
 		d.look:ghost(if ghostMode then ghostMode(d.id) else nil)
 		d.look:frozen(iced ~= nil and iced(d.id))
+		d.look:boost(boosted ~= nil and boosted(d.id))
 		d.look:draw(sprite, facing, dashing, vx, dt)
 	end
 end

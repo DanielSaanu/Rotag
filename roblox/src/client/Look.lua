@@ -21,7 +21,9 @@ local SURFACE_PPS = 50 -- SurfaceGui pixels per stud: above screen density so th
 -- not with the Pixelated mode Sprites.Apply sets for tile art.
 local RESAMPLE = Enum.ResamplerMode.Default
 -- H21: the frozen rim (Look:frozen): ice cyan, this much larger than the frame, and the feet line's thickness.
+-- H22: the same rim in orange is the boost grant's halo (Look:boost); the freeze wins when both are on.
 local RIM_TINT = Color3.fromRGB(0x45, 0xe0, 0xff)
+local BOOST_TINT = Color3.fromRGB(255, 140, 40)
 local RIM_SCALE = 1.08
 local ICE_LINE = 0.012 -- of the canvas: ~3 px at SURFACE_PPS
 
@@ -165,7 +167,7 @@ function Look:draw(spriteName: string, facing: number, dashing: boolean, vx: num
 	local half = BASE * self.sy / 2
 	image.Position = UDim2.fromScale(0.5 + half * math.sin(rad), FEET + half * (1 - math.cos(rad)))
 	local rim = self.rim
-	if self.frozenOn and rim then -- the same rect, turn and feet as the frame, a little larger (Look:frozen)
+	if rim and rim.Visible then -- the same rect, turn and feet as the frame, a little larger (Look:frozen, Look:boost)
 		rim.Image, rim.ImageRectOffset, rim.ImageRectSize = image.Image, image.ImageRectOffset, image.ImageRectSize
 		rim.ResampleMode, rim.Rotation = image.ResampleMode, image.Rotation
 		rim.Size = UDim2.fromScale(BASE * self.sx * RIM_SCALE, BASE * self.sy * RIM_SCALE)
@@ -194,14 +196,12 @@ end
 -- H21 (docs/briefs/items-art.md, "Frozen"): while the ice beam holds this runner, the CURRENT frame drawn again behind
 -- itself, tinted ice cyan and RIM_SCALE larger, plus a thin cyan line at the feet. Built on the first freeze, hidden
 -- after. ImageColor3 multiplies, so the copy reads cyan only where the art is light (Danzo's Play judges it).
-function Look:frozen(on: boolean)
-	if on == self.frozenOn or not self.image then return end
-	self.frozenOn = on
-	if on and not self.rim then
+function Look:_rim()
+	local tint = if self.frozenOn then RIM_TINT elseif self.boostOn then BOOST_TINT else nil
+	if tint and not self.rim then
 		local rim = Instance.new("ImageLabel")
-		rim.Name = "RotagFrozenRim"
+		rim.Name = "RotagRim"
 		rim.BackgroundTransparency = 1
-		rim.ImageColor3 = RIM_TINT
 		rim.AnchorPoint = Vector2.new(0.5, 1)
 		rim.ZIndex = 1
 		rim.Parent = self.gui
@@ -216,8 +216,24 @@ function Look:frozen(on: boolean)
 		line.Parent = self.gui
 		self.rim, self.iceLine = rim, line
 	end
-	if self.rim then self.rim.Visible = on end
-	if self.iceLine then self.iceLine.Visible = on end
+	if self.rim then
+		self.rim.Visible = tint ~= nil
+		if tint then self.rim.ImageColor3 = tint end
+	end
+	if self.iceLine then self.iceLine.Visible = self.frozenOn == true end
+end
+function Look:frozen(on: boolean)
+	if on == self.frozenOn or not self.image then return end
+	self.frozenOn = on
+	self:_rim()
+end
+
+-- H22 (DESIGN section 3 rule 46; QA round 2, Danzo: a glow should not look like a box): while the boost grant is on
+-- this runner, the same rim in orange: a halo that follows the figure, not a box behind it.
+function Look:boost(on: boolean)
+	if on == self.boostOn or not self.image then return end
+	self.boostOn = on
+	self:_rim()
 end
 
 -- The sheet ids changed after this look was built (Remotes.SheetIds landed late): re-apply on the next draw.

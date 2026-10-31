@@ -209,10 +209,11 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		c.pending = {}
 		c.look:ghost(ghostMode(player.UserId))
 		c.look:frozen(iced(player.UserId))
+		c.look:boost(Place.grantLeft(player.UserId) > 0) -- H22: the grant's orange halo
 		c.look:draw(pose(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
 		if not readySent then sendReady() end
 	end
-	Others.draw(dt, ghostMode, iced, heldOf)
+	Others.draw(dt, ghostMode, iced, heldOf, function(id) return Place.grantLeft(id) > 0 end)
 	local st = Tagging.state()
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))

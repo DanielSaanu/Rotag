@@ -28,6 +28,7 @@ local ICON = { crate = { Vector3.new(1.3, 1.3, 0.2), 0 }, trap = { Vector3.new(1
 	ice = { Vector3.new(1.1, 1.1, 1.1), 0 }, fixture = { Vector3.new(1.2, 1.2, 0.2), 0 },
 	pad = { Vector3.new(1.8, 0.35, 0.2), 0 }, grant = { Vector3.new(0.45, 1.6, 0.2), 0 } }
 local HIDDEN = CFrame.new(0, -1e4, 0)
+local ICE_BLOCK_COLOR, ICE_BLOCK_SEE = Color3.fromRGB(175, 235, 255), 0.35 -- the frozen runner's block: pale ice, see-through
 -- One name per item on every line (QA round 1, H22): the slot readout and the ghost line agree.
 Items.NAME = { fixture = "PIECE", pad = "BOOST PAD", grant = "BOOST" } :: { [string]: string }
 
@@ -181,9 +182,9 @@ function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boo
 				icon.part.CFrame = CFrame.new(at.X, at.Y + ITEM_UP, Z) * CFrame.Angles(0, 0, turn)
 			end
 			local h = not roundOver and Items.holdOf(id)
-			-- a trap at the feet, ice around the body; a stumble shows in the motion (H21: in its pose, and a freeze in
-			-- client/Look's rim, once the sheet has the hold art)
-			if h and (h.kind == "stumble" or (h.kind == "freeze" and ItemArt.HOLD_ART)) then h = nil end
+			-- a trap at the feet, an ICE BLOCK round a frozen body (Danzo 2026-10-31: the rim alone read as nothing, "I
+			-- envisioned an actual ice block surrounding the sprite"; Look's rim stays behind it); a stumble shows in the pose
+			if h and h.kind == "stumble" then h = nil end
 			if h then
 				seenHold[id] = true
 				local o = overlays[id]
@@ -191,15 +192,17 @@ function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boo
 				if not o then
 					local trap = h.kind == "trap"
 					o = part(Enum.PartType.Block, if trap then Vector3.new(Config.TRAP_W, Config.TRAP_H, 1.2)
-						else Vector3.new(Config.RUNNER_WIDTH + 0.6, Config.RUNNER_HEIGHT + 0.6, 1.2),
-						ITEM_COLOR[if trap then "trap" else "ice"])
-					o.Name, o.Transparency = h.kind, if trap then 0 else 0.55
+						else Vector3.new(Config.RUNNER_WIDTH + 1.4, Config.RUNNER_HEIGHT + 1.0, 1.0),
+						if trap then ITEM_COLOR.trap else ICE_BLOCK_COLOR)
+					o.Name, o.Transparency = h.kind, if trap then 0 else ICE_BLOCK_SEE
+					if not trap then o.Material = Enum.Material.Glass end -- a glassy cube the figure is seen through
 					overlays[id] = o
 				end
 				released[id] = nil
 				if h.kind == "trap" then ItemArt.trap(o, h.from, h.presses, nil, now) end
 				local dy = if h.kind == "trap" then Config.TRAP_H / 2 - Config.RUNNER_HEIGHT / 2 else 0
-				o.CFrame = CFrame.new(at.X, at.Y + dy, Z - 0.2)
+				-- the ice block sits BEHIND the sprite plane (side-on, depth is invisible), so the figure is seen in it
+				o.CFrame = CFrame.new(at.X, at.Y + dy, if h.kind == "freeze" then -Config.RUNNER_DEPTH / 2 - 0.3 else Z - 0.2)
 			end
 		end
 	end

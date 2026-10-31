@@ -202,6 +202,11 @@ rule 11 (no hold over ~1 s).
 
 ## 9. The art on the parts (H21, 2026-10-19)
 
+**Frozen (changed 2026-10-31, Danzo):** the cyan rim alone read as nothing in Play ("they just slide in place"), so
+`client/Items` draws an ICE BLOCK round a frozen runner on every screen: a Glass part, pale ice, 0.35 see-through,
+1.4 studs wider and 1 taller than the runner, deep enough to read as a cube, at the runner's drawn spot; it goes when
+the hold ends. Look's rim and feet line stay behind it. The brief's row below describes the rim only.
+
 The contract is [the brief](../briefs/items-art.md) "Sprite names and sizes"; this is how the client meets it.
 
 - **Where:** `client/ItemArt.lua` (new ModuleScript; `client/Items` calls it). `ItemArt.show(part, name, mirrored)` puts a

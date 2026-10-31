@@ -99,7 +99,7 @@ progress and a `grant` per live grant. `UseItem` (client → server): `number` 0
   reason) and is retried in 0.5 s. They head for ghost orbs as before.
 - **A pad someone else placed launches on the first frame it is touched**; only your own pad (set under your feet)
   needs a real entry, off then on (QA round 2). The BOOST line is appended to whatever status line is up; no preview
-  between rounds; the preview and the glow are plain parts (Neon read white and yellow).
+  between rounds; the preview is a plain part (Neon read white). The grant's box became Look's rim in orange (Danzo).
 - **Pads launch everyone, ghosts included** (QA round 1 asked): the spec says "anyone may use it" and "pads are map";
   a ghost needs the mobility to reach the holder, and a self-launch spends the pad's 20 s for everyone else.
 - **The ghost line says why the preview is red** ("NO ROOM: map / keep-clear / orb / a piece / a pad / a runner",
@@ -120,7 +120,9 @@ progress and a `grant` per live grant. `UseItem` (client → server): `number` 0
 A ghost holding a piece sees it previewed ahead (pale violet; red when the server would refuse) and the keep-clear
 zones faintly red; the GRAPPLE button reads ROTATE; W / C / ↑ / right click / RT turns it. Placed pieces are violet
 blocks, pads lime slabs with a tilted arrow; a fading piece goes half-transparent for its last second. A granted runner
-has an orange glow behind its sprite and, on its own HUD, "BOOST +15%  n.ns" after whatever else the line says. Over a holder's head: a violet block, a
+has an orange halo (`Look:boost`: the frozen rim's trick, the frame drawn again behind itself, larger and tinted) and,
+on its own HUD, "BOOST +15%  n.ns" after whatever else the line says. Danzo (2026-10-31): the earlier box behind the
+sprite was ugly, "a glow shouldn't look like that". Over a holder's head: a violet block, a
 lime slab or an orange bar. Real art is the next routine block (behind `Sprites.Has`, like H21).
 
 ## 8. Verification (2026-10-31, H22)

@@ -74,7 +74,7 @@ start, stand still 45 s and you are a ghost.
 4. BOOST PAD: press E: a lime slab with an arrow under you, nothing happens. Step off and back on: you are thrown
    along the arrow and up, with dash and double jump back. **The feel calls:** 100 across / 105 up; run onto a pad
    from a standstill, then at full sprint against the arrow (the arrow should win), then double-jump at the top.
-5. BOOST: as a ghost, touch a living dummy: an orange glow behind it for 5 s. Living, let a dummy ghost holding BOOST
+5. BOOST: as a ghost, touch a living dummy: an orange halo round its figure for 5 s (the box is gone, Danzo 2026-10-31). Living, let a dummy ghost holding BOOST
    touch you: "BOOST +15%  n.ns" on your line and you are faster for 5 s; as the holder late in a chase it changes
    nothing.
 6. Left click is Use (the controls table): a stray click while holding a piece places it. Say if that bites.
