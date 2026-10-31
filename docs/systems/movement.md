@@ -200,8 +200,8 @@ boost) into the air, bleeding only at the over-speed rate while held. A double j
 
 Why the run is cut by cycle and not per frame: [sprites-and-animation.md](sprites-and-animation.md) §3 (H2).
 
-**Not built:** corner correction (Config has the 4 px; the goals did not ask for it), an 8-way dash, wall-run,
-grapple, boost pads (out of scope).
+**Not built:** corner correction (Config has the 4 px; the goals did not ask for it), an 8-way dash, wall-run. Boost
+pads: H22, [placement.md](placement.md). **The grapple (H25): [grapple.md](grapple.md)** (`shared/Grapple`, phase 4c).
 
 ## 4. The camera (shared/SideCam.lua, client/SideCamera.lua)
 
@@ -222,8 +222,8 @@ camera scripts reset them on spawn.
   at Play start in a probe, and keys sent in the first seconds were not seen by `UserInputService` at all). The best
   explanation of Danzo's "click and release" (not confirmed: the MCP injects keys, it cannot reproduce focus): click
   into the game view once after pressing Play.
-- **Jump:** Space or Z, pad A, the JUMP button. **Dash:** Shift or X, pad X or B, DASH. **Grapple** (unread until
-  its PR): W, C, ↑, right click, RT. **Use:** E, V, left click, RB, LT, ITEM. The table and why: [controls.md](controls.md)
+- **Jump:** Space or Z, pad A, the JUMP button. **Dash:** Shift or X, pad X or B, DASH. **Grapple** (held, H25,
+  [grapple.md](grapple.md)): W, C, ↑, right click, RT. **Use:** E, V, left click, RB, LT, ITEM. The table and why: [controls.md](controls.md)
   (PR 3). High priority with `Sink`: Space never reaches Roblox's jump, Shift never shift-lock (the server also turns
   `EnableMouseLockOption` off); clicks pass on so GUI buttons still see them.
 - **Touch buttons:** a `ScreenGui` shown only when `TouchEnabled`, four in an arc around the right thumb: JUMP 96 px in

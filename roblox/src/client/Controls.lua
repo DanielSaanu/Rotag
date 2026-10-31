@@ -1,6 +1,6 @@
 -- Input, turned into the plain table shared/Movement.lua reads: { moveX, jumpPressed, jumpHeld, dashPressed, touch }
--- plus the fields client/Use strips (usePressed, presses) and the grapple pair the grapple PR will read
--- (grapplePressed, grappleHeld; for a ghost holding a piece the same input is "rotate", PR 4).
+-- plus the fields client/Use strips (usePressed, presses) and the grapple pair (grapplePressed, grappleHeld: the
+-- living's grapple, H25; for a ghost holding a piece the same input is "rotate", PR 4).
 -- Run: Roblox's own control module (keys A/D, arrows, gamepad stick, the touch joystick), so the mobile joystick
 -- works with no code of ours (DESIGN §3 rule 24). Everything else: the controls table of docs/systems/controls.md §2
 -- (PR 3): two keyboard schemes live at once (A: Space / Shift / W / E with the mouse; B: Z / X / C / V with ↑), the
@@ -176,7 +176,7 @@ local shown = { item = "", hook = "" }
 -- Every frame from the client: which of the two optional buttons to show. `item`: the held item that Use can fire
 -- (nil when the slot is empty or holds a hex, which is used by touch); `hook`: "grapple" for a living runner once
 -- the grapple exists, "rotate" for a ghost holding a piece, nil otherwise. Cheap: nothing changes unless the
--- values do.
+-- values do. H25: "grapple" lit (an anchor is picked, or you hang), "grapple_dim" (living, nothing in reach).
 function Controls.buttons(item: string?, hook: string?)
 	local itemKey, hookKey = item or "", hook or ""
 	if itemKey ~= shown.item then
@@ -200,6 +200,8 @@ function Controls.buttons(item: string?, hook: string?)
 		if b then
 			b.Visible = hook ~= nil
 			b.Text = if hook == "rotate" then "ROTATE" else "GRAPPLE"
+			b.BackgroundTransparency = if hook == "grapple_dim" then 0.65 else 0.25
+			b.TextTransparency = if hook == "grapple_dim" then 0.5 else 0
 		end
 	end
 end
@@ -262,7 +264,7 @@ function Controls.read(humanoid: Humanoid?)
 		touch = usingTouch,
 		usePressed = usePressed, -- H19: client/Use reads these two and strips them before Movement sees the input
 		presses = presses,
-		grapplePressed = grapplePressed, -- PR 3: unread until the grapple PR (living) and PR 4 (a ghost's rotate)
+		grapplePressed = grapplePressed, -- the living's grapple (H25, Movement) and a ghost's rotate (PR 4, client/Place)
 		grappleHeld = grappleHeld,
 	}
 	jumpPressed, dashPressed, usePressed, presses, grapplePressed = false, false, false, 0, false

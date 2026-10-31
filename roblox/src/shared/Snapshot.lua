@@ -1,6 +1,6 @@
 -- The snapshot stream (H14, docs/systems/netcode.md §8): how one runner's motion reaches every other screen, and the
 -- server's tag record. The owning client packs its Movement state (position, velocity, sprite, facing, the juice
--- events since the last one) into a 13-byte buffer Config.SNAPSHOT_RATE times a second; the server stamps each on
+-- events since the last one, H25: the rope's anchor) into a 14-byte buffer Config.SNAPSHOT_RATE times a second; the server stamps each on
 -- arrival, keeps the newest as that runner's position, and relays the batch; every other client keeps a short buffer
 -- and draws Config.SNAPSHOT_DELAY behind the newest, sliding between the two snapshots around that moment. Roblox's own
 -- physics replication smooths a CFrame-driven body into ~0.4 s of lag (netcode.md §3); a remote arrives at once (N6).
@@ -20,7 +20,7 @@ for i, name in Snapshot.SPRITES do SPRITE_INDEX[name] = i end
 local JUMPS = { "ground", "double", "wall" }
 local JUMP_INDEX = { ground = 1, double = 2, wall = 3 }
 
-Snapshot.SIZE = 13 -- bytes: u16 seq, i16 x, i16 y, i16 vx, i16 vy, u8 sprite, u8 flags, u8 landed
+Snapshot.SIZE = 14 -- bytes: u16 seq, i16 x, i16 y, i16 vx, i16 vy, u8 sprite, u8 flags, u8 landed, u8 anchor (H25)
 local POS_SCALE = 16 -- 1/16 stud: +-2047 studs (the arena is a few hundred)
 local VEL_SCALE = 8 -- 1/8 stud/s: +-4095 studs/s (a dash is 120)
 local I16 = 32767
@@ -29,6 +29,7 @@ local SEQ_MOD = 65536
 export type Snap = {
 	seq: number, x: number, y: number, vx: number, vy: number, sprite: string, facing: number, dashing: boolean,
 	jump: string?, dash: boolean, landed: number?,
+	anchor: number?, -- H25: the anchor this runner's rope is on (the map's 1-255), nil: not on a rope. Drawing only
 }
 
 local function q(v: number, scale: number): number
@@ -47,6 +48,7 @@ function Snapshot.pack(s: Snap): buffer
 		+ (if s.jump then (JUMP_INDEX[s.jump] or 0) * 4 else 0) + (if s.dash then 16 else 0)
 	buffer.writeu8(b, 11, flags)
 	buffer.writeu8(b, 12, math.clamp(math.floor((s.landed or 0) + 0.5), 0, 255))
+	buffer.writeu8(b, 13, math.clamp(math.floor(s.anchor or 0), 0, 255))
 	return b
 end
 
@@ -57,13 +59,14 @@ function Snapshot.unpack(b: any): Snap?
 	if not sprite then return nil end
 	local flags = buffer.readu8(b, 11)
 	local landed = buffer.readu8(b, 12)
+	local anchor = buffer.readu8(b, 13)
 	return {
 		seq = buffer.readu16(b, 0),
 		x = buffer.readi16(b, 2) / POS_SCALE, y = buffer.readi16(b, 4) / POS_SCALE,
 		vx = buffer.readi16(b, 6) / VEL_SCALE, vy = buffer.readi16(b, 8) / VEL_SCALE,
 		sprite = sprite, facing = if flags % 2 == 1 then -1 else 1, dashing = math.floor(flags / 2) % 2 == 1,
 		jump = JUMPS[math.floor(flags / 4) % 4], dash = math.floor(flags / 16) % 2 == 1,
-		landed = if landed > 0 then landed else nil,
+		landed = if landed > 0 then landed else nil, anchor = if anchor > 0 then anchor else nil,
 	}
 end
 
@@ -136,7 +139,7 @@ end
 -- snapshot the draw clock passed since the last call (each once). Nil until the first snapshot. Past the newest point
 -- (a lost packet, a sender pause, a stop) it holds there: never ahead of what was sent (netcode.md §4).
 export type View = { x: number, y: number, vx: number, vy: number, sprite: string, facing: number, dashing: boolean,
-	events: { jump: string?, dash: boolean?, landed: number? }, behind: number }
+	anchor: number?, events: { jump: string?, dash: boolean?, landed: number? }, behind: number }
 function Snapshot.at(st: Stream, now: number): View?
 	local pts = st.points
 	local n = #pts
@@ -172,7 +175,7 @@ function Snapshot.at(st: Stream, now: number): View?
 	return {
 		x = sa.x + (sb.x - sa.x) * k, y = sa.y + (sb.y - sa.y) * k,
 		vx = sa.vx + (sb.vx - sa.vx) * k, vy = sa.vy + (sb.vy - sa.vy) * k,
-		sprite = sa.sprite, facing = sa.facing, dashing = sa.dashing, events = events,
+		sprite = sa.sprite, facing = sa.facing, dashing = sa.dashing, anchor = sa.anchor, events = events,
 		behind = pts[n].t - t,
 	}
 end

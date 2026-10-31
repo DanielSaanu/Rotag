@@ -49,3 +49,11 @@ studs/s cap, so three patrolling dummies swung both walls 16 studs back and fort
 proportionally (a time constant longer than the sway's period) and keep the cap only for the big moves; pin the
 outcome with a driven sway (a sine of the measured amplitude and period) and watch the old rule fail it.
 *(2026-11-01, handoff H24, `shared/Walls.step`.)*
+
+**S14 — A constraint solved by projecting positions bleeds energy at a game's frame rate: step a pendulum in its
+angle with leapfrog, and pin "energy never grows, and does not die" over several periods.** The grapple's first swing
+projected the next position onto the rope and set the velocity to the chord: it lost 86% of its energy in 4 s at
+60 Hz. The obvious repair (a velocity constraint plus a position snap) ADDS energy instead. In the angle,
+`w += a(th) dt/2; th += w dt; w += a(th1) dt/2` lost 0.1% over 4 s, and plain symplectic Euler overshot the start
+energy by 3%. Measure the energy per swing before trusting any constraint solver, and mutation-check that the test
+fails for Euler. *(2026-11-01, handoff H25, `shared/Grapple.swing`.)*

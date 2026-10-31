@@ -1,6 +1,6 @@
 # Parkour Tag (working title): Game Design Notes
 
-_Last updated: 1 Nov 2026 (H24: rule 3's map shrink built as the closing walls, rules 3 and 51, §6.8; §2 unchanged). 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
+_Last updated: 1 Nov 2026 (H25: the grapple built, notes under rules 15 and 17; §2 unchanged). 1 Nov 2026 (H24: rule 3's map shrink built as the closing walls, rules 3 and 51, §6.8; §2 unchanged). 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
 
 This is the design contract. Code and art are judged against it. A change to §2 (locked decisions) or §3 (the
 adopted rules) is escalation trigger 1 (`CLAUDE.md`). Portable principles that are not about this game live in
@@ -105,12 +105,16 @@ Moves should hand speed off to each other:
     - Half gravity at the apex while jump is held
 15. **Refresh on contact.** Dash and double jump come back on landing, wall touch, boost pad or bouncing off a player. This is what makes moves chain.
     *Amendment, Danzo 2026-10-11 (H10, replacing H9's recharge-after-air rule the same day):* a dash started on the floor ends at run speed instead of the air dash's end speed, so a floor chain gains only the burst itself. Air dash, refresh on contact and dash-into-jump are unchanged. The chain is still a little faster than a run; the cooldown is the knob (QA rounds 1–2).
+    *Proposed by the H25 build, Danzo to confirm (2026-11-01):* hooking a grapple anchor is a contact too: dash and double jump come back (`Config.GRAPPLE_REFRESH`, off with false; [grapple.md](systems/grapple.md) §2).
 16. **Keep speed between moves.** Dash into jump keeps the speed, platform momentum carries into the jump, and wall-climb leads back into a run. Pizza Tower's open moveset beat a restricted one in testing.
 17. **Grapple rules:**
     - Only clearly marked, colour-coded anchors.
     - Aim assist to the nearest anchor.
     - Release keeps swing speed, with a small optional release boost.
     - Never target off-screen anchors. Missed swings frustrate players (Grapple Dog, Parkour Reborn).
+    *Built (H25, 2026-11-01): gold anchors, hold to hang, the nearest on-screen anchor in reach (ahead first), release
+    keeps the swing x1.1; the swing is capped at the dash speed so the dash still redirects it and the speed check is
+    unchanged ([grapple.md](systems/grapple.md)).*
 18. **Easy to start, hard to master.** Casual players do fine with run and jump alone. Hidden speed tech lets experts break routes. A steep skill floor killed Rumbleverse and keeps Parkour Reborn small.
 19. **Mistakes cost little.** After a hit or fall, speed rebuilds fast (Pizza Tower).
 20. **Never use floaty or delayed controls.** MultiVersus lost players when its movement felt "underwater".

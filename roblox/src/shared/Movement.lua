@@ -4,6 +4,7 @@
 -- step() once per physics frame and hands the velocity to the part; physics does the moving and the colliding.
 -- Why it is shaped this way, and what each number does: docs/systems/movement.md. Tests: test/luau/movement.test.luau.
 local Config = require(script.Parent.Config)
+local Grapple = require(script.Parent.Grapple) -- H25: the rope (docs/systems/grapple.md)
 
 local Movement = {}
 
@@ -13,12 +14,14 @@ local Movement = {}
 -- dash in any of them; a dash in progress ends.
 -- launchX / launchY (H22, rule 15): a boost pad's launch this frame (shared/Placement.launch), ignored in a hold.
 export type Input = { moveX: number, jumpPressed: boolean, jumpHeld: boolean, dashPressed: boolean, touch: boolean?,
-	speedMult: number?, hold: string?, holdDir: number?, holdLeft: number?, launchX: number?, launchY: number? }
+	speedMult: number?, hold: string?, holdDir: number?, holdLeft: number?, launchX: number?, launchY: number?,
+	-- H25: the grapple input (edge and held) and the anchor the aim assist picks this frame (Grapple.pick), nil: none.
+	grapplePressed: boolean?, grappleHeld: boolean?, anchor: Grapple.Anchor? }
 -- Distances in studs from the runner's collider to the nearest surface on each side, nil if nothing is in reach.
 -- ground is feet-to-floor (negative when sunk into it), ceiling head-to-roof, walls side-to-wall.
 export type Contacts = { ground: number?, ceiling: number?, wallLeft: number?, wallRight: number? }
 -- What happened this step, for juice: landed = impact speed, jump = "ground" | "wall" | "double", dash = started.
-export type Events = { landed: number?, jump: string?, dash: boolean?, launch: boolean? }
+export type Events = { landed: number?, jump: string?, dash: boolean?, launch: boolean?, grapple: string? }
 export type State = {
 	x: number, y: number, vx: number, vy: number, facing: number, grounded: boolean,
 	coyote: number, jumpBuffer: number, jumpHold: number, holdSpeed: number,
@@ -28,6 +31,8 @@ export type State = {
 	-- H21, for the sprite pick only: the hold in force (input.hold as last stepped), seconds since it landed, and the
 	-- frame a freeze keeps (the one showing when it landed).
 	hold: string?, holdTime: number, holdSprite: string,
+	rope: Grapple.Rope?, grappleCooldown: number, grappleBuffer: number, -- H25: on a rope (nil: not), the two clocks
+	grappleArmed: boolean, -- H25 QA r1: pressed in the air and still held: hooks the moment an anchor comes in reach
 }
 
 local function approach(v: number, target: number, maxDelta: number): number
@@ -57,6 +62,7 @@ function Movement.new(x: number, y: number): State
 		airJumps = Config.AIR_JUMPS, dashes = 1, dashTime = 0, dashDir = 1, dashCooldown = 0, dashFloor = false,
 		wallForce = 0, wallForceDir = 0, runDistance = 0, runFrom = 0, stillTime = 0, sliding = false,
 		events = {}, hold = nil, holdTime = 0, holdSprite = "runner_idle",
+		rope = nil, grappleCooldown = 0, grappleBuffer = 0, grappleArmed = false,
 	}
 end
 
@@ -71,12 +77,15 @@ Movement.TRAPPED_FPS = 8 -- the stuck pose's yank / lurch, ping-pong (two frames
 -- The stumble is a roll (Danzo, 2026-10-19): trip 0.14 s, the tucked pose at 20 / 160 / 290 degrees 0.12 s each, recover
 -- 0.2 s; each entry is when that frame ENDS (cumulative). The last one is Config.STUMBLE_TIME, 0.7 s.
 Movement.STUMBLE_ENDS = { 0.14, 0.26, 0.38, 0.5, 0.7 }
+-- H25: on the rope, until the art block draws a hang pose: the fall frame, whose front fist is raised (grapple.md §6).
+Movement.SWING_SPRITE = "runner_fall"
 
 -- The pose from motion alone (docs/systems/movement.md §3, H3): the dash pose while dashing; in the air rise, apex or
 -- fall by vertical speed (a wall slide is a fall: its capped speed sits inside the apex band); on the ground idle at
 -- rest after a short grace, else the RUN_FRAMES run frames by distance travelled. Also the client's fallback when the
 -- sheet lacks a hold pose (H21: the game looks as it did before the art until Danzo uploads).
 function Movement.motionSprite(s: State): string
+	if s.rope then return Movement.SWING_SPRITE end
 	if s.dashTime > 0 then return "runner_dash" end
 	if not s.grounded then
 		if s.sliding or s.vy < -Config.APEX_POSE_BELOW then return "runner_fall" end
@@ -140,6 +149,9 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		moveX, jumpPressed, jumpHeld, dashPressed = 0, false, false, false
 		s.dashTime, s.jumpHold, s.wallForce = 0, 0, 0
 	end
+	-- H25: a hold breaks the rope; letting go of the input releases it with the boost (rule 17).
+	if s.rope and (hold or not input.grappleHeld) then Grapple.release(s, not hold) end
+	s.grappleCooldown = math.max(0, s.grappleCooldown - dt)
 	local vx0 = s.vx -- the speed a freeze slides on (H19)
 	s.dashCooldown = math.max(0, s.dashCooldown - dt)
 	s.wallForce = math.max(0, s.wallForce - dt)
@@ -149,6 +161,7 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	local wasGrounded = s.grounded
 	local ground = c.ground
 	if ground ~= nil and ground <= Config.GROUND_SNAP and s.vy <= 0 then
+		Grapple.release(s, false) -- H25: landing ends a swing
 		s.grounded = true
 		s.y -= ground
 		if not wasGrounded then ev.landed = -s.vy end
@@ -175,6 +188,7 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 
 	-- 3. Dash: horizontal, toward the stick or else the way we face. Gravity is off while it lasts.
 	if dashPressed and s.dashes > 0 and s.dashCooldown <= 0 then
+		Grapple.release(s, false) -- H25: a dash off the rope sets its own speed (DESIGN §2: "dash redirects it")
 		local dir = if moveX ~= 0 then moveX else s.facing
 		s.dashes -= 1
 		s.dashTime = Config.DASH_TIME
@@ -189,7 +203,15 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	end
 
 	-- 4. Jump, in priority order: ground (or coyote), wall, double.
-	if s.jumpBuffer > 0 then
+	if s.rope then
+		-- H25: on the rope a jump lets go with the boost and at least a full jump up (vy above it is kept, not held).
+		if s.jumpBuffer > 0 then
+			Grapple.release(s, true)
+			s.vy = math.max(s.vy, Config.JUMP_SPEED)
+			s.holdSpeed, s.jumpHold, s.jumpBuffer = Config.JUMP_SPEED, Config.JUMP_HOLD_WINDOW, 0
+			ev.jump, ev.grapple = "double", "jump" -- "double": the mid-air puff on other screens, not a ground one (QA r1)
+		end
+	elseif s.jumpBuffer > 0 then
 		local reach = Movement.wallReach()
 		local nearL = wl ~= nil and wl <= reach
 		local nearR = wr ~= nil and wr <= reach
@@ -210,6 +232,7 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	-- the wall kick banks it), up at the launch speed; a dash or a jump hold in progress ends; dash and double jump back.
 	local lx, ly = input.launchX, input.launchY
 	if lx and ly and not hold then
+		Grapple.release(s, false)
 		if lx ~= 0 then s.vx = sign(lx) * math.max(math.abs(lx), s.vx * sign(lx)) end
 		s.vy = math.max(s.vy, ly)
 		s.grounded, s.coyote, s.jumpBuffer, s.jumpHold, s.dashTime, s.wallForce = false, 0, 0, 0, 0, 0
@@ -217,10 +240,32 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		ev.launch = true
 	end
 
+	-- 4c. The grapple (H25, rule 17): a press is buffered GRAPPLE_BUFFER and hooks the first frame the input is still
+	-- held, the aim assist has an anchor and the cooldown is over. A dash in progress ends; dash and double jump back.
+	if input.grapplePressed and not hold then
+		s.grappleBuffer = Config.GRAPPLE_BUFFER * scale
+		if not s.grounded then s.grappleArmed = true end -- held in the air: the hook waits for an anchor (QA round 1)
+	else
+		s.grappleBuffer = math.max(0, s.grappleBuffer - dt)
+	end
+	if s.grounded or not input.grappleHeld or hold then s.grappleArmed = false end -- standing on the floor never auto-hooks
+	local anchor = input.anchor
+	if not s.rope and anchor and (s.grappleBuffer > 0 or s.grappleArmed) and input.grappleHeld and s.grappleCooldown <= 0
+		and not hold then
+		s.grappleArmed = false
+		Grapple.attach(s, anchor)
+		s.grappleBuffer, s.jumpBuffer, s.jumpHold, s.dashTime, s.wallForce, s.coyote = 0, 0, 0, 0, 0, 0
+		s.grounded = false
+		if Config.GRAPPLE_REFRESH then refresh(s) end
+		ev.grapple = "attach"
+	end
+
 	-- 5. Velocity. A wall jump this frame forces the stick away from the wall from this frame on.
 	if s.wallForce > 0 then moveX = s.wallForceDir end
 	s.sliding = false -- for the sprite pick only: the wall-slide fall cap is in force this frame
-	if s.dashTime > 0 then
+	if s.rope then
+		Grapple.swing(s, moveX, dt) -- H25: the rope's own step replaces the run and the fall
+	elseif s.dashTime > 0 then
 		s.dashTime -= dt
 		s.vx = s.dashDir * Config.DASH_SPEED
 		s.vy = 0
@@ -262,6 +307,7 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	end
 
 	-- 6. Surfaces stop what pushes into them, so a stored speed never drives the part into a wall or a roof.
+	local vx6, vy6 = s.vx, s.vy
 	local ceiling = c.ceiling
 	if ceiling ~= nil and ceiling <= Config.TOUCH_DIST and s.vy > 0 then
 		s.vy = 0
@@ -269,12 +315,15 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	end
 	if touchL and s.vx < 0 then s.vx = 0 end
 	if touchR and s.vx > 0 then s.vx = 0 end
+	if s.rope and (s.vx ~= vx6 or s.vy ~= vy6) then Grapple.stopped(s) end -- H25: a wall or roof checks the swing
 
 	-- 7. Facing and the animation clock (the run cycle advances by distance, not time).
 	if s.dashTime > 0 then
 		s.facing = s.dashDir
 	elseif s.wallForce > 0 then
 		s.facing = s.wallForceDir
+	elseif s.rope then
+		if math.abs(s.vx) > 1 then s.facing = sign(s.vx) end -- on the rope you face the way you swing
 	elseif moveX ~= 0 then
 		s.facing = moveX
 	end

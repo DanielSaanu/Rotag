@@ -43,6 +43,8 @@ to (`roblox/default.project.json`).
   layout per verb, with sources. Before any input or `Controls.lua` change.
 - [`docs/systems/players.md`](docs/systems/players.md): more than one runner: other runners drawn on every screen, pass-through
   collision, off-screen arrows, round-ready. Before any multiplayer, collision or HUD-arrow change.
+- [`docs/systems/grapple.md`](docs/systems/grapple.md): the grapple as built (H25): anchors, aim assist, the swing's
+  maths, release, the speed cap instead of a trust allowance, what was seen. Before any grapple or anchor change.
 - [`docs/systems/trust.md`](docs/systems/trust.md): movement trust: why there is no movement remote, the server's speed
   check on each runner, what a violation does, what it cannot catch. Before any remote, anti-cheat or movement-speed change.
 - [`docs/systems/netcode.md`](docs/systems/netcode.md): research (H13): the one-PC test rig throttle, why physics replication

@@ -117,7 +117,7 @@ end
 export type Placed = { n: number, owner: number, item: string, shape: string?, rot: number, left: number,
 	bottom: number, dir: number, boxes: { number }, count: number, from: number, untilT: number, fadeAt: number? }
 export type State = { placed: { Placed }, nextN: number }
--- A box the map forbids: x0, y0, x1, y1 and why ("map", "keep-clear", "spawn", "orb"; a grapple anchor later).
+-- A box the map forbids: x0, y0, x1, y1 and why ("map", "keep-clear", "spawn", "orb", "anchor" since H25).
 export type Box = { any }
 
 function Placement.new(): State

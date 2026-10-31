@@ -25,6 +25,7 @@ local ItemArt = require(script.Parent:WaitForChild("ItemArt")) -- H21: is the ho
 local Place = require(script.Parent:WaitForChild("Place")) -- H22: ghost parts, pads, the grant (placement.md)
 local Ignition = require(script.Parent:WaitForChild("Ignition")) -- H23: the burn-out (endgame.md)
 local Walls = require(script.Parent:WaitForChild("Walls")) -- H24: the closing walls (endgame.md §7)
+local Grapple = require(script.Parent:WaitForChild("Grapple")) -- H25: anchors, the aim assist, ropes (grapple.md)
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -125,6 +126,8 @@ RunService.PreSimulation:Connect(function(dt: number)
 	end
 	input.speedMult = Tagging.speedMult(Place.grantLeft(player.UserId) > 0)
 	Place.frame(input, s, player.UserId) -- the rotate press, and a pad's launch on entering one
+	-- H25: the aim assist's anchor; a ghost's grapple input was its rotate (above) and never hooks (rule 37)
+	Grapple.frame(input, s, c.character, c.root, Tagging.ghost(player.UserId) == nil, SideCamera.view())
 	local ev = Movement.step(s, input, contacts, dt)
 	-- Physics can run more than once between two draws: keep every event until the sprite has reacted to it.
 	for _, p in { c.pending, c.toSend } do
@@ -155,7 +158,7 @@ RunService.Heartbeat:Connect(function()
 	c.toSend = {}
 	snapRemote:FireServer(Snapshot.pack({ seq = seq, x = s.x, y = s.y, vx = s.vx, vy = s.vy,
 		sprite = pose(s), facing = s.facing, dashing = s.dashTime > 0,
-		jump = e.jump, dash = e.dash == true, landed = e.landed }))
+		jump = e.jump, dash = e.dash == true, landed = e.landed, anchor = if s.rope then s.rope.id else nil }))
 end)
 task.spawn(function()
 	local remotes = ReplicatedStorage:WaitForChild("Remotes", REMOTES_WAIT)
@@ -221,11 +224,15 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))
 	-- PR 3 (controls.md §2): the ITEM touch button only while Use would fire (a hex and the grant are used by touch);
-	-- the GRAPPLE button reads ROTATE while a ghost holds a fixture (H22), hidden otherwise until the living grapple.
+	-- the GRAPPLE button reads ROTATE while a ghost holds a fixture (H22), GRAPPLE for the living (H25).
 	local held = Items.held(player.UserId)
 	local live = not (st ~= nil and st.over == true)
 	Controls.buttons(if held ~= nil and held ~= "hex" and held ~= "grant" and live then held else nil,
-		if live then Place.hook(player.UserId) else nil)
+		if live then Place.hook(player.UserId) or Grapple.hook(Tagging.ghost(player.UserId) == nil, c and c.state)
+			else nil) -- H25: GRAPPLE for the living, lit while an anchor is picked
+	local rooted = c and c.root.Parent
+	Grapple.draw(player.UserId, if rooted then c.root.Position.X else nil, if rooted then c.root.Position.Y else nil,
+		if c then c.state.facing else 1, if rooted and c.state.rope then c.state.rope.id else nil, Others.ropes)
 	Place.draw(player.UserId, if c and c.root.Parent then c.state.x else nil, if c then c.state.y else nil,
 		if c then c.state.facing else 1)
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
@@ -285,6 +292,7 @@ Items.start(player)
 Use.start(player)
 Place.start()
 Walls.start(player)
+Grapple.start()
 -- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
 -- where Others draws each runner (the snapshot stream), as the server judges it.
 Tagging.start(player, function(s) -- H23: a burn-out bursts where this screen draws that runner

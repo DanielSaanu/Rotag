@@ -140,6 +140,25 @@ Config.DASH_END_SPEED = 80
 Config.DASH_END_SPEED_FLOOR = Config.RUN_SPEED -- H10: a dash started on the floor ends here instead
 Config.DASH_COOLDOWN = 0.8        -- seconds from one dash to the next, even with the charge back (H6: 0.2 let
                                   -- a grounded runner chain dashes at ~110 studs/s). Danzo's to tune
+-- The grapple (H25, DESIGN §2 kit, §3 rule 17; shared/Grapple, docs/systems/grapple.md). Trial numbers, Danzo's by hand.
+Config.GRAPPLE_RANGE = 28         -- studs from the runner to an anchor it may hook (7 tiles); also the longest rope
+Config.GRAPPLE_MIN_ABOVE = 4      -- an anchor must be at least this far above the runner's centre (1 tile)
+Config.GRAPPLE_BEHIND = 8         -- aim assist: an anchor behind the facing scores this many studs further away
+Config.GRAPPLE_STICKY = 2         -- ... and the anchor already picked this many nearer, so the pick never flickers
+Config.GRAPPLE_INSET_TOP = 6      -- ... and this far below the screen's TOP, where the HUD's fuse banner sits (QA r1)
+Config.GRAPPLE_BEHIND_FAST = 0.8  -- faster than this x RUN_SPEED, an anchor behind the motion is never picked (QA r1:
+                                  -- a hook behind a sprinting runner threw its speed away)
+Config.GRAPPLE_INSET = 2          -- studs inside the screen edge an anchor must be to be picked (rule 17: never off-screen)
+Config.GRAPPLE_MIN_LEN = 8        -- the shortest rope (no loops round the anchor below the speed cap: 5 g L > cap^2)
+Config.GRAPPLE_LIFT = 1           -- hooked from the floor, the rope reels in to this far above your feet's height ...
+Config.GRAPPLE_REEL = 40          -- ... at this many studs/s, so a floor hook swings instead of dragging on the floor
+Config.GRAPPLE_PUMP = 60          -- studs/s^2 the stick pushes along the swing: a hanging runner can get going
+Config.GRAPPLE_MAX_SPEED = Config.DASH_SPEED -- the swing never goes faster than a dash: the dash still redirects it
+                                  -- without a loss (DESIGN §2), and the server's speed check needs no new rate
+Config.GRAPPLE_RELEASE_BOOST = 1.1 -- rule 17's small release boost: the swing's velocity x this on letting go (1 = off)
+Config.GRAPPLE_COOLDOWN = 0.2     -- seconds after a release before the next hook
+Config.GRAPPLE_BUFFER = 0.1       -- a press this early still hooks the moment an anchor is picked (x touch scale)
+Config.GRAPPLE_REFRESH = true     -- hooking an anchor gives back the dash and double jump (rule 15: a contact)
 Config.TOUCH_WINDOW_SCALE = 1.25  -- coyote and buffer are this much wider on touch (rule 23)
 Config.STICK_DEADZONE = 0.3       -- stick |x| under this is no run; over it is a full run (diagonals run full speed)
 

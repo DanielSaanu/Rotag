@@ -51,12 +51,27 @@ for _, s in Arena.LIVING_ORBS do table.insert(Arena.ORBS, s) end
 -- each orb spot (the orb must stay reachable), and every map block. No spawn boxes: every placed part is cleared at
 -- round start, so a spawn spot needs no protection mid-round (QA round 1). { x0, y0, x1, y1, why }, studs.
 Arena.KEEP_CLEAR = { { 17 * T, 0, 24 * T, 12 * T, "keep-clear" } }
+
+-- H25 (DESIGN §3 rules 17, 29; docs/systems/grapple.md §5): the grapple anchors, { x, y } studs, numbered by their
+-- place in this list (the snapshot's anchor byte). Over open floor and the gaps, 3-11 tiles up, 22-36 studs apart so
+-- one swing's release reaches the next. Built as gold marked balls tagged ANCHOR_TAG; clients read them from the
+-- workspace (no remote). PR 6 carries a list per map.
+Arena.ANCHOR_TAG = "RotagAnchor"
+Arena.ANCHORS = {
+	{ x = -14 * T, y = 5 * T }, -- the open floor left of PlatformHigh
+	{ x = -1 * T, y = 6 * T }, -- over the spawn, between PlatformHigh and PlatformLow
+	{ x = 8 * T, y = 8 * T }, -- over the gap from PlatformLow up to PlatformMid
+	{ x = 15 * T, y = 6 * T }, -- over the floor between PlatformMid and the wall-jump shaft
+	{ x = 20.5 * T, y = 11 * T }, -- above the shaft
+	{ x = 26.5 * T, y = 5 * T }, -- the floor past the shaft
+}
 function Arena.static(): { { any } }
 	local out = {}
 	for _, b in BLOCKS do table.insert(out, { b[2], b[3], b[4], b[5], "map" }) end
 	for _, z in Arena.KEEP_CLEAR do table.insert(out, z) end
 	local o = Config.ORB_SIZE / 2
 	for _, s in Arena.ORBS do table.insert(out, { s.x - o, s.y - o, s.x + o, s.y + o, "orb" }) end
+	for _, a in Arena.ANCHORS do table.insert(out, { a.x - 2, a.y - 2, a.x + 2, a.y + 2, "anchor" }) end -- H25
 	return out
 end
 
@@ -93,8 +108,32 @@ function Arena.build(): Folder
 		part.BottomSurface = Enum.SurfaceType.Smooth
 		part.Parent = map
 	end
+	-- H25: the anchors, in a Persistent model so streaming never drops one from a screen. Not solid and not queried:
+	-- they are never a floor or a wall to the probes (T11), nor block a rope's line of sight.
+	local anchors = Instance.new("Model")
+	anchors.Name = "Anchors"
+	anchors.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	for i, a in Arena.ANCHORS do
+		for _, spec in { { "Anchor", 1.6, Color3.fromRGB(255, 205, 60), 0, Enum.Material.Neon },
+			{ "AnchorBack", 3.4, Color3.fromRGB(35, 25, 10), -0.5, Enum.Material.SmoothPlastic } } do -- QA r1: bigger, darker
+			local part = Instance.new("Part")
+			part.Name = spec[1]
+			part.Shape = if spec[1] == "Anchor" then Enum.PartType.Ball else Enum.PartType.Cylinder
+			part.Size = if spec[1] == "Anchor" then Vector3.one * spec[2] else Vector3.new(0.2, spec[2], spec[2])
+			part.CFrame = CFrame.new(a.x, a.y, spec[4]) * (if spec[1] == "Anchor" then CFrame.identity
+				else CFrame.Angles(0, math.pi / 2, 0)) -- the backing disc faces the camera
+			part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch, part.CastShadow = true, false, false, false, false
+			part.Color, part.Material = spec[3], spec[5]
+			if spec[1] == "Anchor" then
+				part:SetAttribute("AnchorId", i)
+				part:AddTag(Arena.ANCHOR_TAG)
+			end
+			part.Parent = anchors
+		end
+	end
+	anchors.Parent = map
 	map.Parent = workspace
-	print(("[Rotag] test map: %d parts in Workspace.Map"):format(#BLOCKS))
+	print(("[Rotag] test map: %d parts and %d grapple anchors in Workspace.Map"):format(#BLOCKS, #Arena.ANCHORS))
 	return map
 end
 

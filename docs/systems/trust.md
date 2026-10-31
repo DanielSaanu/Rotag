@@ -125,7 +125,7 @@ untrusted one changes nothing in either direction: a teleport back inside never 
 
 | Name | Value | What |
 |---|---|---|
-| `MoveCheck.RATE_X` / `RATE_UP` / `RATE_DOWN` | 120 / 52.5 / 80 | `DASH_SPEED` / `JUMP_SPEED` / `MAX_FALL` (§3) |
+| `MoveCheck.RATE_X` / `RATE_UP` / `RATE_DOWN` | 120 / 52.5 / 80 | max(`DASH_SPEED`, `GRAPPLE_MAX_SPEED`) (H25, §11) / `JUMP_SPEED` / `MAX_FALL` (§3) |
 | `Config.MOVE_BURST_TIME` | 0.2 s | each axis's slack: 24 / 10.5 / 16 studs. Lower once real jitter is known; raise if honest players are snapped |
 | `Config.MOVE_CLEAR_TIME` | 1 s | clean time after a violation before claims use that runner's samples again |
 | `Config.MOVE_SNAP_BACK` | true | false: untrusted and warning only |
@@ -135,7 +135,8 @@ untrusted one changes nothing in either direction: a teleport back inside never 
 ## 8. What would change it
 
 - **A new move that is faster** (grapple release, boost pads, DESIGN §2's kit) must raise `MoveCheck`'s rates in
-  the same change, or honest players get snapped. The test pins the rates to Config names, so a new fastest move needs
+  the same change, or honest players get snapped. **The grapple (H25, §11)** did not: its swing is capped at the dash
+  speed, so the rates stand and nothing new is trusted. The test pins the rates to Config names, so a new fastest move needs
   a new line there and in the fastest-chain test.
 - **Boost pads (H22, QA round 2):** a pad's launch is the client's own move, inside the budget by construction
   (100 across under the dash rate, 105 up averaging the up rate; the pad chain is driven in `move_check.test.luau`), so
@@ -285,3 +286,15 @@ runner left at the hold's 2-stud floor had only 0.49 studs to spare on a dash-ju
 stream's own catch-up jitter (§3). It now keeps ~22.6. A client that ignored the hold was already caught during it.
 The trap's down rate is the fall cap: a runner caught by a trap set in mid-air drops onto it (shared/Movement), and
 that fall (40 studs in the test) is legal.
+
+## 11. The grapple (H25, 2026-11-01): capped, so no allowance
+
+The swing is capped at `GRAPPLE_MAX_SPEED` = `DASH_SPEED` and `RATE_X = max(DASH_SPEED, GRAPPLE_MAX_SPEED)`, so the
+budgets are unchanged and the server never trusts "I am on an anchor" (the routine read's bit-gated allowance was not
+built: a client-set bit that widens a check is a cheat's lever, → N16). Five driven 10 s swing chains are never
+flagged; worst use x 1.38 of 24, up 2.41 of 10.5, down 2.67 of 16 (pinned, `move_check_grapple.test.luau`). Raising
+the cap above 120 raises the x rate for everyone. The reasoning and the measurements: [grapple.md](grapple.md) §4.
+
+QA round 1 (2026-11-01): the snapshot's anchor byte is cosmetic and unvalidated; a modified client can draw a
+fake rope (a ghost too). Harmless: nothing reads it but the other screens' drawing. If it ever matters, the server can
+check the byte against the map's anchor list and the sender's living state before relaying.

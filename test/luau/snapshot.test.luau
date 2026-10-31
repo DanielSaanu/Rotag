@@ -22,7 +22,7 @@ do -- the wire: every field survives pack/unpack to within the quantisation; bad
 	local s = { seq = 65535, x = -123.456, y = 7.89, vx = -119.9, vy = 52.5, sprite = "runner_run_3", facing = -1,
 		dashing = true, jump = "wall", dash = true, landed = 61.4 }
 	local b = Snapshot.pack(s)
-	assert(buffer.len(b) == Snapshot.SIZE, "13 bytes on the wire")
+	assert(Snapshot.SIZE == 14 and buffer.len(b) == Snapshot.SIZE, "14 bytes on the wire (13 + the anchor, H25)")
 	local u = Snapshot.unpack(b)
 	assert(u, "unpacks")
 	assert(u.seq == 65535 and math.abs(u.x - s.x) <= 1 / 32 and math.abs(u.y - s.y) <= 1 / 32, "seq and position")
@@ -32,8 +32,14 @@ do -- the wire: every field survives pack/unpack to within the quantisation; bad
 	local plain = Snapshot.unpack(Snapshot.pack({ seq = 1, x = 0, y = 0, vx = 0, vy = 0, sprite = "runner_idle",
 		facing = 1, dashing = false, dash = false }))
 	assert(plain and plain.jump == nil and plain.landed == nil and not plain.dash and not plain.dashing, "no events")
+	assert(plain.anchor == nil and u.anchor == nil, "no rope: no anchor")
+	for _, id in { 1, 7, 255 } do -- H25: the rope's anchor round-trips (the map's 1-255); out of range is clamped
+		local r = Snapshot.unpack(Snapshot.pack({ seq = 2, x = 0, y = 0, vx = 0, vy = 0, sprite = "runner_fall",
+			facing = 1, dashing = false, dash = false, anchor = id }))
+		assert(r and r.anchor == id, "anchor " .. id .. " round-trips")
+	end
 	assert(Snapshot.unpack("not a buffer") == nil, "a string is refused")
-	assert(Snapshot.unpack(buffer.create(12)) == nil and Snapshot.unpack(buffer.create(14)) == nil, "wrong sizes refused")
+	assert(Snapshot.unpack(buffer.create(13)) == nil and Snapshot.unpack(buffer.create(15)) == nil, "wrong sizes refused")
 	local bad = Snapshot.pack(s)
 	buffer.writeu8(bad, 10, 200)
 	assert(Snapshot.unpack(bad) == nil, "a sprite index off the list is refused")

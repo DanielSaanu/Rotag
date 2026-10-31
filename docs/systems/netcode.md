@@ -96,9 +96,11 @@ competitive tag game and the wrong thing to adopt mid-prototype. Note for DESIGN
 ## 8. Built (H14, 2026-10-14, the Fable session; pending Danzo's two-client Play)
 
 **The stream.** `Remotes.Snapshot` is an `UnreliableRemoteEvent` declared in `default.project.json`. Each client,
-on `Heartbeat`, `Config.SNAPSHOT_RATE` (30) times a second, packs its runner's Movement state into a 13-byte buffer
+on `Heartbeat`, `Config.SNAPSHOT_RATE` (30) times a second, packs its runner's Movement state into a 14-byte buffer
 (`shared/Snapshot.pack`: u16 sequence, x, y, vx, vy at 1/16 and 1/8 stud, the sprite index, facing, dashing, and the
-juice events since the last one: jump kind, dash start, landing impact) and fires it. `server/Snapshots` rate-limits
+juice events since the last one: jump kind, dash start, landing impact; since H25 a 14th byte, the anchor its rope is
+on, 0 = none, so other screens draw the rope: [grapple.md](grapple.md) §5; the server never reads it) and fires it.
+The flags byte is unchanged (bit 0 facing, 1 dashing, 2-3 jump kind, 4 dash start; 5-7 free). `server/Snapshots` rate-limits
 per sender (a token bucket at 1.5 x the rate, burst 8), refuses anything that is not exactly one snapshot, drops a
 sequence older than the last, stamps it with the SERVER clock on arrival, keeps it as that runner's newest position,
 and relays the whole batch once per `Heartbeat` to every client. The relayed batch is `{ [runner id] = { t, b } }`.

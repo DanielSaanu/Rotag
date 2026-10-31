@@ -109,3 +109,11 @@ dust), keep it as the cap for the whole event so standing still cannot bank budg
 same measured speed. Pin all four sides: an honest client a grace late passes; ignoring the event is caught BEFORE it
 ends; idling then sprinting inside it is caught; the control with no event passes. State the residual in studs.
 *(2026-10-19, handoff H19, `MoveCheck.hold`, trust.md §10; first version wrong, corrected by QA round 1.)*
+
+**N16 — Before widening a server check for a new fast move, ask whether a cap inside the existing rate serves the
+design; never widen it on a state bit the client sets.** The grapple's routine read was a speed allowance granted while
+the snapshot's grapple bit is on: a cheat would set it always. Capping the swing at the dash speed kept every rate
+(and is what DESIGN §2's "dash redirects it" wants), and five driven swing chains used at most 1.38 of the 24-stud x
+burst. If a faster move is ever wanted, raise the rate for everyone and say so beside the knob, or bound the allowance
+by server-known data (the anchor positions it built), never by the client's word. *(2026-11-01, handoff H25,
+trust.md §11.)*

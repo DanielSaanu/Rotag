@@ -6,7 +6,7 @@ grapple, mouse binds on, pry with 3 taps anywhere), to be judged by hand; every 
 and its saved data are not built: trigger 9 then). Build: PR 3 of the order in
 [ghosts-v2-proposal.md](ghosts-v2-proposal.md) §12: `roblox/src/client/Controls.lua` holds the whole table as one
 `BINDS` data table (a remap edits lists, not code); the grapple input is read by a ghost holding a fixture since PR 4 (H22: it turns the piece, and the GRAPPLE touch
-button reads ROTATE then, [placement.md](placement.md)); for the living it is unread until the grapple PR. QA goals:
+button reads ROTATE then, [placement.md](placement.md)); for the living it is the grapple since H25 ([grapple.md](grapple.md): hold to hang, the GRAPPLE button shows, lit while an anchor is picked). QA goals:
 [../qa/controls.md](../qa/controls.md). Bounds: DESIGN §3 rules 20-24 (never floaty, 4 touch buttons at most, lower-middle
 clear, read the mobile joystick). The verb list is H16's, adopted (DESIGN §3 rules 37-51,
 [ghosts-v2-proposal.md](ghosts-v2-proposal.md)); if those verbs change, only rows change here.
@@ -38,7 +38,7 @@ habit, ZXCV under the left hand). That pair is also the left/right-hand variant.
 | Move | A / D | ← / → | left stick (d-pad untested: Danzo's pad test; a d-pad term in `moveX` if he wants it, QA r2) | Roblox's thumbstick, bottom-left |
 | Jump | **Space** (kept) | **Z** | **A / Cross** (kept) | JUMP, 96 px, bottom-right corner (kept) |
 | Dash | **Left/Right Shift** (kept) | **X** | **X / Square** (kept), B / Circle too | DASH, 76 px, up-left of JUMP (kept) |
-| Grapple (ghost: rotate) | **W**, or right mouse button | **C**, or ↑ | **RT / R2** (hold) | GRAPPLE, 76 px, above JUMP; ROTATE for a ghost holding a piece, hidden otherwise |
+| Grapple (ghost: rotate) | **W**, or right mouse button | **C**, or ↑ | **RT / R2** (hold) | GRAPPLE, 76 px, above JUMP: always for the living (H25), lit while an anchor is picked or you hang, dimmed otherwise; ROTATE for a ghost holding a piece, hidden for other ghosts |
 | Use item | **E**, or left mouse button (a click anywhere, even on the HUD: guard it with the first clickable UI, QA r2) | **V** | **RB / R1**, LT / L2 too | ITEM, 76 px, above DASH and left of GRAPPLE (QA r1: "left of DASH" reached the lower-middle on a 667 px phone, rule 23), shows the held item's icon; hidden when the slot is empty |
 | Pry the trap | Space / E / W or clicks, 3 times | Z / X / C / V, 3 times | any face button or trigger, 3 times | 3 taps anywhere (the status line says "tap anywhere") |
 | Down (reserved) | S | ↓ | stick down | — |

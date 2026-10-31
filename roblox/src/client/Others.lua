@@ -28,7 +28,8 @@ local studio = game:GetService("RunService"):IsStudio()
 type Drawn = { id: number, root: BasePart, look: any, params: RaycastParams, pose: RemotePose.Pose,
 	trail: RemotePose.Trail, prevT: number, at: Vector3, streamed: boolean, logged: number,
 	lunge: { x0: number, y0: number, tx: number, ty: number, t0: number }?,
-	hold: any?, holdSprite: string? } -- H21: the hold a streamless runner is under, and the frame a freeze keeps
+	hold: any?, holdSprite: string?, -- H21: the hold a streamless runner is under, and the frame a freeze keeps
+	facing: number?, anchor: number? } -- H25: as drawn this frame, and the anchor its rope is on (its stream says)
 local drawn: { [Model]: Drawn } = {}
 local byId: { [number]: Model } = {}
 local byRoot: { [BasePart]: Vector3 } = {} -- where each other runner was drawn this frame (the IT marker, the claim)
@@ -136,6 +137,7 @@ function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((numb
 			if h then sprite = heldSprite(d, h, sprite, now) else d.hold = nil end
 		end
 		d.streamed = v ~= nil
+		d.facing, d.anchor = facing, if v then v.anchor else nil
 		log(model, d, now, st)
 		-- Rule 6's catch-up (H14): on a verdict the tagger's sprite goes to the victim over TAG_LUNGE_TIME, then eases
 		-- back onto its stream over the same time, so the tag reads as a touch on the victim's screen too.
@@ -159,6 +161,13 @@ function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((numb
 		d.look:boost(boosted ~= nil and boosted(d.id))
 		d.look:ignite(if ignition then ignition(d.id) else 0)
 		d.look:draw(sprite, facing, dashing, vx, dt)
+	end
+end
+
+-- H25: fn(id, x, y, facing, anchor) for every other runner drawn this frame on a rope (client/Grapple draws it).
+function Others.ropes(fn: (number, number, number, number, number?) -> ())
+	for _, d in drawn do
+		if d.anchor then fn(d.id, d.at.X, d.at.Y, d.facing or 1, d.anchor) end
 	end
 end
 

@@ -14,7 +14,9 @@ local MoveCheck = {}
 -- x: a dash holds DASH_SPEED; a jump out of a dash adds JUMP_H_BOOST, but any speed above the run speed bleeds off
 -- (RUN_REDUCE, faster still without the stick), so above DASH_SPEED is only ever a fraction of a second: the burst.
 -- up: no move sets vy above JUMP_SPEED. down: MAX_FALL caps every fall.
-MoveCheck.RATE_X = Config.DASH_SPEED
+-- H25: the grapple's swing is capped at GRAPPLE_MAX_SPEED (= DASH_SPEED as tried), so x is the larger of the two; its
+-- release boost and its fast stretches up and down fit the bursts (driven in move_check.test.luau, trust.md §11).
+MoveCheck.RATE_X = math.max(Config.DASH_SPEED, Config.GRAPPLE_MAX_SPEED)
 MoveCheck.RATE_UP = Config.JUMP_SPEED
 MoveCheck.RATE_DOWN = Config.MAX_FALL
 

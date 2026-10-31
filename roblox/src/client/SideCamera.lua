@@ -27,4 +27,16 @@ function SideCamera.update(x: number, y: number, vx: number, dt: number)
 	camera.CFrame = CFrame.lookAt(Vector3.new(cam.x, cam.y, DISTANCE), Vector3.new(cam.x, cam.y, 0))
 end
 
+-- H25: the world this screen shows, for the grapple's aim assist (rule 17: never an off-screen anchor). Centre and
+-- half extents in studs; the width from the viewport's aspect. Reuses one table; nil before the first update.
+local view = { x = 0, y = 0, halfW = 0, halfH = Config.CAMERA_VIEW_HEIGHT / 2 }
+function SideCamera.view(): { x: number, y: number, halfW: number, halfH: number }?
+	local camera = workspace.CurrentCamera
+	if not (cam and camera) then return nil end
+	local size = camera.ViewportSize
+	view.x, view.y = cam.x, cam.y
+	view.halfW = view.halfH * (if size.Y > 0 then size.X / size.Y else 16 / 9)
+	return view
+end
+
 return SideCamera
