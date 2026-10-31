@@ -127,9 +127,16 @@
 - [ ] **Danzo: Play the PR 5 checklist** (in the summary). The calls made while he was out: `END_PHASE_AFTER` 120 s (not
       150); "final two" means a round that began with 3+ (DESIGN rule 51 reworded); the speed check not scaled; the
       look is placeholder. Is +10% noticeable; is the ignition readable without hiding the figure.
-- [ ] **Next (2026-10-31):** PRs 1-5 done and pushed. Then the living grapple (its own movement PR), PR 6 (maps, the
-      end-phase shrink), and the art block for pieces, pads, the grant and the ignition (placeholders now, behind
-      `Sprites.Has`). Build on in the PR order of
+- [x] **PR 5b, the closing walls (H24), built and QA'd 8/10 in round 1 (2026-11-01), pushed.** Danzo: "make it like
+      SpeedRunners, the walls closing, not an instant kill, not solid, a short time to get back". Two server-owned red
+      walls open with the end phase, close to a 48-stud box over 20 s, a 3 s GET BACK IN grace, a wall kill = a
+      burn-out; everyone keeps their own camera. Summary and checklist: `docs/qa/ghosts-v2-walls-summary.md`; the
+      research and design: `docs/systems/endgame.md` §7.
+- [ ] **Danzo: Play the PR 5b checklist** (in the summary). Confirm: 3 s grace, walls from the end phase (not the first
+      burn-out), the slow follow of the living mean, the 48-stud box, no zoom, +10% kept with the walls.
+- [ ] **Next (2026-11-01):** PRs 1-5b done and pushed. Then the living grapple (its own movement PR), PR 6 (maps with
+      their own window bounds), and the art block for pieces, pads, the grant, the ignition and the walls (placeholders
+      now, behind `Sprites.Has`). Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
       (heavy guess 150 s, not in DESIGN).

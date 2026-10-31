@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-10-19 (H16, H17 resolved)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-01 (H24 built, QA loop next)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -28,6 +28,15 @@ Resolution (added by the heavy agent under the same entry):
 ## Open
 
 ## Resolved
+
+### H24 — The closing walls: a SpeedRunners-style end phase blended with PR 5 — 2026-11-01 00:40 — RESOLVED
+- **Resolved 2026-11-01 (heavy research + build; routine QA loop 8/10 in round 1):** SpeedRunners' shared shrinking
+  screen became a server-owned world window (DESIGN §2 untouched): pure `shared/Walls` (open with the end phase at the
+  living mean, close to `WALL_MIN_HW` 24 over 20 s, ease toward the mean, a 3 s grace reset on return and paused in
+  holds, death order), `server/Walls` (the server's own record, `MatchState.window` / `outside`), `client/Walls` (neon
+  edges beating with the close, a red band, screen-edge glow, GET BACK IN), `Tag.eliminate` as the one elimination
+  path, a red burst for a wall kill. The reviewer: "reads instantly as the screen closing in", "one moment, not two
+  systems". Waiting on Danzo's Play. → `docs/systems/endgame.md` §7, `docs/qa/ghosts-v2-walls-summary.md`, S13, T13.
 
 ### H23 — Build ghosts v2 PR 5: ignition and end-phase speed — 2026-10-31 23:30 — RESOLVED
 - **Resolved 2026-10-31 (heavy build, finished after one Opus API cut-off; routine QA loop 8/10 in round 1):**
