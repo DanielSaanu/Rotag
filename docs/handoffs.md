@@ -27,7 +27,10 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H25 — The living grapple: hold to hang on marked anchors, release keeps the swing — 2026-11-01 02:10 — BUILT, QA loop next
+### H25 — The living grapple: hold to hang on marked anchors, release keeps the swing — 2026-11-01 02:10 — BUILT, QA loop paused after round 1
+- **Status (2026-11-01, Danzo went to bed):** built (heavy), round 1 reviewed 7/10, its fixes applied, committed and
+  pushed (`qa round 1:` 44aa228); round 2 was started and stopped unfinished. Next session: run `/qa-loop docs/qa/grapple.md`
+  from round 2 (the round 1 report is `docs/qa/grapple-round1.md`; the changes-since list is in that file's Builder decisions).
 - **Trigger:** 2 (`shared/Movement` gains a move; `shared/MoveCheck`'s rates must cover a swing's speed; `shared/
   Snapshot` and `shared/RemotePose` if the wire carries the rope; `shared/SideCam` if the camera leads into a swing),
   3 (the speed check: a swing can exceed the dash rate the x budget is built on, so the budget needs a grapple

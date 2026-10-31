@@ -136,9 +136,12 @@
       research and design: `docs/systems/endgame.md` §7.
 - [x] **Danzo: Play the PR 5b checklist (signed off 2026-11-01: "all working nicely")** (in the summary). Confirm: 3 s grace, walls from the end phase (not the first
       burn-out), the slow follow of the living mean, the 48-stud box, no zoom, +10% kept with the walls.
-- [ ] **Next (2026-11-01):** PRs 1-5b done and pushed. Then the living grapple (its own movement PR), PR 6 (maps with
-      their own window bounds), and the art block for pieces, pads, the grant, the ignition and the walls (placeholders
-      now, behind `Sprites.Has`). Build on in the PR order of
+- [ ] **The grapple (H25) is built and mid-loop (2026-11-01, paused at bedtime):** round 1 scored 7/10, its fixes are in and
+      pushed (air hooks clear the floor, no hook behind a sprint, anchors out from under the HUD, hold-to-arm). Round 2 not
+      yet run. Next session: `/qa-loop docs/qa/grapple.md` from round 2, then Danzo's feel checklist (`docs/qa/grapple.md`:
+      the 120 cap, the 1.1 boost, the pump, refresh on the hook).
+- [ ] **Next (2026-11-01):** after the grapple loop: PR 6 (maps with their own window bounds and anchors), then the art
+      block for pieces, pads, the grant, the ignition, the walls and the hang pose (placeholders now, behind `Sprites.Has`). Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
       (heavy guess 150 s, not in DESIGN).
