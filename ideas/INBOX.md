@@ -120,8 +120,16 @@
       should shatter when the freeze ends. (2) The grant's orange halo (`Look:boost`, the frozen rim's trick in
       orange, replacing the box he called ugly): does it read as "boosted" at play speed. Pads: Danzo's call, a pad
       throws you the way you are already running (no arrow); done 2026-10-31.
-- [ ] **Next (2026-10-31):** PRs 1-4 done and pushed. Then PR 5 (ignition, end-phase speed), the living grapple, PR 6
-      (maps), and the art block for pieces, pads and the grant (placeholder parts now, behind `Sprites.Has`). Build on in the PR order of
+- [x] **PR 5 (H23) built and QA'd 8/10 in round 1 (2026-10-31), pushed.** The end phase (final two of a round that began
+      with 3+, or 120 s in; +10% run speed for the living, on top of max(ramp, grant); server-decided, `MatchState.endPhase`),
+      the ignition (ember rim, embers, a glow light, the beating red readout, the holder's arrow beating off screen),
+      the burn-out burst. Summary and Danzo's checklist: `docs/qa/ghosts-v2-endgame-summary.md`. Detail: `docs/systems/endgame.md`.
+- [ ] **Danzo: Play the PR 5 checklist** (in the summary). The calls made while he was out: `END_PHASE_AFTER` 120 s (not
+      150); "final two" means a round that began with 3+ (DESIGN rule 51 reworded); the speed check not scaled; the
+      look is placeholder. Is +10% noticeable; is the ignition readable without hiding the figure.
+- [ ] **Next (2026-10-31):** PRs 1-5 done and pushed. Then the living grapple (its own movement PR), PR 6 (maps, the
+      end-phase shrink), and the art block for pieces, pads, the grant and the ignition (placeholders now, behind
+      `Sprites.Has`). Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
       (heavy guess 150 s, not in DESIGN).
