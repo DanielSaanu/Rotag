@@ -115,6 +115,11 @@
       and Danzo's checklist: `docs/qa/ghosts-v2-placement-summary.md`. Detail: `docs/systems/placement.md`.
 - [ ] **Danzo: Play the PR 4 checklist** (in the summary). The calls: does a pad's 100 across / 105 up feel right; should
       ghosts be launched by pads (the spec says yes); does a stray left click placing a piece bite.
+- [ ] **Danzo (2026-10-31, after a first Play, parked while he is out): judge two looks.** (1) The ice block round a
+      frozen runner (`client/Items`: Glass, pale ice, 0.35 see-through, behind the sprite): colour, size, and whether it
+      should shatter when the freeze ends. (2) The grant's orange halo (`Look:boost`, the frozen rim's trick in
+      orange, replacing the box he called ugly): does it read as "boosted" at play speed. Pads confirmed
+      one-directional (the arrow); say if a pad should throw you the way you were already running (one line).
 - [ ] **Next (2026-10-31):** PRs 1-4 done and pushed. Then PR 5 (ignition, end-phase speed), the living grapple, PR 6
       (maps), and the art block for pieces, pads and the grant (placeholder parts now, behind `Sprites.Has`). Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
