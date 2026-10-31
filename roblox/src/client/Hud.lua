@@ -243,9 +243,13 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		statusLabel.Text = "next round soon" -- joined after this round began (H8): waiting, not eliminated
 	elseif not inRound then
 		statusLabel.Text = "out (next round soon)"
-	else -- H22: a ghost's boost grant on you (rule 46)
-		local boost = Place.grantLeft(me)
-		statusLabel.Text = if boost > 0 then ("BOOST +%d%%  %.1fs"):format(Config.GRANT_BOOST * 100, boost) else ""
+	else
+		statusLabel.Text = ""
+	end
+	local boost = Place.grantLeft(me) -- H22, rule 46: a ghost's boost grant on you, shown with whatever else is up (QA round 2)
+	if boost > 0 and inRound then
+		local line = ("BOOST +%d%%  %.1fs"):format(Config.GRANT_BOOST * 100, boost)
+		statusLabel.Text = if statusLabel.Text == "" then line else statusLabel.Text .. "  |  " .. line
 	end
 	local warded = (state.ward or 0) - (now - (state.at or now)) > 0 and #state.ghosts > 0
 	if wasWarded and not warded then flashUntil = now + WARD_FLASH end

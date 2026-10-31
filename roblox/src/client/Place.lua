@@ -19,8 +19,10 @@ local Place = {}
 local RUNNER_TAG = "RotagRunner"
 local HIDDEN = CFrame.new(0, -1e4, 0)
 local Z = Config.RUNNER_DEPTH / 2 + 0.5 -- in front of the runner sprites, like the item icons
-local OK_COLOR, NO_COLOR = Color3.fromRGB(200, 190, 255), Color3.fromRGB(255, 60, 60)
-local GRANT_COLOR = Color3.fromRGB(255, 150, 40)
+-- Plain (SmoothPlastic) for the violet preview and the orange glow: Neon washed them out to white and yellow (QA
+-- round 2); Neon stays for the red refusal and the keep-clear zone, which are meant to shout.
+local OK_COLOR, NO_COLOR = Color3.fromRGB(160, 140, 255), Color3.fromRGB(255, 60, 60)
+local GRANT_COLOR = Color3.fromRGB(255, 110, 20)
 
 local mirror: Rules.State = Rules.new() -- the server's placed parts, by its numbers
 local static: { Rules.Box } = {}
@@ -40,11 +42,11 @@ local refusal: string? = nil -- why the preview is red this frame (the fit test'
 local lastPlacing: string? = nil -- the placeable item held last frame: a new one starts at rotation 0 (QA round 1)
 local studio = RunService:IsStudio()
 
-local function part(size: Vector3, color: Color3, transparency: number): BasePart
+local function part(size: Vector3, color: Color3, transparency: number, neon: boolean?): BasePart
 	local p = Instance.new("Part")
 	p.Size, p.Color, p.Transparency, p.CFrame = size, color, transparency, HIDDEN
 	p.Anchored, p.CanCollide, p.CanQuery, p.CanTouch, p.CastShadow = true, false, false, false, false
-	p.Material = Enum.Material.Neon
+	p.Material = if neon then Enum.Material.Neon else Enum.Material.SmoothPlastic
 	p.Parent = folder
 	return p
 end
@@ -76,7 +78,7 @@ local function onEvent(e: any)
 				and type(b[4]) == "number" then
 				table.insert(static, { b[1], b[2], b[3], b[4], if type(b[5]) == "string" then b[5] else "map" })
 				if b[5] == "keep-clear" then
-					local z = part(Vector3.new(b[3] - b[1], b[4] - b[2], 0.2), NO_COLOR, 1)
+					local z = part(Vector3.new(b[3] - b[1], b[4] - b[2], 0.2), NO_COLOR, 1, true)
 					z.Name = "KeepClear"
 					z:SetAttribute("At", Vector3.new((b[1] + b[3]) / 2, (b[2] + b[4]) / 2, Z - 0.3))
 					table.insert(zoneParts, z)
@@ -103,10 +105,12 @@ function Place.grantLeft(id: number): number
 	return math.max(0, (grants[id] or 0) - os.clock())
 end
 
--- What the local runner holds that it places, if any: "fixture" or "pad" (a ghost only).
+-- What the local runner holds that it places, if any: "fixture" or "pad" (a ghost only, while the round runs: no
+-- preview between rounds, QA round 2).
 local function placing(me: number): string?
 	local item = Items.held(me)
-	if (item == "fixture" or item == "pad") and Tagging.ghost(me) then return item end
+	local st = Tagging.state()
+	if (item == "fixture" or item == "pad") and Tagging.ghost(me) and st ~= nil and not st.over then return item end
 	return nil
 end
 
@@ -126,8 +130,9 @@ function Place.refusal(): string?
 end
 
 -- Every physics step, after the freeze and the ramp: the rotate press, and a pad's launch when the local runner
--- ENTERS one (a pad that appears under you is not an entry, so a ghost's own pad never fires under it). Pads launch
--- everyone, ghosts included (proposal §3: "anyone may use it"; placement.md §5).
+-- ENTERS one. Your OWN pad appears under your feet, so it needs a real entry (off, then on); someone else's pad that
+-- lands on you launches at once, so a fast runner never slips under a fresh pad (QA round 2). Pads launch everyone,
+-- ghosts included (proposal §3: "anyone may use it"; placement.md §5).
 function Place.frame(input: any, s: any, me: number)
 	local held = placing(me)
 	if held ~= lastPlacing then
@@ -140,7 +145,7 @@ function Place.frame(input: any, s: any, me: number)
 			local touching = Rules.onPad(p, s.x, s.y)
 			local was = inside[p.n]
 			inside[p.n] = touching
-			if touching and was == false and not input.hold then
+			if touching and (was == false or (was == nil and p.owner ~= me)) and not input.hold then
 				input.launchX, input.launchY = Rules.launch(p.dir)
 				if studio then print(("[Rotag] pad: launched off pad %d"):format(p.n)) end
 			end
@@ -203,7 +208,10 @@ function Place.draw(me: number, x: number?, y: number?, facing: number)
 		end
 		if ok ~= shownOk then
 			shownOk = ok
-			for _, c in cells do c.Color = if ok then OK_COLOR else NO_COLOR end
+			for _, c in cells do
+				c.Color = if ok then OK_COLOR else NO_COLOR
+				c.Material = if ok then Enum.Material.SmoothPlastic else Enum.Material.Neon
+			end
 		end
 	elseif cells[1] and cells[1].CFrame ~= HIDDEN then
 		for _, c in cells do c.CFrame = HIDDEN end

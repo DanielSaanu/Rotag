@@ -133,6 +133,10 @@ server's own runner and is not checked (nor is any body with no player, like the
 - **A new move that is faster** (grapple release, boost pads, DESIGN §2's kit) must raise `MoveCheck`'s rates in
   the same change, or honest players get snapped. The test pins the rates to Config names, so a new fastest move needs
   a new line there and in the fastest-chain test.
+- **Boost pads (H22, QA round 2):** a pad's launch is the client's own move, inside the budget by construction
+  (100 across under the dash rate, 105 up averaging the up rate; the pad chain is driven in `move_check.test.luau`), so
+  a cheat "launching" with no pad gains nothing it could not already claim. If that is ever abused, the knob is a
+  server-side check: a rise past a held jump's with no pad on the sample's path marks the sample untrusted.
 - **The frozen holder:** the freeze is applied by the client, and a cheat can ignore it (tag.md §2); the server still
   refuses a frozen holder's claims. A "no horizontal travel while frozen" budget would be a small addition.
 - **Input replay** (a client → server input remote, the server running `Movement` over its own probes) is the real
