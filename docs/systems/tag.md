@@ -262,6 +262,7 @@ run logged `claim 8061215879 -> -1000 dropped: no overlap in the server's last 0
 | `ROUND_GAP` | 4 | seconds between rounds |
 | `START_SPREAD` | 120 | studs of floor the round's runners start spread over, centred on the spawn (§4, H8) |
 | `STUDIO_DUMMY` | true | the dummy, Studio only |
+| `IGNITE_AT`, `END_PHASE_AFTER`, `END_PHASE_SPEED` | 10, 120, 1.1 | the ignition and the end phase (H23, [endgame.md](endgame.md) §5) |
 
 ## 9. H6 verdicts (Danzo's first Play with the remotes, 2026-10-11)
 
@@ -272,6 +273,14 @@ run logged `claim 8061215879 -> -1000 dropped: no overlap in the server's last 0
    freeze.** `START_FREEZE` 3 -> 1 s with a countdown to GO (§3). A held key resumes after the freeze (checked). The
    re-press is most likely Studio's game view not having keyboard focus after Play (movement.md §5); unconfirmed.
 3. **Dash spam: real**, fixed with a longer cooldown (movement.md §3, `DASH_COOLDOWN` 0.8).
+
+## 10. The endgame: ignition and end-phase speed (H23, PR 5)
+
+The holder ignites from `IGNITE_AT` (10 s) left, drawn by every client from the replicated fuse (`Tag.ignition`:
+an ember rim, embers and a light on the holder; the readout reddens and beats faster), and a burn-out bursts where
+they stood. The end phase (`Tag.endPhase`: the final two of a round that began with 3+, or past `END_PHASE_AFTER`,
+120 s) multiplies every living runner's run speed by 1.1 on top of max(ramp, grant); the server decides it and sends
+`MatchState.endPhase`. The speed check needed no change. Detail, numbers and what was seen: [endgame.md](endgame.md).
 
 ## Expansion: deficits at scale
 

@@ -69,6 +69,12 @@ Config.PAD_H = 1
 Config.PAD_LIFE = 20              -- seconds a ghost's pad lasts
 Config.PAD_SPEED_X = 100          -- the launch along the arrow: speed you already carry that way is kept (rule 16) ...
 Config.PAD_SPEED_Y = 105          -- ... and up: 2 x JUMP_SPEED, the most whose rise averages the speed check's up rate
+-- Ghosts v2 PR 5 (DESIGN §3 rules 2, 3, 50, 51; H23, docs/systems/endgame.md). Trial numbers, tuned by hand.
+Config.IGNITE_AT = 10             -- rule 50: seconds left on the fuse when the holder visibly ignites, growing to 0
+Config.END_PHASE_AFTER = 120      -- rule 51: seconds into a round when the end phase starts if the final two have not
+                                  -- come first (H23's pick: a round still 3+ alive here has ~2 lives left, ~3:00)
+Config.END_PHASE_SPEED = 1.1      -- rule 51: in the end phase every living runner's top run speed x this, ramp and
+                                  -- grant on top (45 x 1.15 x 1.1 = 56.9: still under the speed check's dash rate)
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart

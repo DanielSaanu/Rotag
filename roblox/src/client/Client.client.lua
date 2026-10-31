@@ -23,6 +23,7 @@ local Items = require(script.Parent:WaitForChild("Items"))
 local Use = require(script.Parent:WaitForChild("Use")) -- H19: Use, prying, the local hold (docs/systems/items.md)
 local ItemArt = require(script.Parent:WaitForChild("ItemArt")) -- H21: is the hold art in the sheet yet
 local Place = require(script.Parent:WaitForChild("Place")) -- H22: ghost parts, pads, the grant (placement.md)
+local Ignition = require(script.Parent:WaitForChild("Ignition")) -- H23: the burn-out (endgame.md)
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -210,10 +211,11 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		c.look:ghost(ghostMode(player.UserId))
 		c.look:frozen(iced(player.UserId))
 		c.look:boost(Place.grantLeft(player.UserId) > 0) -- H22: the grant's orange halo
+		c.look:ignite(Tagging.ignition(player.UserId)) -- H23, rule 50: the holder's ember rim and embers
 		c.look:draw(pose(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
 		if not readySent then sendReady() end
 	end
-	Others.draw(dt, ghostMode, iced, heldOf, function(id) return Place.grantLeft(id) > 0 end)
+	Others.draw(dt, ghostMode, iced, heldOf, function(id) return Place.grantLeft(id) > 0 end, Tagging.ignition)
 	local st = Tagging.state()
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))
@@ -227,7 +229,7 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		if c then c.state.facing else 1)
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
 	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
-	Arrows.update(Tagging.me(), Tagging.state())
+	Arrows.update(Tagging.me(), Tagging.state(), Tagging.ignition) -- H23: the holder's arrow beats as it ignites
 end)
 
 -- The sheet ids the server resolved (Remotes.SheetIds, docs/systems/README.md). Nothing waits for them: the runner
@@ -281,7 +283,12 @@ Use.start(player)
 Place.start()
 -- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
 -- where Others draws each runner (the snapshot stream), as the server judges it.
-Tagging.start(player, function() end, function(v)
+Tagging.start(player, function(s) -- H23: a burn-out bursts where this screen draws that runner
+	Ignition.state(s, function(id)
+		if id ~= player.UserId then return Others.drawnAt(id) end
+		return if current and current.root.Parent then current.root.Position else nil
+	end)
+end, function(v)
 	Hud.pass(v, player.UserId)
 	Others.lunge(v.from, v.to)
 end, Others.positionOf, function(v)

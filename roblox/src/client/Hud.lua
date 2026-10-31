@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local Tag = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Tag")) -- H23: Tag.ignition
 local Others = require(script.Parent:WaitForChild("Others")) -- the IT marker sits on the DRAWN runner (H13)
 local Items = require(script.Parent:WaitForChild("Items")) -- what the local ghost holds (H18)
 local Place = require(script.Parent:WaitForChild("Place")) -- H22: the local boost grant
@@ -31,6 +32,14 @@ local GHOST_BLUE, POP_GOLD = Color3.fromRGB(170, 215, 255), Color3.fromRGB(255, 
 local HALO, WARD_END = Color3.fromRGB(255, 90, 60), Color3.fromRGB(255, 20, 20) -- H19: the halo, and its flash
 local WARD_FLASH = 0.3 -- seconds the halo flashes red as the ward ends (PR 1's QA: "hexes are back" is readable)
 local wasWarded, flashUntil = false, -math.huge
+-- H23 (rules 2, 50, 51; endgame.md §3): under IGNITE_AT the fuse readout reddens, swells and beats faster as it runs
+-- down, on every screen; the end phase gets its own line under the status line, flashing for its first seconds.
+local FUSE_SIZE, FUSE_SWELL = 32, 0.35 -- the readout's text size, and how much larger it beats at burn-out
+local FUSE_BEAT = { 2, 8 } -- beats per second at IGNITE_AT left and at 0
+local IGNITE_RED, IGNITE_HOT = Color3.fromRGB(255, 45, 20), Color3.fromRGB(255, 225, 100)
+local PHASE_FLASH = 2.5 -- seconds the end-phase line flashes after it comes on
+local phaseLabel: TextLabel? = nil
+local phaseOn, phaseAt = false, -math.huge
 
 local function label(parent: Instance, y: number, h: number, size: number): TextLabel
 	local l = Instance.new("TextLabel")
@@ -125,7 +134,10 @@ function Hud.start(player: Player)
 	gui.Name = "RotagHud"
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = false
-	fuseLabel = label(gui, 8, 40, 32)
+	fuseLabel = label(gui, 8, 40, FUSE_SIZE)
+	phaseLabel = label(gui, 106, 24, 20)
+	phaseLabel.TextColor3 = Color3.fromRGB(255, 190, 60) -- QA round 1: a dark stroke and a brighter orange on the sky
+	phaseLabel.TextStrokeTransparency = 0
 	popLabel = label(gui, 48, 32, 28)
 	popLabel.TextColor3 = Color3.fromRGB(255, 210, 90)
 	statusLabel = label(gui, 82, 24, 18)
@@ -188,6 +200,15 @@ end
 function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number)
 	if not fuseLabel then return end
 	local now = os.clock()
+	local phase = state ~= nil and not state.over and state.endPhase == true
+	if phase and not phaseOn then phaseAt = now end
+	phaseOn = phase
+	if phaseLabel then
+		phaseLabel.Text = if not phase then "" else ("%s: everyone +%d%% speed"):format(
+			if #state.alive <= 2 then "FINAL TWO" else "OVERTIME", math.floor((Config.END_PHASE_SPEED - 1) * 100 + 0.5))
+		phaseLabel.TextTransparency = if now - phaseAt < PHASE_FLASH then 0.6 * (0.5 + 0.5 * math.sin(now * 6 * math.pi))
+			else 0
+	end
 	local pop = now - popAt
 	popLabel.TextTransparency = math.clamp((pop - POP_TIME * 0.6) / (POP_TIME * 0.4), 0, 1)
 	-- The holder's wait: a big count to GO on their screen; everyone else is told to run.
@@ -227,7 +248,12 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	end
 	local mine = state.it == me
 	fuseLabel.Text = ("%s  %.1f"):format(if mine then "YOU'RE IT" else (Hud.nameOf(state.it) .. " is it"), fuseLeft)
-	fuseLabel.TextColor3 = if mine then Color3.fromRGB(255, 90, 70) else Color3.new(1, 1, 1)
+	local base = if mine then Color3.fromRGB(255, 90, 70) else Color3.new(1, 1, 1)
+	local lv = Tag.ignition(fuseLeft) -- H23: the same growth as the holder's ember rim (Look:ignite)
+	local beat = 0.5 + 0.5 * math.sin(now * 2 * math.pi * (FUSE_BEAT[1] + (FUSE_BEAT[2] - FUSE_BEAT[1]) * lv))
+	fuseLabel.TextColor3 = if lv > 0 then base:Lerp(IGNITE_RED, math.min(1, 0.5 + lv)):Lerp(IGNITE_HOT, 0.5 * beat * lv)
+		else base
+	fuseLabel.TextSize = FUSE_SIZE * (1 + FUSE_SWELL * lv * beat)
 	if mine and frozenLeft > 0 then
 		statusLabel.Text = "you're it: wait for GO"
 	elseif Items.holdOf(me) then -- H19: what holds you, and for a trap how to get out. Above the tag-freeze line: a

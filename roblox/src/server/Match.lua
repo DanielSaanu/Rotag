@@ -53,6 +53,7 @@ local lastStarter: number? = nil
 local ready: { [number]: boolean } = {}
 local dueSince: number? = nil
 local lastSent, dirty = -math.huge, true
+local endOn = false -- H23: the end phase as last sent; a flip is sent at once, not on the next resync
 local studio = RunService:IsStudio()
 local log = function(...) if studio then print("[Rotag] tag:", ...) end end
 
@@ -91,6 +92,7 @@ local function snapshot(now: number)
 		winner = r and r.winner,
 		ghosts = ghosts, -- H18: { { id } } for every present ghost (ghosts.md §4)
 		ward = ward, -- seconds before any ghost may hex again
+		endPhase = r ~= nil and Tag.endPhase(r, now), -- H23, rule 51: the server's call, on its own clock (endgame.md)
 	}
 end
 
@@ -307,6 +309,10 @@ local function step(dt: number)
 			dirty = true
 		end
 		if r.over then nextRoundAt = now + Config.ROUND_GAP end
+		if Tag.endPhase(r, now) ~= endOn then
+			endOn, dirty = not endOn, true
+			if endOn then log(("END PHASE: %d alive, %.0fs into the round"):format(Tag.aliveCount(r), now - r.started)) end
+		end
 	elseif now >= nextRoundAt then
 		startRound(now)
 	end

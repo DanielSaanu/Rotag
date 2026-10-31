@@ -16,6 +16,7 @@ local MARGIN = Config.STUDS_PER_TILE / 2 -- studs past the edge where half the 4
 local INSET = 3.5 -- studs in from the edge (at the 48-stud view, ~50 px on a 700 px tall screen)
 local SIZE = 34 -- px, the badge
 local RED, WHITE = Color3.fromRGB(255, 50, 40), Color3.fromRGB(245, 245, 245)
+local HOT = Color3.fromRGB(255, 230, 90) -- the holder's arrow beats toward this as its fuse runs out (QA round 1, H23)
 local GHOST_BLUE = Color3.fromRGB(170, 215, 255)
 
 local gui: ScreenGui? = nil
@@ -65,7 +66,8 @@ local function build(): { frame: Frame, pointer: Frame, label: TextLabel }
 end
 
 -- Every render frame, after the camera moved. `me` is our runner id; `state` the server's last MatchState (or nil).
-function Arrows.update(me: number, state: any)
+-- `ignition(id)` (H23): 0..1 as the holder's fuse runs out; its off-screen arrow beats red to hot yellow with it.
+function Arrows.update(me: number, state: any, ignition: ((number) -> number)?)
 	if not gui then return end
 	local camera = workspace.CurrentCamera
 	if not camera then return end
@@ -90,6 +92,10 @@ function Arrows.update(me: number, state: any)
 					for _, e in state.ghosts do if e.id == id then ghost = true end end
 				end
 				local color = if holder then RED elseif ghost then GHOST_BLUE else WHITE
+				if holder and ignition then
+					local ign = ignition(id)
+					if ign > 0 then color = RED:Lerp(HOT, ign * (0.5 + 0.5 * math.sin(os.clock() * (2 + 6 * ign) * 2 * math.pi))) end
+				end
 				m.label.BackgroundColor3 = color
 				m.label.Text = string.upper(string.sub(nameOf(id), 1, 1))
 				m.label.TextColor3 = if ghost then GHOST_BLUE else Color3.new(0, 0, 0)

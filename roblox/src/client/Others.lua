@@ -115,9 +115,9 @@ end
 -- Every render frame, after the camera. `ghostMode(id)` (H15): nil for the living, "ready"/"cooling" for a ghost.
 -- `iced(id)` (H21): the ice beam holds it, so its Look draws the frozen rim. `heldOf(id)` (H21): the hold on runner
 -- id, or nil (only once the sheet has the hold art), for the streamless runners' poses. `boosted(id)` (H22): the
--- boost grant is on it, so its Look draws the orange halo.
+-- boost grant is on it, so its Look draws the orange halo. `ignition(id)` (H23): 0..1, how far its ignition has grown.
 function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((number) -> boolean)?,
-	heldOf: ((number) -> any?)?, boosted: ((number) -> boolean)?)
+	heldOf: ((number) -> any?)?, boosted: ((number) -> boolean)?, ignition: ((number) -> number)?)
 	local now = os.clock()
 	for model, d in drawn do
 		if not d.root.Parent or (player and model == player.Character) then
@@ -157,6 +157,7 @@ function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((numb
 		d.look:ghost(if ghostMode then ghostMode(d.id) else nil)
 		d.look:frozen(iced ~= nil and iced(d.id))
 		d.look:boost(boosted ~= nil and boosted(d.id))
+		d.look:ignite(if ignition then ignition(d.id) else 0)
 		d.look:draw(sprite, facing, dashing, vx, dt)
 	end
 end
@@ -164,6 +165,13 @@ end
 -- Where another runner's sprite is drawn (its stream spot), or the root's own position for our runner and the dummy.
 function Others.positionOf(root: BasePart): Vector3
 	return byRoot[root] or root.Position
+end
+
+-- Where runner `id` was drawn this frame, or nil (not another runner on this screen). H23: the burn-out's spot.
+function Others.drawnAt(id: number): Vector3?
+	local model = byId[id]
+	local d = model and drawn[model]
+	return d and d.at
 end
 
 -- A tag landed (TagVerdict): `from` lunges to `to`. Our own sprite is welded to our body and we saw the touch

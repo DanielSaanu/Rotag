@@ -1,6 +1,6 @@
 # Parkour Tag (working title): Game Design Notes
 
-_Last updated: 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
+_Last updated: 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
 
 This is the design contract. Code and art are judged against it. A change to §2 (locked decisions) or §3 (the
 adopted rules) is escalation trigger 1 (`CLAUDE.md`). Portable principles that are not about this game live in
@@ -178,7 +178,8 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
 50. **Ignition (rule 2):** from `IGNITE_AT` (trial 10 s) left on the fuse the holder is visibly ignited, growing as it
     burns, drawn by every client from the replicated fuse; elimination plays a burn-out. Ignitions and burn-outs are
     the first cosmetic slot (§6.5).
-51. **End-phase speed (rule 3):** only in the end phase (the final two living, or a round past `END_PHASE_AFTER`),
+51. **End-phase speed (rule 3):** only in the end phase (the final two living of a round that began with three or more,
+    or a round past `END_PHASE_AFTER`, trial 120 s; H23, [endgame.md](systems/endgame.md)),
     every living runner's top speed is multiplied by `END_PHASE_SPEED` (trial 1.1), alongside rule 3's map shrink;
     the ramp and the grant apply on top. Never during a normal fuse.
 
@@ -234,6 +235,9 @@ No 2D, side-on parkour tag game has made it big on Roblox. The few 2D projects o
 7. **Bots.** Scope for a basic bot that chases, flees and uses abilities.
 8. **Maps** (H16). 3-4 from the start, differing in layout (rule 48): Tower (vertical), Yard (open), Warren (maze),
    Rooftops (gaps); feels in [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md) §6. Open: which first, and size.
+9. ~~**`END_PHASE_AFTER`.**~~ **Resolved-trial 2026-10-31 (H23, heavy; Danzo to confirm):** 120 s, not the
+   proposal's 150: the final two normally arrive first (~83-100 s), and a round still 3+ alive at 2:00 ends near 3:00,
+   inside the pillar (150 would end near 3:30). Reasoning: [endgame.md](systems/endgame.md) §5.
 
 ---
 

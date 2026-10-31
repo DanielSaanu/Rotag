@@ -21,6 +21,7 @@ export type Round = {
 	                          -- one holder by this, never by the holder's id (→ S12; H15's mark used it)
 	winner: number?,
 	over: boolean,
+	started: number,          -- when the round began: the end phase's clock (rule 51, H23)
 }
 
 -- The fuse a NEW holder gets after an elimination (not a pass): it shrinks per elimination (tag.md §5, decision e).
@@ -64,6 +65,7 @@ function Tag.newRound(order: { number }, starter: number, now: number): Round
 	return {
 		order = table.clone(order), alive = alive, it = starter, fuse = Config.FUSE_START, since = now,
 		frozenUntil = frozenUntil, chaseFrom = frozenUntil, eliminations = 0, hold = 0, winner = nil, over = false,
+		started = now,
 	}
 end
 
@@ -215,9 +217,28 @@ end
 
 -- A runner's run-speed multiplier (rules 4, 46; H22): the holder's ramp, a ghost's boost grant, never both stacked:
 -- boost = max(ramp, grant). The grant equals the ramp's top, so a granted holder reaches the top sooner, never above.
-function Tag.speedMult(isIt: boolean, chaseTime: number, granted: boolean): number
+-- H23, rule 51: in the end phase every LIVING runner's multiplier is that x END_PHASE_SPEED (the caller passes
+-- endPhase only for the living); the dash is never scaled (Movement), so the speed check's budget still holds.
+function Tag.speedMult(isIt: boolean, chaseTime: number, granted: boolean, endPhase: boolean?): number
 	local ramp = if isIt then Tag.chaserBoost(chaseTime) else 1
-	return math.max(ramp, if granted then 1 + Config.GRANT_BOOST else 1)
+	local m = math.max(ramp, if granted then 1 + Config.GRANT_BOOST else 1)
+	return if endPhase then m * Config.END_PHASE_SPEED else m
+end
+
+-- Rule 51 (H23, docs/systems/endgame.md): the end phase is on once only two are left alive in a round that began with
+-- three or more (a round that STARTED with two is a normal fuse until END_PHASE_AFTER), or once the round has run
+-- END_PHASE_AFTER. Sticky with no stored flag: the living only ever fall and the clock only runs on. The server
+-- decides it on its own clock and sends it in MatchState; clients only read it.
+function Tag.endPhase(r: Round, now: number): boolean
+	if r.over then return false end
+	return (#r.order > 2 and Tag.aliveCount(r) <= 2) or now - r.started >= Config.END_PHASE_AFTER
+end
+
+-- Rule 50 (H23): how far the holder's ignition has grown, 0 above IGNITE_AT seconds left, rising linearly to 1 at 0.
+-- Every client draws it from the replicated fuse; nothing decides on it.
+function Tag.ignition(fuseLeft: number): number
+	if fuseLeft >= Config.IGNITE_AT then return 0 end
+	return math.clamp(1 - fuseLeft / Config.IGNITE_AT, 0, 1)
 end
 
 -- Round-ready (H11, players.md §5): a round may start once every present PLAYER has told the server it is drawing

@@ -258,4 +258,63 @@ do -- rule 46 (H22): boost = max(ramp, grant); the grant never stacks on the ram
 	assert(near(Tag.speedMult(true, half, true), 1 + Config.GRANT_BOOST), "half ramp + grant = the grant, not the sum")
 end
 
+do -- rule 51 (H23, endgame.md): the end phase, by count (the final two of a round that began with 3+) and by time
+	local r = Tag.newRound({ A, B, C, D }, A, 0)
+	assert(r.started == 0 and not Tag.endPhase(r, 0), "a four-runner round starts in a normal fuse")
+	assert(not Tag.endPhase(r, Config.END_PHASE_AFTER - 0.01), "not before END_PHASE_AFTER with four alive")
+	assert(Tag.endPhase(r, Config.END_PHASE_AFTER), "on at END_PHASE_AFTER, however many are alive")
+	-- by count: burn A out (3 alive: still off), then the next holder (2 alive: on)
+	local t = Config.START_FREEZE + Config.FUSE_START
+	assert(Tag.tick(r, t) == A and Tag.aliveCount(r) == 3 and not Tag.endPhase(r, t), "three alive: still a normal fuse")
+	local t2 = t + Config.TAG_FREEZE + Tag.freshFuse(1)
+	assert(Tag.tick(r, t2) ~= nil and Tag.aliveCount(r) == 2, "a second burn-out: the final two")
+	assert(t2 < Config.END_PHASE_AFTER and Tag.endPhase(r, t2), "the final two: on, before the time cap")
+	-- sticky: a pass changes nothing, and it stays on to the end of the round
+	assert(r.it == C, "rotation: C after B")
+	Tag.pass(r, D, t2 + Config.TAG_FREEZE + 1)
+	assert(Tag.endPhase(r, t2 + Config.TAG_FREEZE + 1) and Tag.endPhase(r, t2 + 1000), "once on, never off in the round")
+	assert(Tag.tick(r, 1e6) ~= nil and r.over and not Tag.endPhase(r, 1e6), "a round that is over has no end phase")
+	-- a round that STARTED with two is a normal fuse until the time cap (rule 51: "never during a normal fuse")
+	local duel = Tag.newRound({ A, B }, A, 10)
+	assert(not Tag.endPhase(duel, 10) and not Tag.endPhase(duel, 10 + Config.END_PHASE_AFTER - 0.01), "a 2-runner round")
+	assert(Tag.endPhase(duel, 10 + Config.END_PHASE_AFTER), "the clock is the round's own (started at 10)")
+	-- a leave that leaves two counts too: two runners are left either way
+	local l = Tag.newRound({ A, B, C }, A, 0)
+	Tag.leave(l, C, 3)
+	assert(not l.over and Tag.endPhase(l, 3), "three, one leaves: the final two")
+end
+
+do -- rule 51 (H23): every living runner x END_PHASE_SPEED, the ramp and the grant on top, still never stacked together
+	local full, half = Config.RAMP_DELAY + Config.RAMP_TIME, Config.RAMP_DELAY + Config.RAMP_TIME / 2
+	local E = Config.END_PHASE_SPEED
+	assert(E >= 1, "the end phase never slows anyone")
+	assert(Tag.speedMult(false, 0, false, false) == 1 and Tag.speedMult(false, 0, false) == 1, "off: unchanged")
+	assert(near(Tag.speedMult(false, 0, false, true), E), "a runner in the end phase")
+	assert(near(Tag.speedMult(true, half, false, true), Tag.chaserBoost(half) * E), "the holder: ramp x end phase")
+	assert(near(Tag.speedMult(false, 0, true, true), (1 + Config.GRANT_BOOST) * E), "granted: grant x end phase")
+	assert(near(Tag.speedMult(true, full, true, true), (1 + Config.RAMP_MAX) * E), "the top: max(ramp, grant) x E")
+	assert(near(Tag.speedMult(true, half, true, true), (1 + Config.GRANT_BOOST) * E), "half ramp + grant: still max, x E")
+	-- and Movement holds it: the end-phase top speed is reached and held, the dash unscaled
+	local s = Movement.new(0, 0)
+	local top = (1 + Config.RAMP_MAX) * E
+	for _ = 1, 120 do
+		Movement.step(s, { moveX = 1, jumpPressed = false, jumpHeld = false, dashPressed = false, speedMult = top },
+			{ ground = 0 }, 1 / 60)
+	end
+	assert(near(s.vx, Config.RUN_SPEED * top, 1e-6), ("the end-phase holder's top speed: %.3f"):format(s.vx))
+end
+
+do -- rule 50 (H23): the ignition grows from 0 at IGNITE_AT left to 1 at 0, linearly, and never outside 0..1
+	assert(Config.IGNITE_AT > 0 and Config.IGNITE_AT < Tag.freshFuse(100), "ignites inside even the shortest fuse")
+	assert(Tag.ignition(Config.FUSE_START) == 0 and Tag.ignition(Config.IGNITE_AT) == 0, "nothing above IGNITE_AT")
+	assert(near(Tag.ignition(Config.IGNITE_AT / 2), 0.5) and near(Tag.ignition(0), 1), "half way, then full at 0")
+	assert(Tag.ignition(-1) == 1 and Tag.ignition(Config.IGNITE_AT - 0.01) > 0, "clamped; on the moment it starts")
+	local last = 0
+	for i = 100, 0, -1 do
+		local v = Tag.ignition(Config.IGNITE_AT * i / 100)
+		assert(v >= last, "it only grows as the fuse runs down")
+		last = v
+	end
+end
+
 print("tag ok")

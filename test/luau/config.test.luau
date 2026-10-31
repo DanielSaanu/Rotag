@@ -26,4 +26,12 @@ assert(Config.GRANT_BOOST == 0.15 and Config.GRANT_TIME == 5, "boost grant: +15%
 assert(Config.FIXTURE_CAP == 3 and Config.FIXTURE_FADE == 1, "3 live fixtures per ghost; a 4th fades the oldest in 1 s")
 assert(Config.PLACE_CLEAR == Config.STUDS_PER_TILE, "a placed part keeps 1 tile from every living runner")
 assert(Config.PAD_SPEED_X <= Config.DASH_SPEED and Config.PAD_SPEED_Y <= 2 * Config.JUMP_SPEED, "pad inside the check")
+-- DESIGN §3 rules 50-51 (H16 spec, built H23; trial numbers, endgame.md §5). Change the rule text and these together.
+assert(Config.IGNITE_AT == 10 and Config.IGNITE_AT < Config.FUSE_MIN, "ignite at 10 s left, inside every fuse")
+assert(Config.END_PHASE_SPEED == 1.1, "end phase: x1.1 top speed")
+assert(Config.END_PHASE_SPEED >= 1 and Config.RUN_SPEED * (1 + math.max(Config.RAMP_MAX, Config.GRANT_BOOST))
+	* Config.END_PHASE_SPEED < Config.DASH_SPEED, "the fastest end-phase run stays under the dash (the check's x rate)")
+-- H23's pick for the one open number (DESIGN §6): after the proposal's ~1:40 final two, inside the 2-3 minute pillar
+assert(Config.END_PHASE_AFTER == 120 and Config.END_PHASE_AFTER > Config.FUSE_START + Config.FUSE_START - Config.FUSE_SHRINK,
+	"the time cap never bites before two whole unpassed lives (45 + 35) have burnt")
 print("config ok")

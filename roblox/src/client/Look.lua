@@ -26,6 +26,14 @@ local RIM_TINT = Color3.fromRGB(0x45, 0xe0, 0xff)
 local BOOST_TINT = Color3.fromRGB(255, 140, 40)
 local RIM_SCALE = 1.08
 local ICE_LINE = 0.012 -- of the canvas: ~3 px at SURFACE_PPS
+-- H23 (rule 50, docs/systems/endgame.md §3): the ignition, a third rim in ember red-orange (below the freeze, above the
+-- grant) growing from RIM_SCALE to IGNITE_SCALE and flickering faster as the fuse runs down, and embers off the runner
+-- at up to EMBER_RATE a second. Placeholder art from parts and a stock particle, no sheet upload.
+local EMBER_TINT = Color3.fromRGB(255, 70, 20)
+local IGNITE_SCALE = 1.25
+local EMBER_RATE = 35 -- QA round 1: 60 at LightEmission 1 whited the sprite out; the rim is the signal
+local FLICKER = { 2, 10 } -- rim flickers per second at the first spark and at burn-out
+local EMBER_COLORS = ColorSequence.new(Color3.fromRGB(255, 220, 110), Color3.fromRGB(220, 40, 10)) -- hot to ember
 
 -- Juice targets as {x scale, y scale}; each eases back to {1, 1} (DESIGN §3 rule 21). Feet stay planted.
 local JUICE = {
@@ -58,8 +66,8 @@ end
 
 function Look:_clear()
 	if self.holder then self.holder:Destroy() end
-	self.holder, self.image, self.rim, self.iceLine = nil, nil, nil, nil
-	self.frozenOn = false
+	self.holder, self.image, self.rim, self.iceLine, self.embers = nil, nil, nil, nil, nil
+	self.frozenOn, self.igniteLevel = false, 0
 end
 
 function Look:_build()
@@ -170,9 +178,13 @@ function Look:draw(spriteName: string, facing: number, dashing: boolean, vx: num
 	if rim and rim.Visible then -- the same rect, turn and feet as the frame, a little larger (Look:frozen, Look:boost)
 		rim.Image, rim.ImageRectOffset, rim.ImageRectSize = image.Image, image.ImageRectOffset, image.ImageRectSize
 		rim.ResampleMode, rim.Rotation = image.ResampleMode, image.Rotation
-		rim.Size = UDim2.fromScale(BASE * self.sx * RIM_SCALE, BASE * self.sy * RIM_SCALE)
+		local lv = if self.frozenOn then 0 else self.igniteLevel -- H23: the ember rim grows and flickers
+		local scale = if lv > 0 then RIM_SCALE + (IGNITE_SCALE - RIM_SCALE) * lv else RIM_SCALE
+		rim.ImageTransparency = if lv > 0
+			then 0.3 * (0.5 + 0.5 * math.sin(os.clock() * 2 * math.pi * (FLICKER[1] + (FLICKER[2] - FLICKER[1]) * lv))) else 0
+		rim.Size = UDim2.fromScale(BASE * self.sx * scale, BASE * self.sy * scale)
 		-- centred on the frame: its bottom sits half the growth below the frame's
-		rim.Position = UDim2.fromScale(image.Position.X.Scale, image.Position.Y.Scale + (RIM_SCALE - 1) / 2 * BASE * self.sy)
+		rim.Position = UDim2.fromScale(image.Position.X.Scale, image.Position.Y.Scale + (scale - 1) / 2 * BASE * self.sy)
 	end
 end
 
@@ -197,7 +209,8 @@ end
 -- itself, tinted ice cyan and RIM_SCALE larger, plus a thin cyan line at the feet. Built on the first freeze, hidden
 -- after. ImageColor3 multiplies, so the copy reads cyan only where the art is light (Danzo's Play judges it).
 function Look:_rim()
-	local tint = if self.frozenOn then RIM_TINT elseif self.boostOn then BOOST_TINT else nil
+	local tint = if self.frozenOn then RIM_TINT elseif self.igniteLevel > 0 then EMBER_TINT
+		elseif self.boostOn then BOOST_TINT else nil
 	if tint and not self.rim then
 		local rim = Instance.new("ImageLabel")
 		rim.Name = "RotagRim"
@@ -234,6 +247,36 @@ function Look:boost(on: boolean)
 	if on == self.boostOn or not self.image then return end
 	self.boostOn = on
 	self:_rim()
+end
+
+-- H23 (rule 50): `level` 0..1 is how far the holder's ignition has grown (Tag.ignition; 0 = not the holder or not
+-- yet). Every frame, for every runner: cheap when nothing changes (one compare), the emitter is built on first use.
+function Look:ignite(level: number)
+	if not self.holder or level == self.igniteLevel then return end
+	local was = self.igniteLevel > 0
+	self.igniteLevel = level
+	if (level > 0) ~= was then self:_rim() end
+	if level > 0 and not self.embers then
+		local at = Instance.new("Attachment")
+		at.Name = "RotagEmbers"
+		at.Parent = self.holder
+		local e = Instance.new("ParticleEmitter")
+		e.Color, e.LightEmission, e.ZOffset = EMBER_COLORS, 0.5, 1
+		e.Size = NumberSequence.new(1.4, 0) -- H23 Studio: 0.6 read as one yellow dot at play zoom
+		e.Transparency = NumberSequence.new(0, 1)
+		e.Lifetime, e.Speed = NumberRange.new(0.4, 0.8), NumberRange.new(5, 10)
+		e.SpreadAngle, e.Acceleration, e.Drag = Vector2.new(35, 35), Vector3.new(0, 8, 0), 2
+		e.Parent = at
+		local glow = Instance.new("PointLight") -- lights the map around the holder: the glow rule 2 asks for
+		glow.Color, glow.Shadows = EMBER_TINT, false
+		glow.Parent = at
+		self.embers, self.glow = e, glow
+	end
+	if self.embers then
+		self.embers.Enabled = level > 0
+		self.embers.Rate = EMBER_RATE * level
+		self.glow.Enabled, self.glow.Range, self.glow.Brightness = level > 0, 6 + 10 * level, 1 + 3 * level
+	end
 end
 
 -- The sheet ids changed after this look was built (Remotes.SheetIds landed late): re-apply on the next draw.

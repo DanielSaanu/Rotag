@@ -36,3 +36,9 @@ the runner's SurfaceGui did. Build markers the way the runner is drawn, and LOOK
 (the old sprites too, whose rects moved) draws the wrong part of the old picture until Danzo uploads. Guard new art with
 `Sprites.Has` so code can ship BEFORE the build; between build and upload, do not judge the look in Studio, and tell
 Danzo to upload before he plays. *(2026-10-19, handoff H21, the item art.)*
+
+**A7 — Judge a glow by a capture at play zoom, and make a glow out of light, not a tint.** The camera shows 48 studs
+top to bottom, so a 0.6-stud particle is one dot and an `ImageColor3` tint MULTIPLIES dark art toward black: the
+first ignition (an ember rim plus small embers) read as nothing in a Studio capture. A `PointLight` that lights the map
+around the runner, and particles over a stud, read at once. Capture the effect in Play before calling it readable.
+*(2026-10-31, handoff H23, `client/Look:ignite`.)*

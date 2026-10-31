@@ -253,6 +253,8 @@ for a rule Danzo removed (the comeback) is retired WITH its DESIGN rule, never t
    via the loop (sprite or particle; upload is Danzo's). End phase: `Tag` decides it (final two or past
    `END_PHASE_AFTER`), `MatchState` carries it, `Movement`'s `speedMult` and `MoveCheck`'s budget both scale by
    `END_PHASE_SPEED` (the speed check must never flag an end-phase runner). Tests: tag, move_check. Triggers: 2, 3, 6.
+   *Built 2026-10-31 (H23):* `MoveCheck` needed no scaling (its x rate is the dash; driven in the test), see
+   [endgame.md](endgame.md).
 6. **Maps** (rule 48, §6.8). Map data instead of the hand-built test arena: floors, walls, anchors, pads, orb spots
    (living and ghost), keep-clear zones, start spots; the first map (Danzo picks which), then the others; rule 3's map
    shrink with the end phase. Triggers: 1 (which map, the shrink's shape), 2 if the map format is shared.

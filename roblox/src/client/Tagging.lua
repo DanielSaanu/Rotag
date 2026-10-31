@@ -46,10 +46,17 @@ end
 function Tagging.hitStopped(): boolean
 	return os.clock() < hitStopUntil
 end
--- H22, rule 46: the holder's ramp or a ghost's boost grant, never both: Tag.speedMult = max(ramp, grant).
+-- H22, rule 46: the holder's ramp or a ghost's boost grant, never both: Tag.speedMult = max(ramp, grant). H23, rule
+-- 51: x END_PHASE_SPEED for the living while the server's MatchState says the end phase is on (endgame.md).
 function Tagging.speedMult(granted: boolean?): number
 	if not state or state.over then return 1 end
-	return Tag.speedMult(state.it == me, state.chaseFor + since(), granted == true)
+	return Tag.speedMult(state.it == me, state.chaseFor + since(), granted == true,
+		state.endPhase and Tagging.isAlive(me))
+end
+-- H23, rule 50: how far runner `id`'s ignition has grown (0..1): only the holder, from the replicated fuse.
+function Tagging.ignition(id: number): number
+	if not state or state.over or state.it ~= id then return 0 end
+	return Tag.ignition(Tagging.fuseLeft())
 end
 
 -- This runner's entry in MatchState.ghosts ({ id }, H18), or nil if it is not a ghost.
@@ -131,6 +138,7 @@ function Tagging.start(player: Player, onState: (any) -> (), onVerdict: (any) ->
 				s.frozenFor = tonumber(s.frozenFor) or 0
 				s.chaseFor = tonumber(s.chaseFor) or 0
 				s.ward = tonumber(s.ward) or 0 -- H15: absent from an older server, so default to "no ghosts"
+				s.endPhase = s.endPhase == true -- H23: absent or malformed reads as a normal fuse
 				local ghosts = {}
 				if type(s.ghosts) == "table" then
 					for _, e in s.ghosts do

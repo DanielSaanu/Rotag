@@ -375,4 +375,48 @@ do -- H22, rules 15 and 46: a boost pad and a boost grant never make an honest r
 	assert(#rb == 0 and near(fastest, Config.RUN_SPEED * (1 + Config.GRANT_BOOST), 1e-6), "a granted run: 51.75, clean")
 end
 
+do -- H23, rule 51 (trust.md §8): the end phase lifts the RUN by END_PHASE_SPEED on top of the ramp or grant, never the
+	-- dash, so the speed check's x rate (the dash) still covers it and MoveCheck needs no end-phase input. Driven, not
+	-- argued: the fastest chain, a held run and the pad chain, each 10 s at the end phase's top multiplier.
+	local top = (1 + math.max(Config.RAMP_MAX, Config.GRANT_BOOST)) * Config.END_PHASE_SPEED
+	local function boosted(choose)
+		return function(i, st)
+			local inp = choose(i, st)
+			inp.speedMult = top
+			return inp
+		end
+	end
+	local s = standing(ARENA, 0)
+	local bad, deepest, fastest = watched(ARENA, s, 600, boosted(fastestChain()))
+	assert(#bad == 0, "the fastest end-phase chain is never flagged: " .. (bad[1] or ""))
+	assert(fastest <= Config.DASH_SPEED + Config.JUMP_H_BOOST + 1e-6, "still nothing past dash + jump boost: " .. fastest)
+	print(("    end-phase fastest chain, 10 s: burst used %.2f of %.0f studs, fastest %.2f"):format(deepest, BURST_X, fastest))
+	-- MEASUREMENT (→ S11), H23 2026-10-31: 1.38 studs of the 24, exactly the plain chain's: only the run is scaled
+	assert(deepest > 1.38 - 0.2 and deepest < 1.38 + 0.2, ("end-phase chain burst (measurement): %.2f"):format(deepest))
+	-- a held end-phase run at the top multiplier: 45 x 1.15 x 1.1 = 56.925 studs/s, pinned, clean
+	local r = standing(ARENA, -300)
+	local rb, _, runTop = watched(ARENA, r, 600, boosted(function(_, st) return input({ moveX = if st.x < 380 then 1 else 0 }) end))
+	assert(#rb == 0, "an end-phase run is never flagged: " .. (rb[1] or ""))
+	assert(near(runTop, Config.RUN_SPEED * top, 1e-6) and near(runTop, 56.925, 1e-6),
+		("the end phase's top run speed (measurement): %.3f"):format(runTop))
+	assert(runTop < MoveCheck.RATE_X, "under the x rate with room to spare")
+	-- the pad chain with the end-phase multiplier: a launch, a double jump and a dash on every landing
+	local p = standing(ARENA, 0)
+	local dir, wasGrounded = 1, true
+	local c = MoveCheck.new(p.x, p.y, 0)
+	local pb = {}
+	for i = 1, 600 do
+		if p.x > 380 then dir = -1 elseif p.x < -380 then dir = 1 end
+		local inp = input({ moveX = dir, dash = p.dashes > 0 and p.dashCooldown <= 0 and not p.grounded,
+			jump = not p.grounded and p.vy < 5 and p.airJumps > 0, held = true })
+		if p.grounded and not wasGrounded or i == 1 then inp.launchX, inp.launchY = dir * Config.PAD_SPEED_X, Config.PAD_SPEED_Y end
+		wasGrounded = p.grounded
+		inp.speedMult = top
+		tick(ARENA, p, inp)
+		local ok, axis, over = MoveCheck.step(c, p.x, p.y, i * DT)
+		if not ok then table.insert(pb, ("frame %d: %s over by %.2f"):format(i, tostring(axis), over or 0)) end
+	end
+	assert(#pb == 0, "an end-phase pad chain is never flagged: " .. (pb[1] or ""))
+end
+
 print("move_check: ok")
