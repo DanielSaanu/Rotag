@@ -27,42 +27,75 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H21 — Wire the item and hold art into the client (sprites on parts, hold poses, the frozen edge-light) — 2026-10-19 18:31 — OPEN
-- **Status (heavy, 2026-10-19):** Built, waiting on the sheet upload and Danzo's Play. Detail and decisions:
-  [items.md](systems/items.md) §9; new rule A6. Not committed.
-- **Trigger:** 2 (`shared/Movement.spriteFor` gains the hold poses; `movement_sprites.test.luau` pins them), 6 (the item
-  drawer and Look run every render frame: frame picking must stay allocation-free).
-- **Doc:** `docs/briefs/items-art.md` "Sprite names and sizes" (the contract: names, canvases, who picks the frame);
-  `docs/systems/sprites-and-animation.md` §3-§5 (frames are sprites, the clock picks; SurfaceGui on a part; the checklist
-  for a new animated thing); `docs/systems/items.md`; `client/Items.lua`, `client/Look.lua`, `client/Use.lua`,
-  `shared/Movement.lua`, `shared/Items.lua`.
-- **Observed:** Danzo (2026-10-19): "make it happen": the canvas art (https://claude.ai/artifact/K9dE1GepPSSWB29PKirtyE)
-  is to reach Play. The routine session draws the sprites and scenes IN PARALLEL (`tools/items-rig.js`, rig poses) and
-  runs `roblox build`; Danzo uploads. This handoff is the code half only.
-- **Evidence:** `client/Items.lua` draws orbs, placed things, held icons and hold overlays as coloured Parts; `Look.lua`
-  builds one SurfaceGui + ImageLabel per runner (`Look:_build`, `setSprite`, `Look:ghost`); `Movement.spriteFor` has
-  no hold branch; `Items.holdOf(id)` gives {kind, untilT, presses}; `Sprites.Has(name)`; `server/Items.lua` fires
-  put / gone / hold / free over `ItemEvent` ("gone" covers broke, caught someone, or expired).
-- **Routine session's read (guess):** (1) a small `client/Sprite.lua` helper (or a function in a new module) that puts a
-  SurfaceGui + ImageLabel on a given Part (the Look pattern, bilinear resample) and applies a name, so orbs, crates,
-  traps, beams and icons draw sprites ON the parts they already have (the Part turns transparent when a sprite is
-  applied; stays a coloured placeholder when `Sprites.Has` is false). (2) Orb spin from the clock; the take one-shot
-  on the "orb" event with up=false; trap frames from the hold's presses; crate break on "gone" when the crate caught
-  someone (if "gone" cannot tell that from expiry, add a `why` field to the gone payload and document it in the
-  remotes table). (3) `Movement.spriteFor`: hold == "trap" → `runner_trapped_` .. floor(elapsed*8)%2; hold == "stumble"
-  → `runner_stumble_0/1/2` by elapsed (0.2/0.3/0.2); a freeze keeps the frame it had when the hold landed. Movement is
-  pure: the hold's start time and kind are already inputs; keep it so. Tests pin all three. (4) Look: on a freeze, a
-  second ImageLabel behind the first, same rect, tint `#45e0ff`, 1.08 scale, plus a thin cyan line at the feet; removed
-  on free. (5) Keep the line ceiling: `Items.lua` is near its limit, so the sprite helper and the frame picking go in a
-  new module.
-- **Decision needed:** build it, guarded so it ships before the sheet: every `Sprites.Apply` behind `Sprites.Has`.
-  Verification steps 3-4 (no tree change expected; a new ModuleScript is fine, say so). Update items.md, ghosts.md if
-  touched, `roblox/src/client/README.md`, one worklog line. Leave H21 OPEN "Built, waiting on the sheet upload and
-  Danzo's Play". Do NOT commit; do NOT touch `sprites/`, `scenes/`, `tools/`, `Sprites.lua` or `assets.lock.json`
-  (the routine session owns those this block).
-- **Blocked routine work:** none; the art is drawn alongside.
+### H22 — Build ghosts v2 PR 4: fixtures, boost pads, the boost grant, placement — 2026-10-31 19:00 — OPEN
+- **Status (2026-10-31): Built, QA loop next.** Heavy (Opus) built most of it and was cut off twice by an API safeguard
+  false positive; Danzo said "use fable" and the session finished it: a test index bug, the dummies' refusal log, the
+  docs, the goals file, verification 1-4 and a Studio Play (fixtures O/Z/L/S/T placed and fading, pads, a grant on the
+  player, every refusal reason, a piece stopping the player's runner). Not yet seen live: a player launched by a pad
+  (unit-tested; the reviewer drives it). Detail: `docs/systems/placement.md`; goals `docs/qa/ghosts-v2-placement.md`.
+- **Trigger:** 2 (new pure `shared/Placement.lua`; the boost grant in `shared/Tag.lua`'s ramp path; a speed input in
+  `shared/Movement.lua` and `shared/MoveCheck.lua`), 3 (the server re-checks every placement; `UseItem`'s integer is
+  read as the rotation for the first time; new `ItemEvent` payloads), 6 (the preview's fit test runs every frame on
+  the client: keep it allocation-free).
+- **Doc:** `docs/systems/ghosts-v2-proposal.md` §3 (the fixture, boost pad and boost grant rows; the ghost pool weights
+  fixture 30, pad 15, grant 15, crate 12, trap 10, ice 10, hex 8), §5 (placement and the keep-clear map rule), §8
+  (fairness), §12 item 4 (the build spec); `docs/DESIGN.md` §3 rules 15 (a pad refreshes dash and double jump), 39,
+  42, 46-48; `docs/systems/items.md` §2-§4 (who owns what, what the server trusts, the `ItemEvent` payloads);
+  `docs/systems/README.md` remotes table (`UseItem`, `ItemEvent`); `docs/systems/controls.md` (the "Rotate piece"
+  row: the grapple input, W / C / ↑ / right click / RT, and the GRAPPLE touch button reads ROTATE for a ghost
+  holding a piece); `docs/learnings/tooling.md` (the `CanQuery` and collision-group rules: a server-built part must
+  be a wall and a floor to the client's probes).
+- **Observed:** PRs 1-3 are built, QA'd to 8/10 and pushed. Danzo (2026-10-31): "it works fine on keyboard and mouse,
+  ghosts all of that", phone and pad parked, "next up get to work". The Studio state was checked the same day from
+  the MCP (worklog 2026-10-31): the tree matches the project file, a 4-runner round runs with tags, orbs and all three
+  holds, 0 hand-backs, no Rotag errors. The ghost pool today is hex (1 in 5), crate, trap, ice: a ghost has nothing to
+  place yet, and the grapple input is handed out by `Controls.read` (`grapplePressed` / `grappleHeld`) but unread.
+- **Evidence:** line counts (ceiling 400, `test/structure.test.js`): `server/Match.lua` 381, `shared/Movement.lua`
+  301, `client/Client.client.lua` 287, `client/Controls.lua` 272, `client/Items.lua` 255, `client/Hud.lua` 246,
+  `shared/Items.lua` 229, `shared/Tag.lua` 228, `client/ItemArt.lua` 203, `server/Items.lua` 153, `shared/MoveCheck.lua`
+  135, `server/Bots.lua` 133, `server/Arena.lua` 86. There are no map boost pads in code yet (`grep -i pad` in
+  `Movement`, `Arena`, `Config` finds only a comment) and no DESIGN §2 numbers for one. There are no fixture or pad
+  sprites on the sheet (`node bin/warehouse.js scenes` has none): the art is a separate routine block after this one.
+- **Routine session's read (guess):** (1) `shared/Placement.lua`, pure: the tetromino set as cell lists, rotation in
+  90° steps, the fit test against a list of boxes (map parts, live pieces, pads, orb spots, spawn spots, keep-clear
+  zones) plus the 1-tile runner clearance, the 3-live cap with the oldest fading on a 4th (1 s warning), all with
+  injected inputs so `placement.test.luau` pins it. (2) `server/Arena.lua` gains keep-clear zones (the gap between
+  `WallLeft` and `WallRight`, a box over each spawn spot and orb spot; say which in the doc) and a spawn-spot list;
+  pads and fixtures are server-built anchored Parts in a Workspace folder, solid to every runner including ghosts
+  (proposal §3: "fixtures and pads are map"), in a collision group the runners' probes can see. New server logic in
+  a NEW module (`server/Placement.lua` or `server/Fixtures.lua`), Match only wires it. (3) `UseItem` while holding a
+  fixture or pad: the number is the rotation 0-3; the spot is the server's record of the ghost (its newest trusted
+  sample, one tile ahead of its facing); a refused place costs nothing and prints why. New `ItemEvent` kinds for a
+  piece / pad put and gone (document them in items.md §4 and the README table; arrays only, N13). (4) The boost pad:
+  touching it launches along its arrow and refreshes dash and double jump (rule 15); the numbers are the heavy's
+  trial call, recorded in Config and items.md. The boost grant: a ghost holding it touches a living runner (server
+  judged on its own record, like the orb touch); +15% for 5 s; on the holder boost = max(ramp, grant) in `Tag`'s
+  ramp path; the server tells the client and `MoveCheck`'s budget allows it (the speed check must never flag a
+  granted runner). (5) Client: the preview one tile ahead of the ghost, red when invalid, rotated on the grapple
+  input; the GRAPPLE touch button reads ROTATE while a ghost holds a piece; the slot icon for the three new items.
+  `client/Items.lua` is at 255 and `Controls.lua` at 272, so the preview goes in a new client module. Drawn as
+  coloured Parts until the art block, behind `Sprites.Has` like H21. (6) Dummy ghosts place what they roll
+  (`Bots.uses`) so a solo test sees a piece land and a pad launch.
+- **Decision needed:** build PR 4 as `docs/systems/ghosts-v2-proposal.md` §12 item 4 says, with the trial numbers
+  recorded. Write the QA goals file `docs/qa/ghosts-v2-placement.md` (the builder writes it, in the shape of
+  `docs/qa/ghosts-v2-items.md`) so the routine session can run `/qa-loop` on it. Verification steps 1-4 (new
+  ModuleScripts are fine, say which; no new remote is expected: `UseItem` carries the rotation). Update items.md
+  (and ghosts.md if touched), the README remotes table, `roblox/src/{shared,server,client}/README.md`, controls.md
+  (the rotate input is now read), DESIGN only if a rule's wording must change (say which line). One worklog line.
+  Mark H22 "Built, QA loop next". Do NOT commit: the routine session commits after the loop. Do not touch
+  `sprites/`, `scenes/`, `Sprites.lua` or `assets.lock.json`. If a design call is needed (the tetromino set, the pad
+  numbers, where the test arena's keep-clear zones go), make the recommended call, record it, and list it for Danzo
+  in the goals file rather than stopping.
+- **Blocked routine work:** the QA loop on PR 4, and the fixture and pad art block.
 
 ## Resolved
+
+### H21 — Wire the item and hold art into the client (sprites on parts, hold poses, the frozen edge-light) — 2026-10-19 18:31 — RESOLVED
+- **Resolved 2026-10-31 (heavy build 2026-10-19, Danzo's Play 2026-10-31):** `client/ItemArt` (sprites on the item parts
+  behind `Sprites.Has`), hold poses in `Movement.spriteFor` (trap, the 5-frame roll, freeze keeps its frame), the
+  frozen rim; sheet uploaded 2026-10-19; two post-Play fixes (orbs and crates at full size, dummies show hold poses).
+  Danzo: works fine on keyboard and mouse. → `docs/systems/items.md` §9, A6.
+
 
 ### H20 — A frozen tagger cannot pass the fuse (rule 44 changes for the freeze) — 2026-10-19 18:11 — RESOLVED
 - Built (heavy, not committed): `Items.canTag` refuses an ice-frozen holder's claims on the server's hold record (Match + Bots), iced runners stay taggable, trap/stumble unchanged (flagged); rule 44 reworded; detail in [items.md](systems/items.md) §5.

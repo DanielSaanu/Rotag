@@ -45,6 +45,21 @@ Arena.LIVING_ORBS = {
 Arena.ORBS = table.clone(Arena.GHOST_ORBS) -- every spot server/Orbs runs: ghost ones first (the indices clients see)
 for _, s in Arena.LIVING_ORBS do table.insert(Arena.ORBS, s) end
 
+-- H22 (DESIGN §3 rules 47-48, docs/systems/placement.md §3): what a ghost's part may never cover. The keep-clear zone
+-- is the test map's one corridor, the wall-jump shaft: from a tile before WallLeft's face to a tile past WallRight,
+-- floor to 3 tiles above WallLeft's top, so no stack of pieces can cap the climb or seal the far side. An orb box over
+-- each orb spot (the orb must stay reachable), and every map block. No spawn boxes: every placed part is cleared at
+-- round start, so a spawn spot needs no protection mid-round (QA round 1). { x0, y0, x1, y1, why }, studs.
+Arena.KEEP_CLEAR = { { 17 * T, 0, 24 * T, 12 * T, "keep-clear" } }
+function Arena.static(): { { any } }
+	local out = {}
+	for _, b in BLOCKS do table.insert(out, { b[2], b[3], b[4], b[5], "map" }) end
+	for _, z in Arena.KEEP_CLEAR do table.insert(out, z) end
+	local o = Config.ORB_SIZE / 2
+	for _, s in Arena.ORBS do table.insert(out, { s.x - o, s.y - o, s.x + o, s.y + o, "orb" }) end
+	return out
+end
+
 -- The stock Studio template puts a Baseplate and a SpawnLocation at the origin. Seen side-on, the baseplate's top is
 -- a grey plane running toward the camera, and the spawn pad sits in the runner's plane. Remove both for this Play
 -- only (the place file is not changed) and say so in Output.

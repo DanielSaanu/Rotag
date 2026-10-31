@@ -24,7 +24,7 @@ orbs, Use and the holds, the ghosts' crate, trap and ice, and the per-target war
   (a new ghost brings a waiting orb back sooner; the spec says only "respawn 10 s / (1 + 0.5 x ghosts)").
 - **One slot (rule 42).** Touch an orb that is up with an empty slot and the server rolls the orb's pool into it; a
   full slot passes through and leaves the orb up. Ghost pool: the hex alone in PR 1; since PR 2 (H19) crate 12, trap
-  10, ice 10, hex 8, so the hex is 1 roll in 5; PR 4 adds fixture, boost pad, boost grant (hex 8 in 100). Pools:
+  10, ice 10, hex 8, so the hex is 1 roll in 5; PR 4 (H22) added fixture 30, boost pad 15, boost grant 15: the hex is 8 in 100 ([placement.md](placement.md)). Pools:
   `shared/Items.POOLS` ([items.md](items.md) §1).
 - **The hex (rule 40).** A ghost holding a hex that touches the holder takes `SPOOK_DRAIN` **3 s** off the fuse (never
   below 0) and its slot empties. No per-ghost cooldown (H15's `SPOOK_COOLDOWN` is gone): holding a hex is the limit.

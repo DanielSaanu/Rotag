@@ -20,6 +20,8 @@
   cheating body back; teleports under ~45 studs still pass. Detail: `docs/systems/trust.md`.
 - **Ghosts built (2026-10-14, H15):** eliminated runners spook "it" by touch and can earn one comeback a round (DESIGN §3
   rules 37-41). Waiting on a `rojo serve` restart and Danzo's two-player test below. Detail: `docs/systems/ghosts.md`.
+- **Keyboard and mouse signed off (2026-10-31):** Danzo: "it works fine on keyboard and mouse, ghosts all of that". Phone
+  and iPad tests skipped for now. Next: PR 4 (H22), then the QA loop on it.
 - **Ghosts v2 decided (2026-10-19, H16+H17):** no comeback; orbs for everyone (separate ghost orbs); items crate, trap,
   ice beam, grapple (living kit), boost pad, boost grant, ghost Tetris fixtures, rare hex -3 s; ignition; end-phase speed.
   DESIGN §3 rules 37-51, §6.2 resolved, §6.8 maps. Spec + build order: `docs/systems/ghosts-v2-proposal.md`. Controls
@@ -85,13 +87,14 @@
       (Claude's lean); (b) an interim hex chance on the ghost roll, a Config weight PR 2 removes; (c) slower ghost orbs
       until PR 2 (weakest). Say a, b or c.
       **Danzo (2026-10-19): a.** Then "build 2": H19 opened for PR 2.
-- [ ] **Danzo: Play the checklist** in the summary (keyboard, then the phone preset, then a two-player hex). The
+- [x] **Danzo: Play the checklist** in the summary (keyboard, then the phone preset, then a two-player hex). The
       reviewer could not drive a human's hex; Claude saw dummies do it.
+      **Danzo (2026-10-31): works fine on keyboard and mouse, ghosts too.** Phone and iPad parked for now.
 - [x] **PR 2 (H19) built and QA'd 7 → 8/10 (2026-10-19), pushed.** Living orbs, Use (E / V / RB / click / ITEM
       button), crate stumble, bear trap, ice beam, dash i-frames, per-target ward; ghost pool diluted (hex 1 in 5). Two
       fairness holes closed on the way (pry desync, unenforced freeze). Summary and Danzo's checklist:
       `docs/qa/ghosts-v2-items-summary.md`. Solo knob: `Config.STUDIO_DUMMY_TAGS = false` to get held.
-- [ ] **Danzo: Play the PR 2 checklist.** Nobody has pried a trap by hand yet. Two calls: "own traps safe" if being
+- [x] **Danzo: Play the PR 2 checklist (signed off 2026-10-31, keyboard and mouse).** Nobody has pried a trap by hand yet. Two calls: "own traps safe" if being
       caught by your own trap feels cheap; and do 1 s freeze / half-speed stumble feel fair.
 - [ ] **Danzo (2026-10-19, with the /design brief), two rule calls:** (1) ice does NOT freeze you in place: a frozen
       runner slides on, keeping its momentum (this is rule 44 as written; keep it); (2) **a frozen tagger cannot pass the
@@ -104,9 +107,10 @@
       W / E + mouse; Z / X / C / V, ↑), pad, four touch buttons wrapping the corner (GRAPPLE hidden until its PR, ITEM
       only while holding a usable item, with its icon), pry on action presses never Shift, the trap line names the
       device's input. Summary and Danzo's checklist: `docs/qa/controls-summary.md`.
-- [ ] **Danzo: Play the PR 3 checklist** (keyboard, then the phone preset, then a pad if one is to hand). The calls:
+- [x] **Danzo: Play the PR 3 checklist (keyboard and mouse signed off 2026-10-31; phone, iPad and pad parked).** (Was: keyboard, then the phone preset, then a pad if one is to hand.) The calls:
       W / ↑ as grapple, mouse binds, pry anywhere; is ITEM reachable with the thumb; does the d-pad move you.
-- [ ] **Next (2026-10-19):** PRs 1-2 done and pushed. Build on in the PR order of
+- [ ] **Next (2026-10-31):** PRs 1-3 done, pushed and signed off on keyboard and mouse; PR 4 (fixtures, pads, boost grant,
+      placement) opened as H22. Then 5, then the living grapple, then 6. Earlier: PRs 1-2 done and pushed. Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
       (heavy guess 150 s, not in DESIGN).

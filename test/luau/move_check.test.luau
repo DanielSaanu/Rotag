@@ -332,4 +332,47 @@ do -- the speed a hold is judged from comes from the SERVER's own samples, over 
 		"an unknown speed is read as the dash speed (the most lenient cap)")
 end
 
+do -- H22, rules 15 and 46: a boost pad and a boost grant never make an honest runner suspect. The pad's launch (100
+	-- across, 105 up) and the grant's +15% stay under Movement's caps the check is built on (RATE_X is the dash speed,
+	-- above 1.15 x run; a rise from 105 averages exactly RATE_UP), so neither needs a wider budget. Driven, not argued:
+	-- a pad under every landing, with a double jump at the top and a dash on every cooldown, for 10 s.
+	local s = standing(ARENA, 0)
+	local dir, wasGrounded, deepUp, launches = 1, true, 0, 0
+	local c = MoveCheck.new(s.x, s.y, 0)
+	local bad = {}
+	for i = 1, 600 do
+		if s.x > 380 then dir = -1 elseif s.x < -380 then dir = 1 end
+		local inp = input({ moveX = dir, dash = s.dashes > 0 and s.dashCooldown <= 0 and not s.grounded,
+			jump = not s.grounded and s.vy < 5 and s.airJumps > 0, held = true })
+		if s.grounded and not wasGrounded or i == 1 then inp.launchX, inp.launchY = dir * Config.PAD_SPEED_X, Config.PAD_SPEED_Y end
+		wasGrounded = s.grounded
+		inp.speedMult = 1 + Config.GRANT_BOOST -- and granted the whole time
+		if tick(ARENA, s, inp).launch then launches += 1 end
+		local ok, axis, over = MoveCheck.step(c, s.x, s.y, i * DT)
+		if not ok then table.insert(bad, ("frame %d: %s over by %.2f"):format(i, tostring(axis), over or 0)) end
+		deepUp = math.max(deepUp, MoveCheck.RATE_UP * Config.MOVE_BURST_TIME - c.bu)
+	end
+	assert(#bad == 0, "a pad chain with a grant is never flagged: " .. (bad[1] or ""))
+	assert(launches >= 8, "the chain really launched off pads: " .. launches)
+	print(("    pad chain + grant, 10 s: %d launches, up budget used at most %.2f of %.2f studs"):format(launches, deepUp,
+		MoveCheck.RATE_UP * Config.MOVE_BURST_TIME))
+	-- the fastest flat chain with the grant on: the grant lifts only the run, never the dash, so the chain is unchanged
+	local g = standing(ARENA, 0)
+	local chain = fastestChain()
+	local gb = watched(ARENA, g, 600, function(i, st)
+		local inp = chain(i, st)
+		inp.speedMult = 1 + Config.GRANT_BOOST
+		return inp
+	end)
+	assert(#gb == 0, "the fastest honest chain with a grant is never flagged: " .. (gb[1] or ""))
+	-- and a granted run, held for 10 s, averages 1.15 x run speed: far under RATE_X
+	local r = standing(ARENA, -300)
+	local rb, _, fastest = watched(ARENA, r, 600, function(_, st)
+		local inp = input({ moveX = if st.x < 380 then 1 else 0 })
+		inp.speedMult = 1 + Config.GRANT_BOOST
+		return inp
+	end)
+	assert(#rb == 0 and near(fastest, Config.RUN_SPEED * (1 + Config.GRANT_BOOST), 1e-6), "a granted run: 51.75, clean")
+end
+
 print("move_check: ok")

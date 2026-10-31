@@ -5,8 +5,8 @@
 grapple, mouse binds on, pry with 3 taps anywhere), to be judged by hand; every verb is remappable anyway (the panel
 and its saved data are not built: trigger 9 then). Build: PR 3 of the order in
 [ghosts-v2-proposal.md](ghosts-v2-proposal.md) §12: `roblox/src/client/Controls.lua` holds the whole table as one
-`BINDS` data table (a remap edits lists, not code); the grapple input is handed out but unread until the grapple PR
-(living) and PR 4 (a ghost's rotate); the GRAPPLE touch button stays hidden until then. QA goals:
+`BINDS` data table (a remap edits lists, not code); the grapple input is read by a ghost holding a fixture since PR 4 (H22: it turns the piece, and the GRAPPLE touch
+button reads ROTATE then, [placement.md](placement.md)); for the living it is unread until the grapple PR. QA goals:
 [../qa/controls.md](../qa/controls.md). Bounds: DESIGN §3 rules 20-24 (never floaty, 4 touch buttons at most, lower-middle
 clear, read the mobile joystick). The verb list is H16's, adopted (DESIGN §3 rules 37-51,
 [ghosts-v2-proposal.md](ghosts-v2-proposal.md)); if those verbs change, only rows change here.

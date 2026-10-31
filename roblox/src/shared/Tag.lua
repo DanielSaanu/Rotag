@@ -213,6 +213,13 @@ function Tag.chaserBoost(chaseTime: number): number
 	return 1 + Config.RAMP_MAX * math.min(1, t / Config.RAMP_TIME)
 end
 
+-- A runner's run-speed multiplier (rules 4, 46; H22): the holder's ramp, a ghost's boost grant, never both stacked:
+-- boost = max(ramp, grant). The grant equals the ramp's top, so a granted holder reaches the top sooner, never above.
+function Tag.speedMult(isIt: boolean, chaseTime: number, granted: boolean): number
+	local ramp = if isIt then Tag.chaserBoost(chaseTime) else 1
+	return math.max(ramp, if granted then 1 + Config.GRANT_BOOST else 1)
+end
+
 -- Round-ready (H11, players.md §5): a round may start once every present PLAYER has told the server it is drawing
 -- (Remotes.Ready), or once the round has waited `waited` >= Config.READY_TIMEOUT for them, so one stalled client
 -- cannot hold everyone. `bots` are runners with no client (the Studio dummy): never waited for.

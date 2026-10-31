@@ -46,9 +46,10 @@ end
 function Tagging.hitStopped(): boolean
 	return os.clock() < hitStopUntil
 end
-function Tagging.speedMult(): number
-	if not state or state.over or state.it ~= me then return 1 end
-	return Tag.chaserBoost(state.chaseFor + since())
+-- H22, rule 46: the holder's ramp or a ghost's boost grant, never both: Tag.speedMult = max(ramp, grant).
+function Tagging.speedMult(granted: boolean?): number
+	if not state or state.over then return 1 end
+	return Tag.speedMult(state.it == me, state.chaseFor + since(), granted == true)
 end
 
 -- This runner's entry in MatchState.ghosts ({ id }, H18), or nil if it is not a ghost.

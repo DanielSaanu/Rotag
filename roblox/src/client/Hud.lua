@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Others = require(script.Parent:WaitForChild("Others")) -- the IT marker sits on the DRAWN runner (H13)
 local Items = require(script.Parent:WaitForChild("Items")) -- what the local ghost holds (H18)
+local Place = require(script.Parent:WaitForChild("Place")) -- H22: the local boost grant
 local Controls = require(script.Parent:WaitForChild("Controls")) -- the trap line names the device's pry input (PR 3)
 
 local Hud = {}
@@ -166,8 +167,18 @@ function Hud.spook(v: any, me: number)
 end
 
 -- A ghost's own line (rules 38-40): out for the round; grab a ghost orb, then a held hex drains on touch.
+local GHOST_ITEM = { -- H22: what a ghost does with a part or the grant (docs/systems/placement.md)
+	fixture = "GHOST: PIECE  |  Use places it ahead, grapple turns it (red: no room)",
+	pad = "GHOST: BOOST PAD  |  Use sets it at your feet, its arrow your way",
+	grant = ("GHOST: BOOST  |  touch a runner: +%d%% speed for %gs"):format(Config.GRANT_BOOST * 100, Config.GRANT_TIME),
+}
 local function ghostLine(state: any, me: number): string
-	if Items.held(me) ~= "hex" then return "GHOST: out this round  |  grab a ghost orb" end
+	local held = Items.held(me)
+	if held and GHOST_ITEM[held] then
+		local why = Place.refusal() -- the preview is red: say why (QA round 1)
+		return if why then ("%s  |  NO ROOM: %s"):format(GHOST_ITEM[held], why) else GHOST_ITEM[held]
+	end
+	if held ~= "hex" then return "GHOST: out this round  |  grab a ghost orb" end
 	local ward = math.max(0, (state.ward or 0) - (os.clock() - (state.at or os.clock())))
 	return ("GHOST: HEX held, touch %s for -%gs  |  %s"):format(Hud.nameOf(state.it), Config.SPOOK_DRAIN,
 		if ward > 0 then ("ward %.1f"):format(ward) else "READY")
@@ -232,8 +243,9 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		statusLabel.Text = "next round soon" -- joined after this round began (H8): waiting, not eliminated
 	elseif not inRound then
 		statusLabel.Text = "out (next round soon)"
-	else
-		statusLabel.Text = ""
+	else -- H22: a ghost's boost grant on you (rule 46)
+		local boost = Place.grantLeft(me)
+		statusLabel.Text = if boost > 0 then ("BOOST +%d%%  %.1fs"):format(Config.GRANT_BOOST * 100, boost) else ""
 	end
 	local warded = (state.ward or 0) - (now - (state.at or now)) > 0 and #state.ghosts > 0
 	if wasWarded and not warded then flashUntil = now + WARD_FLASH end

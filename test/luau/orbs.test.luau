@@ -77,9 +77,22 @@ do -- rule 43: the holder rolls the holder pool (ice first), a runner the runner
 	local t = Config.ORB_FIRST
 	Orbs.step(o, t, 1, { { id = A, x = 0, y = Y, ghost = false, holder = true }, { id = B, x = 50, y = Y, ghost = false },
 		ghostAt(C, 100, Y) }, fixed(0))
-	assert(o.held[A] == "ice" and o.held[B] == "crate" and o.held[C] == "crate",
-		("holder ice, runner crate, ghost crate at rand 0; saw %s %s %s"):format(tostring(o.held[A]), tostring(o.held[B]),
+	-- H22: the ghost pool's first row is the fixture since PR 4 filled the pool (spec §12; it was the crate in PR 2)
+	assert(o.held[A] == "ice" and o.held[B] == "crate" and o.held[C] == "fixture",
+		("holder ice, runner crate, ghost fixture at rand 0; saw %s %s %s"):format(tostring(o.held[A]), tostring(o.held[B]),
 			tostring(o.held[C])))
+	-- the fixture's tetromino is rolled with it (the same source: rand 0 is the first shape) and only a fixture has one
+	assert(o.piece[C] == "I" and o.piece[A] == nil and o.piece[B] == nil, "a fixture carries its shape: " .. tostring(o.piece[C]))
+	assert(Orbs.use(o, C) == "fixture" and o.piece[C] == nil, "using it clears the shape with the slot")
+end
+
+do -- H22: the event that hands a ghost a fixture names its shape, so every screen (and its preview) knows the piece
+	local o = Orbs.new({ { x = 0, y = Y, kind = "ghost" } }, 0)
+	local ev = Orbs.step(o, Config.ORB_FIRST, 1, { ghostAt(A, 0, Y) }, fixed(0.4))
+	assert(ev[1].item == "pad" and ev[1].piece == nil, "rand 0.4 is a pad (the 30-45 band of 100): no shape")
+	ev = Orbs.step(o, Config.ORB_FIRST + 100, 1, { ghostAt(B, 0, Y) }, fixed(0.29))
+	assert(ev[1].item == "fixture" and ev[1].piece == "T" and o.piece[B] == "T",
+		"rand 0.29 is a fixture, and its shape floor(0.29 x 7) + 1 = the 3rd (T); saw " .. tostring(ev[1].piece))
 end
 
 do -- first come, first served: the earlier taker in the list (the server's join order) gets it

@@ -11,13 +11,14 @@ local Movement = {}
 -- hold (H19, DESIGN §3 rule 44, docs/systems/items.md): "stumble" carries on at STUMBLE_SPEED x run speed toward
 -- holdDir, "freeze" slides with no input as the speed bleeds to 0 over holdLeft seconds, "trap" pins. No steer, jump or
 -- dash in any of them; a dash in progress ends.
+-- launchX / launchY (H22, rule 15): a boost pad's launch this frame (shared/Placement.launch), ignored in a hold.
 export type Input = { moveX: number, jumpPressed: boolean, jumpHeld: boolean, dashPressed: boolean, touch: boolean?,
-	speedMult: number?, hold: string?, holdDir: number?, holdLeft: number? }
+	speedMult: number?, hold: string?, holdDir: number?, holdLeft: number?, launchX: number?, launchY: number? }
 -- Distances in studs from the runner's collider to the nearest surface on each side, nil if nothing is in reach.
 -- ground is feet-to-floor (negative when sunk into it), ceiling head-to-roof, walls side-to-wall.
 export type Contacts = { ground: number?, ceiling: number?, wallLeft: number?, wallRight: number? }
 -- What happened this step, for juice: landed = impact speed, jump = "ground" | "wall" | "double", dash = started.
-export type Events = { landed: number?, jump: string?, dash: boolean? }
+export type Events = { landed: number?, jump: string?, dash: boolean?, launch: boolean? }
 export type State = {
 	x: number, y: number, vx: number, vy: number, facing: number, grounded: boolean,
 	coyote: number, jumpBuffer: number, jumpHold: number, holdSpeed: number,
@@ -203,6 +204,17 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 			jump(s, "double", moveX, 0)
 			ev.jump = "double"
 		end
+	end
+
+	-- 4b. A boost pad (H22, rule 15): launch along its arrow, keeping any speed you already carry that way (rule 16, as
+	-- the wall kick banks it), up at the launch speed; a dash or a jump hold in progress ends; dash and double jump back.
+	local lx, ly = input.launchX, input.launchY
+	if lx and ly and not hold then
+		if lx ~= 0 then s.vx = sign(lx) * math.max(math.abs(lx), s.vx * sign(lx)) end
+		s.vy = math.max(s.vy, ly)
+		s.grounded, s.coyote, s.jumpBuffer, s.jumpHold, s.dashTime, s.wallForce = false, 0, 0, 0, 0, 0
+		refresh(s)
+		ev.launch = true
 	end
 
 	-- 5. Velocity. A wall jump this frame forces the stick away from the wall from this frame on.

@@ -20,12 +20,16 @@ local ITEM_UP = Config.RUNNER_HEIGHT / 2 + 5 -- above the IT marker and its halo
 local ORB_COLOR = { ghost = Color3.fromRGB(150, 160, 255), living = Color3.fromRGB(255, 200, 50) } -- balls
 local ITEM_COLOR = { -- one colour per item (rule 12); unknown: white
 	hex = Color3.fromRGB(235, 60, 200), crate = Color3.fromRGB(160, 100, 45), trap = Color3.fromRGB(190, 45, 35),
-	ice = Color3.fromRGB(90, 230, 255),
+	ice = Color3.fromRGB(90, 230, 255), fixture = Color3.fromRGB(125, 110, 230), pad = Color3.fromRGB(120, 255, 90),
+	grant = Color3.fromRGB(255, 150, 40), -- H22: a violet block (the piece), a lime slab (the pad), an orange bar
 }
 -- The icon over a holder's head: a diamond (hex), a box (crate), a flat jaw (trap), a ball (ice). Unknown: a diamond.
 local ICON = { crate = { Vector3.new(1.3, 1.3, 0.2), 0 }, trap = { Vector3.new(1.8, 0.6, 0.2), 0 },
-	ice = { Vector3.new(1.1, 1.1, 1.1), 0 } }
+	ice = { Vector3.new(1.1, 1.1, 1.1), 0 }, fixture = { Vector3.new(1.2, 1.2, 0.2), 0 },
+	pad = { Vector3.new(1.8, 0.35, 0.2), 0 }, grant = { Vector3.new(0.45, 1.6, 0.2), 0 } }
 local HIDDEN = CFrame.new(0, -1e4, 0)
+-- One name per item on every line (QA round 1, H22): the slot readout and the ghost line agree.
+Items.NAME = { fixture = "PIECE", pad = "BOOST PAD", grant = "BOOST" } :: { [string]: string }
 
 local orbs: { { part: BasePart, up: boolean, ghost: boolean, takenAt: number? } } = {}
 local held: { [number]: string } = {}
@@ -66,9 +70,13 @@ local function drop(t: any)
 	if t.charge then t.charge:Destroy() end
 end
 
+local listeners: { (any) -> () } = {} -- H22: client/Place hears every ItemEvent too (one connection: no lost queue)
+function Items.listen(fn: (any) -> ()) table.insert(listeners, fn) end
+
 -- Shape only (→ N3): the server is the only sender, but a malformed table must not break the frame loop.
 local function onEvent(e: any)
 	if type(e) ~= "table" then return end
+	for _, fn in listeners do fn(e) end
 	if e.kind == "sync" and type(e.orbs) == "table" and type(e.held) == "table" then
 		for _, o in orbs do o.part:Destroy() end
 		table.clear(orbs)
@@ -215,7 +223,7 @@ function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boo
 	local label = slotLabel
 	if label then
 		local mine = if roundOver then nil else held[me]
-		label.Text = if mine then ("ITEM: %s"):format(string.upper(mine)) elseif showSlot and not roundOver then "ITEM: none"
+		label.Text = if mine then ("ITEM: %s"):format(Items.NAME[mine] or string.upper(mine)) elseif showSlot and not roundOver then "ITEM: none"
 			else "" -- the status line (Hud) says what to do about it; the readout only says what is held (QA round 1)
 		label.TextColor3 = if mine then (ITEM_COLOR[mine] or Color3.new(1, 1, 1)) else Color3.new(1, 1, 1)
 	end

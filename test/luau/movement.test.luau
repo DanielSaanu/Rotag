@@ -336,4 +336,60 @@ do -- a freeze slides on the speed it caught you with, bleeding linearly to 0 ov
 	assert(near(s.vx, 0, 1e-6) and s.x > 0, "slid forward, and stopped as the freeze ends")
 end
 
+-- H22, rule 15: a boost pad's launch (client/Place sets launchX / launchY the frame the runner enters a pad).
+local function launched(t, dir)
+	local inp = input(t)
+	inp.launchX, inp.launchY = dir * Config.PAD_SPEED_X, Config.PAD_SPEED_Y
+	return inp
+end
+
+do -- a pad launches along its arrow and up, off the floor, and refreshes the dash and the double jump
+	local s = standing(FLOOR, 0)
+	local ev = tick(FLOOR, s, launched({ moveX = 1 }, 1))
+	assert(ev.launch and not s.grounded, "launched off the floor")
+	assert(near(s.vx, kept(Config.PAD_SPEED_X)), ("along the arrow: %.2f"):format(s.vx))
+	assert(near(s.vy, Config.PAD_SPEED_Y - Config.GRAVITY * DT), "up at the launch speed, gravity from this frame")
+	tick(FLOOR, s, input({ moveX = 1 }))
+	assert(not s.grounded, "the next frame does not snap it back to the floor")
+	-- in the air with both spent: a pad gives them back
+	local a = Movement.new(0, 30)
+	a.airJumps, a.dashes = 0, 0
+	tick(FLOOR, a, launched({}, -1))
+	assert(a.airJumps == Config.AIR_JUMPS and a.dashes == 1 and a.vx < 0, "dash and double jump back (rule 15)")
+	-- the rise is a full jump's height, give or take: pinned as a MEASUREMENT (→ S11)
+	local r = standing(FLOOR, 0)
+	local top = r.y
+	tick(FLOOR, r, launched({}, 1))
+	for _ = 1, 60 do tick(FLOOR, r, input()) top = math.max(top, r.y) end
+	local rise = top - HH
+	print(("    pad: rises %.2f studs (a held jump: %.2f)"):format(rise, apex(30)))
+	-- Measured 2026-10-31 (H22): 11.38 studs, under a held jump's 14.25: a pad gives speed and the refresh, then the
+	-- refreshed double jump goes higher. A pad launching higher needs a launch allowance in MoveCheck (placement.md §6).
+	assert(rise > 11.2 and rise < 11.6, ("a pad's rise (measurement): %.2f"):format(rise))
+end
+
+do -- rule 16: speed already carried along the arrow is kept, never cut; against the arrow the arrow wins
+	local s = standing(FLOOR, 0)
+	tick(FLOOR, s, input({ dash = true, moveX = 1 }))
+	assert(near(s.vx, Config.DASH_SPEED), "dashing right at 120")
+	tick(FLOOR, s, launched({ moveX = 1 }, 1))
+	assert(s.vx > Config.PAD_SPEED_X and s.dashTime == 0, "a dash into a pad keeps its 120 and ends the dash")
+	local b = standing(FLOOR, 0)
+	frames(FLOOR, b, 20, input({ moveX = -1 }))
+	tick(FLOOR, b, launched({ moveX = -1 }, 1))
+	assert(b.vx > 0 and near(b.vx, Config.PAD_SPEED_X, 10), "running left onto a right pad: thrown right")
+	local f = Movement.new(0, 30)
+	f.vy = 200 -- already rising faster (a cheat or a future move): the pad never slows a rise
+	tick(FLOOR, f, launched({}, 1))
+	assert(f.vy > Config.PAD_SPEED_Y, "the up speed is a floor, not a cap")
+end
+
+do -- no pad in a hold (rule 44): a trapped or stumbling runner is not launched
+	local s = standing(FLOOR, 0)
+	local inp = held("trap", {})
+	inp.launchX, inp.launchY = Config.PAD_SPEED_X, Config.PAD_SPEED_Y
+	local ev = tick(FLOOR, s, inp)
+	assert(not ev.launch and s.grounded and s.vx == 0, "pinned, not launched")
+end
+
 print("movement ok")

@@ -56,10 +56,11 @@ in Studio.
 | The local hold into Movement, Use and pry presses out as `UseItem` | `client/Use.lua` | client |
 | Living orbs, things, beams, hold overlays, icons per item, the slot readout for the living | `client/Items.lua` | client |
 | "TRAPPED: mash any key 1/3" / FROZEN / STUMBLE; the ward halo's red flash; halo colour reset on hide | `client/Hud.lua` | client |
+| Fixtures, boost pads, the boost grant (PR 4, H22): `Items.PLACED`, `Items.grants`, `server/Placement`, `client/Place` | [placement.md](placement.md) §2 | both |
 
 ## 3. What the server trusts (DESIGN §3 rule 6, proposal §8; → N4, N5, N10)
 
-**`UseItem`: one small integer** (0-3; the fixture rotation in PR 4, ignored now). The sender is the `Player`; rate gap
+**`UseItem`: one small integer** (0-3; a fixture's rotation since PR 4, H22, [placement.md](placement.md) §3; unread otherwise). The sender is the `Player`; rate gap
 `USE_GAP` (0.05 s; the client sends no faster than every 0.06 s), **waived while the server has the sender trapped**
 (`Items.acceptPress`, QA round 1); a non-integer or out of range is dropped unread.
 Everything else is the server's: the round runs and the sender is in it; the item is the SERVER's slot; no hold, no

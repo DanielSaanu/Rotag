@@ -22,6 +22,7 @@ local Arrows = require(script.Parent:WaitForChild("Arrows"))
 local Items = require(script.Parent:WaitForChild("Items"))
 local Use = require(script.Parent:WaitForChild("Use")) -- H19: Use, prying, the local hold (docs/systems/items.md)
 local ItemArt = require(script.Parent:WaitForChild("ItemArt")) -- H21: is the hold art in the sheet yet
+local Place = require(script.Parent:WaitForChild("Place")) -- H22: ghost parts, pads, the grant (placement.md)
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -120,7 +121,8 @@ RunService.PreSimulation:Connect(function(dt: number)
 		input = { moveX = 0, jumpPressed = false, jumpHeld = false, dashPressed = false, touch = input.touch }
 		s.vx, s.dashTime = 0, 0 -- a dash in progress ends too
 	end
-	input.speedMult = Tagging.speedMult()
+	input.speedMult = Tagging.speedMult(Place.grantLeft(player.UserId) > 0)
+	Place.frame(input, s, player.UserId) -- the rotate press, and a pad's launch on entering one
 	local ev = Movement.step(s, input, contacts, dt)
 	-- Physics can run more than once between two draws: keep every event until the sprite has reacted to it.
 	for _, p in { c.pending, c.toSend } do
@@ -214,10 +216,14 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	local st = Tagging.state()
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))
-	-- PR 3 (controls.md §2): the ITEM touch button only while Use would fire (a hex is used by touch); the GRAPPLE /
-	-- ROTATE button stays hidden until the living grapple and the ghost's piece exist (the grapple PR, PR 4).
+	-- PR 3 (controls.md §2): the ITEM touch button only while Use would fire (a hex and the grant are used by touch);
+	-- the GRAPPLE button reads ROTATE while a ghost holds a fixture (H22), hidden otherwise until the living grapple.
 	local held = Items.held(player.UserId)
-	Controls.buttons(if held ~= nil and held ~= "hex" and not (st ~= nil and st.over == true) then held else nil, nil)
+	local live = not (st ~= nil and st.over == true)
+	Controls.buttons(if held ~= nil and held ~= "hex" and held ~= "grant" and live then held else nil,
+		if live then Place.hook(player.UserId) else nil)
+	Place.draw(player.UserId, if c and c.root.Parent then c.state.x else nil, if c then c.state.y else nil,
+		if c then c.state.facing else 1)
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
 	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	Arrows.update(Tagging.me(), Tagging.state())
@@ -271,6 +277,7 @@ Arrows.start(player, Hud.nameOf)
 Others.start(player)
 Items.start(player)
 Use.start(player)
+Place.start()
 -- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
 -- where Others draws each runner (the snapshot stream), as the server judges it.
 Tagging.start(player, function() end, function(v)

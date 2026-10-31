@@ -22,7 +22,8 @@ do -- rules 43, 39, 10: the pools and weights (ghosts-v2-proposal.md §3), and w
 	local function rows(p) local s = {} for _, r in p do table.insert(s, r[1] .. "=" .. r[2]) end return table.concat(s, " ") end
 	assert(rows(Items.POOLS.runner) == "crate=40 trap=35 ice=25", "runner pool: " .. rows(Items.POOLS.runner))
 	assert(rows(Items.POOLS.holder) == "ice=50 crate=25 trap=25", "holder pool, the ice beam first: " .. rows(Items.POOLS.holder))
-	assert(rows(Items.POOLS.ghost) == "crate=12 trap=10 ice=10 hex=8", "ghost pool (PR 4 adds fixture, pad, grant): "
+	-- H22: the spec's whole ghost pool since PR 4 (it was crate 12 / trap 10 / ice 10 / hex 8 in PR 2: changed WITH it)
+	assert(rows(Items.POOLS.ghost) == "fixture=30 pad=15 grant=15 crate=12 trap=10 ice=10 hex=8", "ghost pool: "
 		.. rows(Items.POOLS.ghost))
 	assert(Items.poolFor("living", true) == Items.POOLS.holder and Items.poolFor("living", false) == Items.POOLS.runner,
 		"a living orb rolls the holder pool for the holder, the runner pool for anyone else")
@@ -31,7 +32,8 @@ do -- rules 43, 39, 10: the pools and weights (ghosts-v2-proposal.md §3), and w
 	for _, r in Items.POOLS.ghost do if r[1] == "hex" then hex = r[2] end end
 	local total = 0
 	for _, r in Items.POOLS.ghost do total += r[2] end
-	assert(near(hex / total, 0.2), "the hex is 1 ghost roll in 5 until PR 4 (was every roll in PR 1)")
+	assert(total == 100 and near(hex / total, 0.08), "the hex is 8 ghost rolls in 100 (rare: Danzo, rule 40)")
+	assert(Items.POOLS.ghost[#Items.POOLS.ghost][1] == "hex", "the hex is the last row (orbs.test feeds it rand 0.99)")
 end
 
 do -- where Use puts things: a crate behind you, a trap at your feet, a beam ahead the way you face
@@ -239,6 +241,46 @@ do -- rule 44 (H20, Danzo 2026-10-19): an iced holder cannot pass the fuse; an i
 		st.holds[A] = { kind = kind, from = 5, untilT = 6, presses = 0, over = false }
 		assert(Items.canTag(st, A, 5.5) and passes(A, C, 5.5), "a " .. kind .. " never stops the holder's tag")
 	end
+end
+
+do -- H22: what Use does with PR 4's items: a fixture and a pad are placed (shared/Placement), the grant is by touch
+	local st = Items.new()
+	assert(Items.canUse(st, A, "fixture", 0) and Items.canUse(st, A, "pad", 0), "a fixture and a pad go through Use")
+	local ok, why = Items.canUse(st, A, "grant", 0)
+	assert(not ok and why == "the boost grant is used by touch", "the grant is not Used: " .. tostring(why))
+	ok = Items.canUse(st, A, "hex", 0)
+	assert(not ok, "the hex still is not Used")
+	assert(Items.PLACED.fixture and Items.PLACED.pad and not Items.PLACED.crate, "only ghost parts are placed")
+	st.holds[A] = { kind = "trap", from = 0, untilT = 1, presses = 0, over = false }
+	assert(not Items.canUse(st, A, "pad", 0.5), "no part is placed during a hold either (rule 44)")
+end
+
+do -- rule 46 (H22): the boost grant, by touch, on the server's own record; 5 s; a second restarts it, never stacks
+	local st = Items.new()
+	local ghost = { id = C, x = 20, y = Y }
+	assert(#Items.grants(st, { ghost }, { at(A, 0, Y) }, 1) == 0, "out of reach: nothing")
+	assert(Items.grantLeft(st, A, 1) == 0, "no grant yet")
+	-- the giver's path between two samples crosses the runner (→ N14): it counts though neither sample touches
+	local ev = Items.grants(st, { { id = C, x = 6, y = Y, px = -6, py = Y } }, { at(A, 0, Y), at(B, 6, Y) }, 1)
+	assert(#ev == 1 and ev[1].kind == "grant" and ev[1].id == A and ev[1].by == C and ev[1].time == Config.GRANT_TIME,
+		"the first victim in order the path reaches is granted, once per giver")
+	assert(near(Items.grantLeft(st, A, 1), 5) and near(Items.grantLeft(st, A, 5.9), 0.1) and Items.grantLeft(st, A, 6) == 0,
+		"it lasts GRANT_TIME (5 s)")
+	assert(Items.grantLeft(st, B, 1) == 0, "the second runner was not granted by the same giver")
+	Items.grants(st, { { id = C, x = 0, y = Y } }, { at(A, 0, Y) }, 4)
+	assert(near(Items.grantLeft(st, A, 4), 5), "a second grant restarts the 5 s, never adds (no stacking)")
+	-- reach is a tag's: boxes within TAG_REACH
+	ev = Items.grants(st, { { id = C, x = Config.RUNNER_WIDTH + Config.TAG_REACH - 0.01, y = Y } }, { at(B, 0, Y) }, 1)
+	assert(#ev == 1, "within a tag's reach")
+	ev = Items.grants(Items.new(), { { id = C, x = Config.RUNNER_WIDTH + Config.TAG_REACH + 0.01, y = Y } }, { at(B, 0, Y) }, 1)
+	assert(#ev == 0, "just past it: nothing")
+	ev = Items.grants(Items.new(), { { id = C, x = 0, y = Y } }, { at(C, 0, Y) }, 1)
+	assert(#ev == 0, "a giver never grants itself")
+	-- help, not a hold: an iframed or held victim is still granted, and no ward is read or written (no table passed)
+	local held = Items.new()
+	held.holds[A] = { kind = "freeze", from = 0, untilT = 2, presses = 0, over = false }
+	ev = Items.grants(held, { { id = C, x = 0, y = Y } }, { at(A, 0, Y, { iframe = true }) }, 1)
+	assert(#ev == 1, "a dash does not dodge help, and a hold does not block it")
 end
 
 print("items ok")

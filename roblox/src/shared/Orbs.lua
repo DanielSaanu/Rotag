@@ -7,6 +7,7 @@
 -- "living" orbs are for the living (H19); the pools (runner, holder, ghost) are shared/Items.POOLS.
 local Config = require(script.Parent.Config)
 local Items = require(script.Parent.Items)
+local Placement = require(script.Parent.Placement)
 
 local Orbs = {}
 
@@ -17,15 +18,16 @@ export type State = {
 	up: { [number]: boolean },     -- per spot index: up as last reported by Orbs.step (a change is an event)
 	firstAt: number,               -- no orb is up before this: round start + ORB_FIRST
 	held: { [number]: string },    -- per runner id: the one item in its slot
+	piece: { [number]: string },   -- H22: per runner id holding a fixture, its tetromino (shared/Placement.SHAPES)
 }
 -- One runner as the server last recorded it: (x, y) now, (px, py) the sample before, if any (the path counts).
 export type Taker = { id: number, x: number, y: number, px: number?, py: number?, ghost: boolean,
 	holder: boolean? }
--- What changed: an orb came back (up = true), or `by` took it and rolled `item` (up = false).
-export type Event = { spot: number, up: boolean, by: number?, item: string? }
+-- What changed: an orb came back (up = true), or `by` took it and rolled `item` (up = false); a fixture's `piece`.
+export type Event = { spot: number, up: boolean, by: number?, item: string?, piece: string? }
 
 function Orbs.new(spots: { Spot }, now: number): State
-	return { spots = spots, takenAt = {}, up = {}, firstAt = now + Config.ORB_FIRST, held = {} }
+	return { spots = spots, takenAt = {}, up = {}, firstAt = now + Config.ORB_FIRST, held = {}, piece = {} }
 end
 
 -- Rule 42: a living orb is back after ORB_RESPAWN; a ghost orb sooner the more ghosts there are, 10 / (1 + 0.5 x n).
@@ -78,7 +80,10 @@ function Orbs.step(o: State, now: number, ghosts: number, takers: { Taker }, ran
 				if Orbs.canTake(o, i, who, now, ghosts) and Orbs.touches(spot, who.x, who.y, who.px, who.py) then
 					local item = Orbs.roll(Items.poolFor(spot.kind, who.holder) :: { { any } }, rand) -- rules 39, 43
 					o.takenAt[i], o.held[who.id], up = now, item, false
-					table.insert(events, { spot = i, up = false, by = who.id, item = item })
+					-- H22: a fixture's shape is rolled with it, so the ghost previews the piece it will place
+					local piece = if item == "fixture" then Placement.rollShape(rand) else nil
+					o.piece[who.id] = piece
+					table.insert(events, { spot = i, up = false, by = who.id, item = item, piece = piece })
 					break
 				end
 			end
@@ -92,7 +97,7 @@ end
 -- Empty a runner's slot (an item used, or the runner left). Returns what was in it.
 function Orbs.use(o: State, id: number): string?
 	local item = o.held[id]
-	o.held[id] = nil
+	o.held[id], o.piece[id] = nil, nil
 	return item
 end
 

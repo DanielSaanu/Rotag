@@ -57,6 +57,18 @@ Config.HOLD_GRACE = 0.3           -- server: seconds of lateness a hold forgives
                                   -- later): its x budget drops to its speed x this + HOLD_SLACK when it lands; trust.md §10
 Config.HOLD_SLACK = 2             -- studs (and studs/s on a freeze's refill): float and snapshot-step dust
 Config.USE_GAP = 0.05             -- a client's UseItem presses closer together than this are dropped unread
+-- Ghosts v2 PR 4 (DESIGN §3 rules 15, 46-48; H22, docs/systems/placement.md). Trial numbers, tuned by hand.
+Config.GRANT_BOOST = 0.15         -- the boost grant: +15% run speed (rule 46: = RAMP_MAX, so a grant only matches the ramp)
+Config.GRANT_TIME = 5             -- seconds it lasts; a second grant restarts it, never stacks
+Config.FIXTURE_CAP = 3            -- live fixtures per ghost; a 4th fades its oldest ...
+Config.FIXTURE_FADE = 1           -- ... after this warning (seconds), solid until then
+Config.PLACE_GAP = 4              -- studs (1 tile) from the ghost's front edge to a fixture's near edge
+Config.PLACE_CLEAR = 4            -- studs (1 tile) a placed part keeps from every living runner (rule 47)
+Config.PAD_W = 8                  -- studs: a boost pad, 2 tiles wide, set at your feet, its arrow your facing
+Config.PAD_H = 1
+Config.PAD_LIFE = 20              -- seconds a ghost's pad lasts
+Config.PAD_SPEED_X = 100          -- the launch along the arrow: speed you already carry that way is kept (rule 16) ...
+Config.PAD_SPEED_Y = 105          -- ... and up: 2 x JUMP_SPEED, the most whose rise averages the speed check's up rate
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart

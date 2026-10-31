@@ -20,4 +20,10 @@ assert(Config.HOLD_IMMUNITY == 0.5 and Config.DASH_IFRAMES == 0.2, "0.5 s with n
 assert(Config.STUMBLE_TIME <= 1 and Config.FREEZE_TIME <= 1 and Config.TRAP_TIME <= 1, "rule 11: no hold over ~1 s")
 -- Retired with H15's rules (H16 removed the spook's cooldown and the comeback): the knobs must not linger.
 assert((Config :: any).SPOOK_COOLDOWN == nil and (Config :: any).GHOST_COMEBACKS == nil, "no spook cooldown, no comeback")
+-- DESIGN §3 rules 46-47 (H16 spec, built H22): the grant equals the ramp's top, 5 s; 3 live fixtures per ghost, a tile
+-- clear of the living. The pad's launch stays inside the speed check's rates (move_check.test drives it).
+assert(Config.GRANT_BOOST == 0.15 and Config.GRANT_TIME == 5, "boost grant: +15% for 5 s")
+assert(Config.FIXTURE_CAP == 3 and Config.FIXTURE_FADE == 1, "3 live fixtures per ghost; a 4th fades the oldest in 1 s")
+assert(Config.PLACE_CLEAR == Config.STUDS_PER_TILE, "a placed part keeps 1 tile from every living runner")
+assert(Config.PAD_SPEED_X <= Config.DASH_SPEED and Config.PAD_SPEED_Y <= 2 * Config.JUMP_SPEED, "pad inside the check")
 print("config ok")

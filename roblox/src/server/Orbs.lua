@@ -23,7 +23,8 @@ function Orbs.current(): Rules.State? return state end
 
 -- ItemEvent payloads (docs/systems/README.md), arrays only (→ N13):
 --   { kind = "sync", orbs = { { x, y, ghost, up } }, held = { { id, item } } }  on join, and to all at round start
---   { kind = "orb", spot, up, by?, item? }  an orb came back (up), or `by` took it and now holds `item`
+--   { kind = "orb", spot, up, by?, item?, piece? }  an orb came back (up), or `by` took it and now holds `item`
+--                                           (H22: a fixture's tetromino in `piece`; sync's held rows carry it too)
 --   { kind = "slot", id, item? }            a runner's slot changed outside an orb (a hex used, a leave): item nil = empty
 local function syncPayload()
 	local orbs, held = {}, {}
@@ -32,7 +33,7 @@ local function syncPayload()
 		table.insert(orbs, { x = s.x, y = s.y, ghost = s.kind == "ghost", up = o ~= nil and o.up[i] == true })
 	end
 	if o then
-		for id, item in o.held do table.insert(held, { id = id, item = item }) end
+		for id, item in o.held do table.insert(held, { id = id, item = item, piece = o.piece[id] }) end
 	end
 	return { kind = "sync", orbs = orbs, held = held }
 end
@@ -70,7 +71,8 @@ function Orbs.step(r: Tag.Round, now: number, history: { [number]: { Tag.Sample 
 		if e.by then
 			log(("%s took %s orb %d: %s"):format(tostring(e.by), o.spots[e.spot].kind, e.spot, tostring(e.item)))
 		end
-		if remote then remote:FireAllClients({ kind = "orb", spot = e.spot, up = e.up, by = e.by, item = e.item }) end
+		if remote then remote:FireAllClients({ kind = "orb", spot = e.spot, up = e.up, by = e.by, item = e.item,
+			piece = e.piece }) end
 	end
 end
 

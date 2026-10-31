@@ -9,12 +9,12 @@ local Config = require(script.Parent.Config)
 local Items = {}
 
 -- The pools, { item, weight } rows (rules 39, 43, 10; ghosts-v2-proposal.md §3). Runners roll escape items, the holder
--- the ice beam first. The ghost pool has PR 2's share: fixture, boost pad and boost grant (PR 4) join it later, at
--- which point the hex is 8 in 100; until then it is 8 in 40.
+-- the ice beam first. The ghost pool is the spec's whole pool since PR 4 (H22): the hex is 8 in 100, the last row.
 Items.POOLS = {
 	runner = { { "crate", 40 }, { "trap", 35 }, { "ice", 25 } },
 	holder = { { "ice", 50 }, { "crate", 25 }, { "trap", 25 } },
-	ghost = { { "crate", 12 }, { "trap", 10 }, { "ice", 10 }, { "hex", 8 } },
+	ghost = { { "fixture", 30 }, { "pad", 15 }, { "grant", 15 }, { "crate", 12 }, { "trap", 10 }, { "ice", 10 },
+		{ "hex", 8 } },
 } :: { [string]: { { any } } }
 
 -- The pool an orb of `kind` rolls for this taker; nil for a kind with no pool (Orbs never puts such an orb up).
@@ -30,6 +30,9 @@ Items.HOLD_TIME = { stumble = Config.STUMBLE_TIME, freeze = Config.FREEZE_TIME, 
 	:: { [string]: number }
 -- Aimed (rule 45: a dash's i-frames dodge it; rule 41: a ghost's hit wards its target) versus put down (jump it).
 Items.AIMED = { ice = true, hex = true } :: { [string]: boolean }
+-- H22: what Use places through shared/Placement (a ghost part), and what is used by touch instead of by Use.
+Items.PLACED = { fixture = true, pad = true } :: { [string]: boolean }
+Items.BY_TOUCH = { hex = "the hex is used by touch", grant = "the boost grant is used by touch" } :: { [string]: string }
 
 -- A thing in the world: a crate, a trap or a beam. (x, y) its centre, (hw, hh) its half size; `dir` the user's facing.
 export type Thing = {
@@ -37,7 +40,7 @@ export type Thing = {
 	from: number, untilT: number, armed: boolean, hit: { [number]: boolean },
 }
 export type Hold = { kind: string, from: number, untilT: number, presses: number, over: boolean }
-export type State = { things: { Thing }, nextN: number, holds: { [number]: Hold } }
+export type State = { things: { Thing }, nextN: number, holds: { [number]: Hold }, grants: { [number]: number } }
 -- A living runner as the server last recorded it: (x, y), the sample before (px, py) if any (the path counts, N14),
 -- whether that sample is in a dash's i-frames, and for the holder when its tag freeze ends (a hold too, rule 44).
 export type Victim = { id: number, x: number, y: number, px: number?, py: number?, iframe: boolean?, frozenUntil: number? }
@@ -45,7 +48,7 @@ export type Victim = { id: number, x: number, y: number, px: number?, py: number
 export type Event = { kind: string, id: number?, hold: string?, time: number?, by: number?, n: number? }
 
 function Items.new(): State
-	return { things = {}, nextN = 0, holds = {} }
+	return { things = {}, nextN = 0, holds = {}, grants = {} }
 end
 
 -- One axis of the slab test: narrows [t0, t1] to where the moving point a -> b is within h of c; nil if never.
@@ -113,8 +116,8 @@ end
 -- May `id` start `item` now (rule 44: never during a hold or the tag freeze)? Returns ok and, when not, why (logs).
 function Items.canUse(st: State, id: number, item: string?, now: number, frozenUntil: number?): (boolean, string?)
 	if item == nil then return false, "nothing held" end
-	if item == "hex" then return false, "the hex is used by touch" end
-	if Items.HOLD[item] == nil then return false, "not a usable item" end
+	if Items.BY_TOUCH[item] then return false, Items.BY_TOUCH[item] end
+	if Items.HOLD[item] == nil and not Items.PLACED[item] then return false, "not a usable item" end
 	if Items.holdOf(st, id, now) then return false, "in a hold" end
 	if frozenUntil and now < frozenUntil then return false, "frozen" end
 	return true, nil
@@ -196,6 +199,32 @@ local function catch(st: State, t: Thing, v: Victim, now: number, wards: { [numb
 	if t.ghost and Items.AIMED[t.item] then wards[v.id] = now + Config.GHOST_WARD end -- rule 41, per target
 	table.insert(ev, { kind = "hold", id = v.id, hold = kind, time = time, by = t.n })
 	return true
+end
+
+-- The boost grant (rule 46; H22): seconds left on `id`'s grant at `now` (0 = none). Help, not a hold: it neither sets
+-- nor heeds the ghost ward (rule 41 is about ganging up) and no dash dodges it (rule 45 is about what hurts).
+function Items.grantLeft(st: State, id: number, now: number): number
+	return math.max(0, (st.grants[id] or now) - now)
+end
+
+-- A ghost holding a grant, as the server last recorded it: (x, y) and the sample before (px, py), if trusted.
+export type Giver = { id: number, x: number, y: number, px: number?, py: number? }
+-- One server frame, after the things: each giver whose path touches a living victim's box (a tag's reach, the path
+-- swept like an orb touch, → N14) grants the first one in `victims` order GRANT_TIME, restarting it (never stacking).
+-- Returns { kind = "grant", id, time, by } per grant; the caller empties each giver's slot.
+function Items.grants(st: State, givers: { Giver }, victims: { Victim }, now: number): { Event }
+	local ev: { Event } = {}
+	for _, g in givers do
+		for _, v in victims do
+			if v.id ~= g.id and Items.swept(v.x, v.y, Config.RUNNER_WIDTH + Config.TAG_REACH,
+				Config.RUNNER_HEIGHT + Config.TAG_REACH, g.x, g.y, g.px, g.py) then
+				st.grants[v.id] = now + Config.GRANT_TIME
+				table.insert(ev, { kind = "grant", id = v.id, time = Config.GRANT_TIME, by = g.id })
+				break
+			end
+		end
+	end
+	return ev
 end
 
 -- One server frame: holds that ran out, then each thing (oldest first) against each living victim (`victims` in join

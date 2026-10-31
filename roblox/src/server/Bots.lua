@@ -18,6 +18,9 @@ Bots.ids = {} :: { [number]: boolean } -- for Tag.readyToStart: never waited for
 
 local list: { [number]: any } = {}
 local count = 0
+local tried: { [number]: number } = {} -- H22: when each dummy last tried to place a part
+local refused: { [number]: string? } = {} -- ... and why the last try was refused (logged once per reason, not per try)
+local PLACE_TRY = 0.5 -- seconds between a dummy's placement tries (a refused one logs why; not every frame)
 
 function Bots.add(tagName: string): number
 	local id = Dummy.ID - count
@@ -88,7 +91,19 @@ function Bots.uses(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample
 		local item = o.held[id]
 		local x = lastX(history, id)
 		local frozen = r.it == id and Tag.frozen(r, now) -- would only log "frozen" every frame
-		if item and item ~= "hex" and x and not frozen and not Items.held(id, now) then
+		if item and ItemRules.PLACED[item] and not frozen then
+			-- H22: a dummy ghost places a fixture or pad where it is (a random rotation), so solo Play sees one land
+			if now - (tried[id] or -math.huge) >= PLACE_TRY then
+				tried[id] = now
+				local ok, why = Items.press(id, now, math.random(0, 3), true)
+				if ok then
+					refused[id] = nil
+				elseif why ~= refused[id] then
+					refused[id] = why
+					print(("[Rotag] bots: %d's %s refused: %s (retrying every %gs)"):format(id, item, tostring(why), PLACE_TRY))
+				end
+			end
+		elseif item and item ~= "hex" and item ~= "grant" and x and not frozen and not Items.held(id, now) then
 			for _, other in r.order do
 				local ox = if r.alive[other] and not Bots.isBot(other) then lastX(history, other) else nil
 				if ox and math.abs(ox - x) <= Config.ICE_LENGTH then

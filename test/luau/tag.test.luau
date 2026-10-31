@@ -247,4 +247,15 @@ do -- H12 (trust.md §4): a claimant sample the speed check marked untrusted nev
 		"an untrusted TARGET can still be tagged (the tagger did nothing wrong)")
 end
 
+do -- rule 46 (H22): boost = max(ramp, grant); the grant never stacks on the ramp; nobody else has a ramp
+	local full, half = Config.RAMP_DELAY + Config.RAMP_TIME, Config.RAMP_DELAY + Config.RAMP_TIME / 2
+	assert(Tag.speedMult(false, 1e6, false) == 1, "a runner: no ramp, however long the chase")
+	assert(near(Tag.speedMult(false, 0, true), 1 + Config.GRANT_BOOST), "a granted runner: +15%")
+	assert(near(Tag.speedMult(true, half, false), Tag.chaserBoost(half)), "the holder alone: the ramp")
+	assert(near(Tag.speedMult(true, 0, true), 1 + Config.GRANT_BOOST), "a granted holder at the start: the grant")
+	assert(near(Tag.speedMult(true, full, true), 1 + Config.RAMP_MAX), "at the ramp top a grant adds nothing: never above")
+	assert(Config.GRANT_BOOST == Config.RAMP_MAX, "the grant is the ramp's top (proposal §3: same size both ways)")
+	assert(near(Tag.speedMult(true, half, true), 1 + Config.GRANT_BOOST), "half ramp + grant = the grant, not the sum")
+end
+
 print("tag ok")

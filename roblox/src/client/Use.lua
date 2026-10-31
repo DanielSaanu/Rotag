@@ -8,6 +8,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Items = require(script.Parent:WaitForChild("Items"))
+local Place = require(script.Parent:WaitForChild("Place")) -- H22: a fixture's rotation rides on the Use
 
 local Use = {}
 
@@ -23,7 +24,7 @@ local function send(): boolean
 	local now = os.clock()
 	if not remote or now - lastSent < SEND_GAP then return false end
 	lastSent = now
-	remote:FireServer(0)
+	remote:FireServer(Place.rotation()) -- 0-3: the server reads it for a fixture only (docs/systems/placement.md)
 	return true
 end
 
