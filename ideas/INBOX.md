@@ -20,6 +20,8 @@
   cheating body back; teleports under ~45 studs still pass. Detail: `docs/systems/trust.md`.
 - **Ghosts built (2026-10-14, H15):** eliminated runners spook "it" by touch and can earn one comeback a round (DESIGN §3
   rules 37-41). Waiting on a `rojo serve` restart and Danzo's two-player test below. Detail: `docs/systems/ghosts.md`.
+- **PRs 4, 5 and 5b signed off (2026-11-01):** Danzo: "all working nicely" (placement, pads, the ice block and halo, the
+  ignition and end phase, the closing walls). Next: the living grapple, PR 6, the art block.
 - **Keyboard and mouse signed off (2026-10-31):** Danzo: "it works fine on keyboard and mouse, ghosts all of that". Phone
   and iPad tests skipped for now. Next: PR 4 (H22), then the QA loop on it.
 - **Ghosts v2 decided (2026-10-19, H16+H17):** no comeback; orbs for everyone (separate ghost orbs); items crate, trap,
@@ -113,9 +115,9 @@
       ghost, a 4th fades the oldest), boost pads (launch everyone, ghosts included), the boost grant (+15% for 5 s,
       max(ramp, grant)), the preview with its refusal reason, keep-clear zones (the test arena's wall-jump shaft). Summary
       and Danzo's checklist: `docs/qa/ghosts-v2-placement-summary.md`. Detail: `docs/systems/placement.md`.
-- [ ] **Danzo: Play the PR 4 checklist** (in the summary). The calls: does a pad's 100 across / 105 up feel right; should
+- [x] **Danzo: Play the PR 4 checklist (signed off 2026-11-01: "all working nicely")** (in the summary). The calls: does a pad's 100 across / 105 up feel right; should
       ghosts be launched by pads (the spec says yes); does a stray left click placing a piece bite.
-- [ ] **Danzo (2026-10-31, after a first Play, parked while he is out): judge two looks.** (1) The ice block round a
+- [x] **Danzo (2026-10-31, after a first Play; signed off 2026-11-01 "all working nicely"): judge two looks.** (1) The ice block round a
       frozen runner (`client/Items`: Glass, pale ice, 0.35 see-through, behind the sprite): colour, size, and whether it
       should shatter when the freeze ends. (2) The grant's orange halo (`Look:boost`, the frozen rim's trick in
       orange, replacing the box he called ugly): does it read as "boosted" at play speed. Pads: Danzo's call, a pad
@@ -124,7 +126,7 @@
       with 3+, or 120 s in; +10% run speed for the living, on top of max(ramp, grant); server-decided, `MatchState.endPhase`),
       the ignition (ember rim, embers, a glow light, the beating red readout, the holder's arrow beating off screen),
       the burn-out burst. Summary and Danzo's checklist: `docs/qa/ghosts-v2-endgame-summary.md`. Detail: `docs/systems/endgame.md`.
-- [ ] **Danzo: Play the PR 5 checklist** (in the summary). The calls made while he was out: `END_PHASE_AFTER` 120 s (not
+- [x] **Danzo: Play the PR 5 checklist (signed off 2026-11-01: "all working nicely")** (in the summary). The calls made while he was out: `END_PHASE_AFTER` 120 s (not
       150); "final two" means a round that began with 3+ (DESIGN rule 51 reworded); the speed check not scaled; the
       look is placeholder. Is +10% noticeable; is the ignition readable without hiding the figure.
 - [x] **PR 5b, the closing walls (H24), built and QA'd 8/10 in round 1 (2026-11-01), pushed.** Danzo: "make it like
@@ -132,7 +134,7 @@
       walls open with the end phase, close to a 48-stud box over 20 s, a 3 s GET BACK IN grace, a wall kill = a
       burn-out; everyone keeps their own camera. Summary and checklist: `docs/qa/ghosts-v2-walls-summary.md`; the
       research and design: `docs/systems/endgame.md` §7.
-- [ ] **Danzo: Play the PR 5b checklist** (in the summary). Confirm: 3 s grace, walls from the end phase (not the first
+- [x] **Danzo: Play the PR 5b checklist (signed off 2026-11-01: "all working nicely")** (in the summary). Confirm: 3 s grace, walls from the end phase (not the first
       burn-out), the slow follow of the living mean, the 48-stud box, no zoom, +10% kept with the walls.
 - [ ] **Next (2026-11-01):** PRs 1-5b done and pushed. Then the living grapple (its own movement PR), PR 6 (maps with
       their own window bounds), and the art block for pieces, pads, the grant, the ignition and the walls (placeholders
