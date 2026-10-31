@@ -27,68 +27,16 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H22 — Build ghosts v2 PR 4: fixtures, boost pads, the boost grant, placement — 2026-10-31 19:00 — OPEN
-- **Status (2026-10-31): Built, QA loop next.** Heavy (Opus) built most of it and was cut off twice by an API safeguard
-  false positive; Danzo said "use fable" and the session finished it: a test index bug, the dummies' refusal log, the
-  docs, the goals file, verification 1-4 and a Studio Play (fixtures O/Z/L/S/T placed and fading, pads, a grant on the
-  player, every refusal reason, a piece stopping the player's runner). Not yet seen live: a player launched by a pad
-  (unit-tested; the reviewer drives it). Detail: `docs/systems/placement.md`; goals `docs/qa/ghosts-v2-placement.md`.
-- **Trigger:** 2 (new pure `shared/Placement.lua`; the boost grant in `shared/Tag.lua`'s ramp path; a speed input in
-  `shared/Movement.lua` and `shared/MoveCheck.lua`), 3 (the server re-checks every placement; `UseItem`'s integer is
-  read as the rotation for the first time; new `ItemEvent` payloads), 6 (the preview's fit test runs every frame on
-  the client: keep it allocation-free).
-- **Doc:** `docs/systems/ghosts-v2-proposal.md` §3 (the fixture, boost pad and boost grant rows; the ghost pool weights
-  fixture 30, pad 15, grant 15, crate 12, trap 10, ice 10, hex 8), §5 (placement and the keep-clear map rule), §8
-  (fairness), §12 item 4 (the build spec); `docs/DESIGN.md` §3 rules 15 (a pad refreshes dash and double jump), 39,
-  42, 46-48; `docs/systems/items.md` §2-§4 (who owns what, what the server trusts, the `ItemEvent` payloads);
-  `docs/systems/README.md` remotes table (`UseItem`, `ItemEvent`); `docs/systems/controls.md` (the "Rotate piece"
-  row: the grapple input, W / C / ↑ / right click / RT, and the GRAPPLE touch button reads ROTATE for a ghost
-  holding a piece); `docs/learnings/tooling.md` (the `CanQuery` and collision-group rules: a server-built part must
-  be a wall and a floor to the client's probes).
-- **Observed:** PRs 1-3 are built, QA'd to 8/10 and pushed. Danzo (2026-10-31): "it works fine on keyboard and mouse,
-  ghosts all of that", phone and pad parked, "next up get to work". The Studio state was checked the same day from
-  the MCP (worklog 2026-10-31): the tree matches the project file, a 4-runner round runs with tags, orbs and all three
-  holds, 0 hand-backs, no Rotag errors. The ghost pool today is hex (1 in 5), crate, trap, ice: a ghost has nothing to
-  place yet, and the grapple input is handed out by `Controls.read` (`grapplePressed` / `grappleHeld`) but unread.
-- **Evidence:** line counts (ceiling 400, `test/structure.test.js`): `server/Match.lua` 381, `shared/Movement.lua`
-  301, `client/Client.client.lua` 287, `client/Controls.lua` 272, `client/Items.lua` 255, `client/Hud.lua` 246,
-  `shared/Items.lua` 229, `shared/Tag.lua` 228, `client/ItemArt.lua` 203, `server/Items.lua` 153, `shared/MoveCheck.lua`
-  135, `server/Bots.lua` 133, `server/Arena.lua` 86. There are no map boost pads in code yet (`grep -i pad` in
-  `Movement`, `Arena`, `Config` finds only a comment) and no DESIGN §2 numbers for one. There are no fixture or pad
-  sprites on the sheet (`node bin/warehouse.js scenes` has none): the art is a separate routine block after this one.
-- **Routine session's read (guess):** (1) `shared/Placement.lua`, pure: the tetromino set as cell lists, rotation in
-  90° steps, the fit test against a list of boxes (map parts, live pieces, pads, orb spots, spawn spots, keep-clear
-  zones) plus the 1-tile runner clearance, the 3-live cap with the oldest fading on a 4th (1 s warning), all with
-  injected inputs so `placement.test.luau` pins it. (2) `server/Arena.lua` gains keep-clear zones (the gap between
-  `WallLeft` and `WallRight`, a box over each spawn spot and orb spot; say which in the doc) and a spawn-spot list;
-  pads and fixtures are server-built anchored Parts in a Workspace folder, solid to every runner including ghosts
-  (proposal §3: "fixtures and pads are map"), in a collision group the runners' probes can see. New server logic in
-  a NEW module (`server/Placement.lua` or `server/Fixtures.lua`), Match only wires it. (3) `UseItem` while holding a
-  fixture or pad: the number is the rotation 0-3; the spot is the server's record of the ghost (its newest trusted
-  sample, one tile ahead of its facing); a refused place costs nothing and prints why. New `ItemEvent` kinds for a
-  piece / pad put and gone (document them in items.md §4 and the README table; arrays only, N13). (4) The boost pad:
-  touching it launches along its arrow and refreshes dash and double jump (rule 15); the numbers are the heavy's
-  trial call, recorded in Config and items.md. The boost grant: a ghost holding it touches a living runner (server
-  judged on its own record, like the orb touch); +15% for 5 s; on the holder boost = max(ramp, grant) in `Tag`'s
-  ramp path; the server tells the client and `MoveCheck`'s budget allows it (the speed check must never flag a
-  granted runner). (5) Client: the preview one tile ahead of the ghost, red when invalid, rotated on the grapple
-  input; the GRAPPLE touch button reads ROTATE while a ghost holds a piece; the slot icon for the three new items.
-  `client/Items.lua` is at 255 and `Controls.lua` at 272, so the preview goes in a new client module. Drawn as
-  coloured Parts until the art block, behind `Sprites.Has` like H21. (6) Dummy ghosts place what they roll
-  (`Bots.uses`) so a solo test sees a piece land and a pad launch.
-- **Decision needed:** build PR 4 as `docs/systems/ghosts-v2-proposal.md` §12 item 4 says, with the trial numbers
-  recorded. Write the QA goals file `docs/qa/ghosts-v2-placement.md` (the builder writes it, in the shape of
-  `docs/qa/ghosts-v2-items.md`) so the routine session can run `/qa-loop` on it. Verification steps 1-4 (new
-  ModuleScripts are fine, say which; no new remote is expected: `UseItem` carries the rotation). Update items.md
-  (and ghosts.md if touched), the README remotes table, `roblox/src/{shared,server,client}/README.md`, controls.md
-  (the rotate input is now read), DESIGN only if a rule's wording must change (say which line). One worklog line.
-  Mark H22 "Built, QA loop next". Do NOT commit: the routine session commits after the loop. Do not touch
-  `sprites/`, `scenes/`, `Sprites.lua` or `assets.lock.json`. If a design call is needed (the tetromino set, the pad
-  numbers, where the test arena's keep-clear zones go), make the recommended call, record it, and list it for Danzo
-  in the goals file rather than stopping.
-- **Blocked routine work:** the QA loop on PR 4, and the fixture and pad art block.
-
 ## Resolved
+
+### H22 — Build ghosts v2 PR 4: fixtures, boost pads, the boost grant, placement — 2026-10-31 19:00 — RESOLVED
+- **Resolved 2026-10-31 (heavy build, finished on Fable after two Opus API cut-offs; routine QA loop 7 → 8/10):** pure
+  `shared/Placement` (the seven tetrominoes, the allocation-free fit test shared with the client preview, the 3-cap
+  and fade, the pad), `server/Placement` (every placement re-checked on the server's own record, parts in
+  `Workspace.RotagFixtures`), `client/Place` (preview with its refusal reason, rotate on the grapple input, the pad
+  launch on entry, the grant glow), `Items.grants` and `Tag.speedMult` = max(ramp, grant), `Arena.KEEP_CLEAR`. Pads
+  launch ghosts too (the spec). Waiting on Danzo's Play (the pad feel). → `docs/systems/placement.md`,
+  `docs/qa/ghosts-v2-placement-summary.md`, trust.md §8.
 
 ### H21 — Wire the item and hold art into the client (sprites on parts, hold poses, the frozen edge-light) — 2026-10-19 18:31 — RESOLVED
 - **Resolved 2026-10-31 (heavy build 2026-10-19, Danzo's Play 2026-10-31):** `client/ItemArt` (sprites on the item parts

@@ -109,8 +109,14 @@
       device's input. Summary and Danzo's checklist: `docs/qa/controls-summary.md`.
 - [x] **Danzo: Play the PR 3 checklist (keyboard and mouse signed off 2026-10-31; phone, iPad and pad parked).** (Was: keyboard, then the phone preset, then a pad if one is to hand.) The calls:
       W / ↑ as grapple, mouse binds, pry anywhere; is ITEM reachable with the thumb; does the d-pad move you.
-- [ ] **Next (2026-10-31):** PRs 1-3 done, pushed and signed off on keyboard and mouse; PR 4 (fixtures, pads, boost grant,
-      placement) opened as H22. Then 5, then the living grapple, then 6. Earlier: PRs 1-2 done and pushed. Build on in the PR order of
+- [x] **PR 4 (H22) built and QA'd 7 → 8/10 (2026-10-31), pushed.** The seven tetromino fixtures (solid for all, 3 live per
+      ghost, a 4th fades the oldest), boost pads (launch everyone, ghosts included), the boost grant (+15% for 5 s,
+      max(ramp, grant)), the preview with its refusal reason, keep-clear zones (the test arena's wall-jump shaft). Summary
+      and Danzo's checklist: `docs/qa/ghosts-v2-placement-summary.md`. Detail: `docs/systems/placement.md`.
+- [ ] **Danzo: Play the PR 4 checklist** (in the summary). The calls: does a pad's 100 across / 105 up feel right; should
+      ghosts be launched by pads (the spec says yes); does a stray left click placing a piece bite.
+- [ ] **Next (2026-10-31):** PRs 1-4 done and pushed. Then PR 5 (ignition, end-phase speed), the living grapple, PR 6
+      (maps), and the art block for pieces, pads and the grant (placeholder parts now, behind `Sprites.Has`). Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`
       (heavy guess 150 s, not in DESIGN).
