@@ -34,8 +34,9 @@
 - [ ] **Danzo (2026-11-02): the end-game walls should loosely follow the runners, irregularly** ("track around the map and
       force players to interact/run away from each other ... it always follows the runner but in a sort of irregular
       manner"). → handoff H26 (heavy agent building it). Then its QA loop, then Danzo's Play.
-- [ ] **Grapple (H25) QA loop:** rounds 1 and 2 at 7/10, fixes committed (44aa228, 69b51cc); round 3 running. Then
-      the summary and Danzo's checklist in `docs/qa/grapple-summary.md`.
+- [x] **Grapple (H25) built and QA'd 7 → 7 → 8/10 (2026-11-02), pushed.** Summary and the checklist: `docs/qa/grapple-summary.md`.
+- [ ] **Danzo: Play the grapple checklist** (in the summary). The calls: the 120 cap, a hook behind you at a walk, the
+      refresh on the hook, no boost on a dash off the rope, hold-to-hang; the pump, the 1.1 boost, a side hook's pull.
 - [x] **Tag built (H5, 2026-10-11):** `shared/Tag`, `server/Match`, remotes `TagClaim`/`TagVerdict`/`MatchState`, HUD,
       an orange Studio-only dummy to chase. Server side seen in Play; client side needs a `rojo serve` restart first.
       Detail: `docs/systems/tag.md`. Danzo to Play and judge the 1.5 s freeze, the 3 s start wait and the chaser ramp.

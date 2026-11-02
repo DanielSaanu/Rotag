@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-02 (H26 opened: the walls loosely follow the runners; H25 at QA round 3)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-02 (H26 opened: the walls loosely follow the runners; H25 resolved, 8/10)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -77,98 +77,11 @@ Resolution (added by the heavy agent under the same entry):
   QA loop next". Do NOT commit. Name exactly what Danzo should feel with his hands.
 - **Blocked routine work:** the QA loop on the moving walls; Danzo's Play of it.
 
-### H25 — The living grapple: hold to hang on marked anchors, release keeps the swing — 2026-11-01 02:10 — BUILT, QA loop at round 2 (7/10, fixed)
-- **Status (2026-11-02):** built (heavy); round 1 7/10 fixed (44aa228); round 2 7/10 (a regression from the round 1 inset:
-  anchors hidden from a runner standing under them) fixed and committed (`qa round 2:`). Next: round 3 of
-  `/qa-loop docs/qa/grapple.md` (the round files are `docs/qa/grapple-round1.md`, `-round2.md`; the changes-since list is
-  in round 2's Builder decisions).
-- **Trigger:** 2 (`shared/Movement` gains a move; `shared/MoveCheck`'s rates must cover a swing's speed; `shared/
-  Snapshot` and `shared/RemotePose` if the wire carries the rope; `shared/SideCam` if the camera leads into a swing),
-  3 (the speed check: a swing can exceed the dash rate the x budget is built on, so the budget needs a grapple
-  allowance the server can bound; what the server trusts about "I am on an anchor"), 6 (the aim assist and the
-  swing run every physics step; the rope is drawn every frame on every screen), 1 only if DESIGN §2's kit line or
-  rule 17 needs wording (say which line).
-- **Doc:** `docs/DESIGN.md` §2 (the kit: "Grapple"; "moves should hand speed off to each other: 2. Grapple swing
-  releases you with that speed"), §3 rules 16 (momentum kept), 17 (the grapple rules: marked colour-coded anchors,
-  aim assist to the nearest, release keeps swing speed with a small optional boost, never target off-screen anchors),
-  18-21 (easy to start, mistakes cost little, never floaty, juice), 29 (colour-code anchors), 37 (ghosts never
-  grapple), §4 rows Grapple Dog, Stickman Hook, Parkour Reborn, SpeedRunners; `docs/PRINCIPLES.md`;
-  `docs/systems/movement.md` (the body, the step order, the numbers, the probes, the camera lead);
-  `docs/systems/controls.md` (the Grapple row: W / C / ↑ / right mouse / RT held; the GRAPPLE touch button, 76 px
-  above JUMP, hidden until this PR; a ghost's rotate shares the input); `docs/systems/trust.md` §3, §8 ("a new move
-  that is faster must raise MoveCheck's rates in the same change"); `docs/systems/netcode.md` §8 (the 13-byte
-  snapshot, the state bits); `docs/systems/players.md` §3 (`RemotePose`: the other runner's pose from the stream);
-  `docs/systems/sprites-and-animation.md` (frames are sprites; the checklist for a new animated thing);
-  `docs/learnings.md` (S-rules: measurements pinned; T11 on probes; the A-rules).
-- **Observed:** PRs 1-5b are built, QA'd 8/10 and signed off by Danzo (2026-11-01: "all working nicely"). Danzo:
-  "go" on the grapple, the next item in the inbox. He is at the PC and will Play it. The grapple is the one kit move
-  (DESIGN §2) not built; the controls, the touch button slot and the input (`Controls.read` gives `grapplePressed`
-  and `grappleHeld`, PR 3) are in place and unread for the living.
-- **Evidence:** `shared/Movement.lua` (313 lines; `step` in 7 numbered phases: contacts, jump buffer, dash, jumps,
-  velocity, surfaces, facing/clock; `Input` has `jumpHeld`, `dashPressed`, `launchX/Y`, `hold`; `State` has x, y, vx,
-  vy, facing, grounded, coyote, jumpBuffer, jumpHold, dashes, airJumps, dashTime, wallForce, sliding; `refresh(s)`
-  gives dash and double jump back; rule 16's speed retention lives here). `Config`: RUN_SPEED 45, JUMP_SPEED 52.5,
-  GRAVITY 450, DASH_SPEED 120, DASH_TIME 0.15, WALL_JUMP_H_SPEED 65, AIR_JUMPS 1, MOVE_BURST_TIME 0.2.
-  `MoveCheck.RATE_X = DASH_SPEED` (120), `RATE_UP = JUMP_SPEED`, `RATE_DOWN` (135 lines): a pendulum of rope L under
-  g 450 reaches sqrt(2 g L): 20 studs of rope gives 134 studs/s at the bottom, over the x rate; the x budget would
-  flag an honest swing unless the rate rises or a swing allowance exists (trust.md §8). `client/Body.lua` (90 lines)
-  is the only file that knows the runner is a Part: raycast contacts, anti-gravity, the plane lock, velocity out.
-  `shared/Snapshot` packs 13 bytes with state bits (dash, grounded, facing...; `netcode.md` §8 lists them);
-  `RemotePose` rebuilds the pose for another screen from the stream. `client/Look` draws the sprite (poses:
-  `runner_idle`, `runner_run_0-7`, `runner_jump_rise`, `runner_jump_apex`, `runner_fall`, `runner_dash`, the holds; NO
-  hang or swing pose on the sheet: the art block is later, so the swing uses an existing pose for now, say which, and
-  a rope drawn as a thin part or beam). `server/Arena.lua` has no anchors (`BLOCKS`: floor, end walls, three
-  platforms, two wall-jump walls); anchors are new map data (PR 6 will carry them per map). `server/MoveGuard`
-  rebuilds a body at its last trusted spot on a violation. Line counts (ceiling 400): `Client.client.lua` 306,
-  `Movement.lua` 313, `Look.lua` 291, `Controls.lua` 272, `movement.test.luau` 397, `move_check.test.luau` 422 (tests
-  have no ceiling but split them when they pass ~400: `movement_world.luau` helpers exist).
-- **Routine session's read (guess):** (1) Anchors: a list of points in `server/Arena` (`Arena.ANCHORS`, 4-6 over the
-  test map: above the platform gaps, above the wall-jump shaft, over open floor at 3-5 tiles up), built as small
-  marked parts (colour-coded, rule 29; a ring or a hook shape, placeholder), and sent to clients once (the simplest
-  wire: a `sync`-like payload on an existing remote, or the anchor parts themselves tagged with `CollectionService`
-  so clients read them from the workspace, no remote at all; the heavy picks). (2) Aim assist, client side, pure:
-  `Movement.pickAnchor(s, anchors, view)` → the nearest anchor that is on this screen (rule 17: never off-screen) and
-  above the runner within `GRAPPLE_RANGE` (trial 28 studs), favouring the one ahead of the facing. (3) The swing in
-  `Movement.step`: on `grapplePressed` with a pick, enter a rope state `{ ax, ay, len }` (len = the distance at
-  attach, clamped to `GRAPPLE_MAX_LEN`); while `grappleHeld`, a pendulum constraint each step: integrate velocity under
-  gravity, then project the position onto the circle and remove the radial velocity (semi-implicit, stable at 60-240
-  Hz; a tiny pump from the stick, `GRAPPLE_PUMP`, so a hanging runner can start swinging); on release, keep the
-  tangential velocity (rule 16, DESIGN §2 line 2) plus a small boost `GRAPPLE_RELEASE_BOOST` (trial 1.1, rule 17), refresh
-  the double jump and dash (rule 15 lists refresh sources; a release is a natural one: say if you add it), and a short
-  `GRAPPLE_COOLDOWN` (0.2 s) before the next attach. Jump while hanging = release with the jump's vertical added. A
-  hold (trap, freeze, stumble) breaks the rope. Ghosts never grapple (rule 37): the client does not read the input for
-  a ghost beyond the rotate. (4) Speed trust: measure the fastest honest swing (drive it in `move_check.test.luau`: the
-  longest rope from the highest anchor, pump, release at the bottom, dash) and set `MoveCheck.RATE_X` (or a swing
-  allowance granted while the server sees the grapple bit in the stream, bounded by the same maths) so the chain is
-  never flagged; record the new numbers in trust.md §7-8. The server never trusts "I am attached" for anything but
-  the allowance; if the allowance is bit-gated, bound the bit's duration like the dash's i-frames. (5) The wire: a
-  grapple bit in the snapshot's state bits plus the anchor index (one byte) so other screens draw the rope and the
-  pose; `RemotePose` reads it. (6) Client: `Body` unchanged (the plane lock and probes still apply; the rope state
-  is Movement's); the rope drawn as a thin neon part from the runner's hand to the anchor on every screen (own and
-  others), the anchor highlighted when it is the current pick (aim assist readable: rule 17), the GRAPPLE touch
-  button shown for the living (`Controls.buttons`), the camera leading into the swing if `SideCam` needs it.
-  (7) Tests: `movement.test.luau` or a new `grapple.test.luau` (attach, the constraint keeps the length within 0.5
-  stud over 2 s, energy does not grow when hanging still, release keeps the tangential speed, the boost, jump off the
-  rope, a hold breaks it, no attach to an off-screen or out-of-range anchor, cooldown), `move_check.test.luau` (the
-  driven fastest swing never flagged; pinned as a measurement), `snapshot.test.luau` (the bit and index round-trip),
-  `remote_pose.test.luau`.
-- **Decision needed:** design and build the living grapple as DESIGN §2 and rule 17 say, with trial numbers in Config
-  and reasons in movement.md (a new section, or `docs/systems/grapple.md` if movement.md would pass ~300 lines).
-  Write the QA goals file `docs/qa/grapple.md` in the shape of `docs/qa/ghosts-v2-walls.md` (the loop question: does
-  the grapple hand speed off to the other moves, is it easy to start and never floaty, is the aim assist readable, is
-  the server never fooled). Verification steps 1-4 (new ModuleScripts fine; a new remote only if the anchors need one:
-  then `default.project.json` and the README table). Update movement.md, controls.md (the Grapple row is live, the
-  button shows), trust.md §7-8, netcode.md §8 (the bits), the README remotes table if touched, the src READMEs,
-  DESIGN only if a line's wording must change (say which). One worklog line. Mark H25 "Built, QA loop next". Do NOT
-  commit. Do not touch `sprites/`, `scenes/`, `Sprites.lua` or `assets.lock.json`. Movement FEEL is Danzo's call by
-  hand: name in the goals file exactly what he should try.
-- **Blocked routine work:** the QA loop on the grapple; PR 6's anchors per map; the art block's hang/swing poses.
-- **Built 2026-11-01 (heavy; QA loop next):** `shared/Grapple` (pick, rope, leapfrog swing, release) in Movement phase
-  4c, `client/Grapple`, six anchors in `server/Arena`, a 14th snapshot byte; no new remote and no allowance (the swing is
-  capped at the dash speed, `RATE_X` unchanged; driven chains never flagged). Calls for Danzo: the cap, a hook behind
-  you, refresh on the hook (DESIGN rule 15 note) → `docs/systems/grapple.md`, trust.md §11, goals `docs/qa/grapple.md`.
-
 ## Resolved
+
+### H25 — The living grapple: hold to hang on marked anchors, release keeps the swing — 2026-11-01 02:10 — RESOLVED
+- **Resolved 2026-11-02:** built by the heavy, QA loop 7 → 7 → 8/10 (target met in round 3). Anchors, aim assist, the
+  leapfrog swing, release/jump/dash off the rope, no new trust → `docs/systems/grapple.md`, `docs/qa/grapple-summary.md`.
 
 ### H24 — The closing walls: a SpeedRunners-style end phase blended with PR 5 — 2026-11-01 00:40 — RESOLVED
 - **Resolved 2026-11-01 (heavy research + build; routine QA loop 8/10 in round 1):** SpeedRunners' shared shrinking
