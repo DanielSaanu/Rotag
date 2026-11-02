@@ -18,6 +18,12 @@ local hw0: number? = nil -- the half-width when this client first saw the walls:
 local HOT = Color3.fromRGB(255, 225, 100)
 local HIDDEN = CFrame.new(0, -1e4, 0)
 local EXTRAPOLATE = 0.5 -- seconds a MatchState's window is carried forward at most (they come 4 a second)
+local SMOOTH = 15 -- 1/s: the drawn window closes the gap to the extrapolated one at this rate (QA H26 r1: the wander's
+-- acceleration made each MatchState land ~0.29 studs off the extrapolation, a visible hop 4 times a second)
+local drawX: number? = nil -- the window as drawn last frame (nil: not shown)
+local drawHw = 0
+local lastFrame = 0
+local predictedWas = false -- the local GET BACK IN prediction, with the server's hysteresis (WALL_BACK_IN)
 local NEAR = 40 -- studs: an off-screen wall's edge glow starts this far beyond the screen's edge
 
 local parts: { { edge: BasePart, band: BasePart } } = {}
@@ -86,13 +92,22 @@ function Walls.update(state: any, myX: number?, grace: number?)
 	local w = state and not state.over and state.window
 	if not w then
 		hide()
-		hw0 = nil
+		hw0, drawX, predictedWas = nil, nil, false
 		return
 	end
 	local now = os.clock()
 	local age = math.clamp(now - (state.at or now), 0, EXTRAPOLATE)
 	local x = w.x + w.vx * age
 	local hw = math.max(Config.WALL_MIN_HW, w.hw + w.vhw * age)
+	if drawX == nil then
+		drawX, drawHw = x, hw -- first sight: snap
+	else
+		local k = 1 - math.exp(-SMOOTH * math.clamp(now - lastFrame, 0, 0.1))
+		drawX += (x - (drawX :: number)) * k
+		drawHw += (hw - drawHw) * k
+	end
+	lastFrame = now
+	x, hw = drawX :: number, drawHw
 	hw0 = math.max(hw0 or hw, hw)
 	local span = (hw0 :: number) - Config.WALL_MIN_HW
 	local closed = if span < 1 then 1 else math.clamp(((hw0 :: number) - hw) / span, 0, 1) -- progress, whatever the start width
@@ -115,7 +130,10 @@ function Walls.update(state: any, myX: number?, grace: number?)
 		end
 	end
 	if not label then return end
-	local predicted = myX ~= nil and math.abs(myX - x) > hw + Config.RUNNER_WIDTH / 2 -- the server hears a ping later
+	-- the server hears a ping later; the same hysteresis as its own (shared/Walls.outside): out past the wall, back in
+	-- only WALL_BACK_IN further in, so a runner on a swaying line never sees the label blink
+	local predicted = myX ~= nil and math.abs(myX - x) > hw + Config.RUNNER_WIDTH / 2 - (if predictedWas then Config.WALL_BACK_IN else 0)
+	predictedWas = predicted
 	if grace == nil and not predicted then
 		label.Text = ""
 		return

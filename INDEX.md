@@ -32,6 +32,8 @@ to (`roblox/default.project.json`).
   slot, the hex and the shared ward, what the server trusts (orb touches, `GhostClaim`), `ItemEvent`, what each screen shows.
 - [`docs/systems/items.md`](docs/systems/items.md): items as built (v2 PR 2, H19): living orbs and pools, Use (`UseItem`), the holds
   (crate, bear trap, ice beam), dash i-frames, the per-target ward, what the server trusts. Before any item, hold or Use change.
+- [`docs/systems/walls.md`](docs/systems/walls.md): the closing walls (H24) and the moving window (H26): the world-space window the
+  server owns, hysteresis at the edge, the wander and the lean, the numbers, what was seen. Before any walls change.
 - [`docs/systems/endgame.md`](docs/systems/endgame.md): the endgame as built (v2 PR 5, H23; PR 5b, H24): the end phase, its speed, the
   ignition and burn-out, the closing walls (SpeedRunners research, the grace, what the server trusts; H26: the moving window, §7.7). Before any end-phase change.
 - [`docs/systems/placement.md`](docs/systems/placement.md): placement as built (v2 PR 4, H22): the seven tetromino fixtures, boost pads,

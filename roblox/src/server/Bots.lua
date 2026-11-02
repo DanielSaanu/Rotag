@@ -73,7 +73,9 @@ function Bots.move(r: Tag.Round?, dt: number, now: number, history: { [number]: 
 				chase = if o and o.held[id] ~= nil then lastX(history, r.it) else orbX(o, x) -- any item: to the holder
 			end
 		end
-		if r and r.alive[id] then -- the walls (H24): never head out (H26 follow-up), and outside, back in first
+		-- The walls (H24): never head out (H26 follow-up), and outside, back in first. A dummy holder's chase is clamped
+		-- into the box too, so it will not follow a runner who steps out: Studio only, and the walls do that runner's job.
+		if r and r.alive[id] then
 			local lo, hi = Walls.room(now)
 			if lo and hi then
 				if x >= hi - 0.5 then d.dir = -1 elseif x <= lo + 0.5 then d.dir = 1 end -- the patrol turns inside
