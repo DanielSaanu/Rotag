@@ -23,14 +23,17 @@ export type Rope = { x: number, y: number, id: number, len: number, target: numb
 -- behind the facing, - GRAPPLE_STICKY if it is `prev` (the last pick's id). `clear(a)`, if given, is the line of sight
 -- (the client's raycast); it is asked only of an anchor that would win, so at most a few rays a frame. nil: none.
 -- QA round 1: never one under the screen's top GRAPPLE_INSET_TOP (the HUD banner sits there), and never one behind
--- the MOTION while moving faster than GRAPPLE_BEHIND_FAST x run (`vx`): the catch would throw the run away.
+-- the MOTION while moving faster than GRAPPLE_BEHIND_FAST x run (`vx`): the catch would throw the run away. QA round
+-- 3: with hysteresis, so the pick never blinks at the threshold: the anchor picked last frame (`prev`) is kept up to
+-- BEHIND_FAST; one not picked is taken only under BEHIND_SLOW.
 function Grapple.pick(x: number, y: number, facing: number, anchors: { Anchor }, view: View, prev: number?,
 	clear: ((Anchor) -> boolean)?, vx: number?): Anchor?
 	local best, bestScore = nil, math.huge
 	local inset = Config.GRAPPLE_INSET
-	local fast = vx ~= nil and math.abs(vx) > Config.GRAPPLE_BEHIND_FAST * Config.RUN_SPEED
+	local speed = if vx ~= nil then math.abs(vx) / Config.RUN_SPEED else 0
 	for _, a in anchors do
 		local dx, dy = a.x - x, a.y - y
+		local fast = speed > (if a.id == prev then Config.GRAPPLE_BEHIND_FAST else Config.GRAPPLE_BEHIND_SLOW)
 		if dy >= Config.GRAPPLE_MIN_ABOVE and math.abs(a.x - view.x) <= view.halfW - inset
 			and a.y - view.y >= -(view.halfH - inset) and a.y - view.y <= view.halfH - Config.GRAPPLE_INSET_TOP
 			and not (fast and dx * (vx :: number) < 0) then

@@ -36,6 +36,7 @@ local FLOOR_RAY = 64 -- studs down from an anchor the floor under it is looked f
 local FLOOR_TRIES = 5 -- ... and again, a second apart, this many times while one is missing: the anchors are Persistent,
 -- so with streaming they can arrive before the map's parts do (QA round 2); a floor found late still caps the rope
 local floorTries = 0
+local floorRetryPending = false -- one retry in flight at most (QA r3: six tag signals in one frame spent them all at once)
 
 local function rebuild()
 	table.clear(anchors)
@@ -43,11 +44,16 @@ local function rebuild()
 	for _, part in CollectionService:GetTagged(ANCHOR_TAG) do
 		local id = part:GetAttribute("AnchorId")
 		if part:IsA("BasePart") and type(id) == "number" then
-			-- the floor under it (the map is static): a hook's rope is kept short enough to swing clear of it (QA r1)
-			local p = RaycastParams.new()
-			p.FilterType = Enum.RaycastFilterType.Exclude
-			p.FilterDescendantsInstances = { folder :: any, part.Parent :: any }
-			local hit = workspace:Raycast(part.Position, Vector3.new(0, -FLOOR_RAY, 0), p)
+			-- the floor under it (the map is static): a hook's rope is kept short enough to swing clear of it (QA r1).
+			-- Only the map's own blocks count (QA r3: a runner or a ghost piece under the anchor must not become its floor).
+			local map = workspace:FindFirstChild("Map")
+			local hit = nil
+			if map then
+				local p = RaycastParams.new()
+				p.FilterType = Enum.RaycastFilterType.Include
+				p.FilterDescendantsInstances = { map }
+				hit = workspace:Raycast(part.Position, Vector3.new(0, -FLOOR_RAY, 0), p)
+			end
 			local a = { x = part.Position.X, y = part.Position.Y, id = id, floor = if hit then hit.Position.Y else nil }
 			table.insert(anchors, a)
 			byId[id] = a
@@ -56,9 +62,13 @@ local function rebuild()
 	pick = nil
 	local missing = false
 	for _, a in anchors do if a.floor == nil then missing = true end end
-	if missing and floorTries < FLOOR_TRIES then
+	if missing and floorTries < FLOOR_TRIES and not floorRetryPending then
 		floorTries += 1
-		task.delay(1, rebuild)
+		floorRetryPending = true
+		task.delay(1, function()
+			floorRetryPending = false
+			rebuild()
+		end)
 	end
 end
 

@@ -121,6 +121,7 @@ anchor distance would be the server re-judging the swing. Instead the swing's ow
 |---|---|---|
 | `GRAPPLE_RANGE` | 28 studs | reach to an anchor; also the longest rope |
 | `GRAPPLE_MIN_ABOVE` | 4 | an anchor must be this far above your centre |
+| `GRAPPLE_BEHIND_FAST` / `_SLOW` | 0.8 / 0.7 x run | faster than FAST, no anchor behind the motion; one skipped returns only under SLOW (no blink) |
 | `GRAPPLE_BEHIND` / `GRAPPLE_STICKY` | 8 / 2 studs | aim assist: behind scores further, the last pick nearer |
 | `GRAPPLE_INSET` | 2 studs | inside the screen edge (never off-screen) |
 | `GRAPPLE_MIN_LEN` | 8 studs | the shortest rope (no loops) |
@@ -204,3 +205,12 @@ through the real framing (`test/luau/run.js` lifts `BLOCKS` and `ANCHORS` out of
 the client looks for a missing floor again up to 5 times a second apart (Persistent anchors can arrive before the
 streamed map). Deferred: a keep-clear column under each anchor (a piece in the arc is a legitimate ghost play, and a
 column would only guard the low point); leavers' hidden rope parts.
+
+## QA round 3 (2026-11-02, 8/10: target met)
+
+Seen live by the reviewer: a floor hook at spawn, a side hook 11 studs off anchor 4 (smooth, no yank), and the first
+dash off the rope (-15 → -120 the way it steered, which then landed a tag). Fixed after it: the floor ray counts only
+`Workspace.Map`'s blocks (a runner or a ghost piece under an anchor could have become its floor on a retry), one
+floor retry in flight at most (six tag signals in a frame could spend all five at once), and hysteresis on the
+behind-skip (`GRAPPLE_BEHIND_SLOW` 0.7: the halo blinked for a frame while slowing past a ball at the 0.8 threshold).
+Left as is: the disc reads as a rim under bloom (the art block's call); leavers' hidden rope parts.

@@ -58,6 +58,12 @@ do -- the pick (rule 17): above, in reach, on screen; the nearest, ahead before 
 	assert(Grapple.pick(0, 0, -1, { behind }, VIEW, nil, nil, fast) == nil, "... whichever way you face")
 	assert(Grapple.pick(0, 0, 1, { behind }, VIEW, nil, nil, -fast) == behind, "sprinting left: it is ahead of the motion")
 	assert(Grapple.pick(0, 0, 1, { behind }, VIEW, nil, nil, fast - 10) == behind, "at a walk, behind is still a pick")
+	-- QA round 3: hysteresis at the threshold, so the halo never blinks while slowing past a ball
+	local mid = (Config.GRAPPLE_BEHIND_FAST + Config.GRAPPLE_BEHIND_SLOW) / 2 * Config.RUN_SPEED
+	assert(Grapple.pick(0, 0, 1, { behind }, VIEW, behind.id, nil, mid) == behind, "between the two: the last pick is kept")
+	assert(Grapple.pick(0, 0, 1, { behind }, VIEW, nil, nil, mid) == nil, "... but one not picked yet stays skipped")
+	assert(Grapple.pick(0, 0, 1, { behind }, VIEW, nil, nil, Config.GRAPPLE_BEHIND_SLOW * Config.RUN_SPEED - 1) == behind,
+		"under BEHIND_SLOW it is a pick again")
 	-- QA round 1: never one under the HUD's banner at the top of the screen (GRAPPLE_INSET_TOP, more than the side inset)
 	local top = { x = 0, y = 24 - Config.GRAPPLE_INSET_TOP + 0.5, id = 8 }
 	assert(Grapple.pick(0, 0, 1, { top }, VIEW) == nil, "under the banner: not picked")

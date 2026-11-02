@@ -148,6 +148,8 @@ Config.GRAPPLE_STICKY = 2         -- ... and the anchor already picked this many
 Config.GRAPPLE_INSET_TOP = 6      -- ... and this far below the screen's TOP, where the HUD's fuse banner sits (QA r1)
 Config.GRAPPLE_BEHIND_FAST = 0.8  -- faster than this x RUN_SPEED, an anchor behind the motion is never picked (QA r1:
                                   -- a hook behind a sprinting runner threw its speed away)
+Config.GRAPPLE_BEHIND_SLOW = 0.7  -- ... and one already skipped comes back only under this x RUN_SPEED (QA r3: without
+                                  -- the gap the halo blinked frame to frame while slowing past a ball)
 Config.GRAPPLE_INSET = 2          -- studs inside the screen edge an anchor must be to be picked (rule 17: never off-screen)
 Config.GRAPPLE_MIN_LEN = 8        -- the shortest rope (no loops round the anchor below the speed cap: 5 g L > cap^2)
 Config.GRAPPLE_LIFT = 1           -- hooked from the floor, the rope reels in to this far above your feet's height ...

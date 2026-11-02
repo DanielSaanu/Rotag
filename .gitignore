@@ -11,3 +11,6 @@ exports/**/*.json
 rojo
 rojo.exe
 tools/luau/
+
+# agent worktrees
+.claude/worktrees/
