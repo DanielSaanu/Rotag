@@ -74,3 +74,12 @@ Play viewport was 1x1 with 0 render frames: every `BindToRenderStep` body was de
 remotes and the server ran normally. A Play stop/start did not fix it. What still works: the server's and client's
 Output, and the real client modules required in the Client datamodel and driven on Heartbeat from the live remotes
 (`Tagging.start`, then the draw call). Say in the doc that nothing was seen on screen. *(2026-11-01, handoff H24.)*
+
+**T14 — Driving the runner through the MCP one call at a time burns the 45 s fuse: put a whole sequence in ONE
+`user_keyboard_input` call and read the state in the very next call.** Each tool call's turnaround is seconds of
+round time; three "walk, then press, then read" calls in a row left the runner a ghost before the read (no halo, no
+hook), which looked like a bug and was not. What works: one keyboard call (`wait 9000` for the round, `keyDown D`
+1000 ms, `keyUp D`, `wait 800`, `keyDown W`, `wait 1200`), then one `execute_luau` that polls for a couple of
+seconds; restart Play for a fresh fuse. `VirtualInputManager` is not callable from `execute_luau` (no RobloxScript
+capability). A key left down by an earlier session stays down across Play restarts: send `keyUp` for W, A, D, Space
+and Shift first. *(2026-11-02, the grapple QA loop, H25.)*
