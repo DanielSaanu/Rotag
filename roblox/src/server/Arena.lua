@@ -53,15 +53,19 @@ for _, s in Arena.LIVING_ORBS do table.insert(Arena.ORBS, s) end
 Arena.KEEP_CLEAR = { { 17 * T, 0, 24 * T, 12 * T, "keep-clear" } }
 
 -- H25 (DESIGN §3 rules 17, 29; docs/systems/grapple.md §5): the grapple anchors, { x, y } studs, numbered by their
--- place in this list (the snapshot's anchor byte). Over open floor and the gaps, 3-11 tiles up, 22-36 studs apart so
+-- place in this list (the snapshot's anchor byte). Over open floor and the gaps, 5-11 tiles up, 22-48 studs apart so
 -- one swing's release reaches the next. Built as gold marked balls tagged ANCHOR_TAG; clients read them from the
--- workspace (no remote). PR 6 carries a list per map.
+-- workspace (no remote). PR 6 carries a list per map. Standing under one, it must show under the HUD banner: the
+-- camera's centre sits CAMERA_Y_OFFSET above the runner, so over a floor at y f an anchor is picked only up to
+-- f + RUNNER_HEIGHT / 2 + CAMERA_Y_OFFSET + CAMERA_VIEW_HEIGHT / 2 - GRAPPLE_INSET_TOP = f + 23.75 (QA round 2: 6 tiles
+-- was 0.25 over; grapple.test.luau now stands under every anchor from every block top in reach, through run.js).
 Arena.ANCHOR_TAG = "RotagAnchor"
 Arena.ANCHORS = {
 	{ x = -14 * T, y = 5 * T }, -- the open floor left of PlatformHigh
-	{ x = -1 * T, y = 6 * T }, -- over the spawn, between PlatformHigh and PlatformLow
-	{ x = 8 * T, y = 8 * T }, -- over the gap from PlatformLow up to PlatformMid
-	{ x = 15 * T, y = 6 * T }, -- over the floor between PlatformMid and the wall-jump shaft
+	{ x = -2 * T, y = 5.5 * T }, -- over the spawn, between PlatformHigh and PlatformLow (x -8: the longest rope from the
+	-- floor, 19.25, ends 0.75 short of PlatformLow's left edge at 12, so a swing never bonks it; QA round 2 saw it at -4)
+	{ x = 8 * T, y = 7.5 * T }, -- over the gap from PlatformLow up to PlatformMid (from PlatformLow's edge: 20.6 away)
+	{ x = 15 * T, y = 5.5 * T }, -- over the floor between PlatformMid and the wall-jump shaft
 	{ x = 20.5 * T, y = 11 * T }, -- above the shaft
 	{ x = 26.5 * T, y = 5 * T }, -- the floor past the shaft
 }

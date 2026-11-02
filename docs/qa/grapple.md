@@ -48,7 +48,7 @@ other runners are server-driven dummies (`Config.STUDIO_DUMMIES = 3`); they neve
 12. **Verification.** `npm test` (13 node, 15 Luau suites incl. the new `grapple.test.luau` and
     `move_check_grapple.test.luau`; 20 mutations of the grapple rules each caught), `npm run lint:luau` clean, `rojo
     build` passes; the sourcemap only gained `Shared.Grapple` and `Client.Grapple` (ModuleScripts); line ceiling holds
-    (`shared/Movement.lua` 357, `client/Client.client.lua` 314).
+    (`shared/Movement.lua` 362, `client/Client.client.lua` 314).
 
 ## Seen by the builder (Studio, 2026-11-01)
 

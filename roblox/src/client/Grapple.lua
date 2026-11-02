@@ -33,6 +33,9 @@ params.IgnoreWater = true
 local fromX, fromY = 0, 0
 local lastCharacter: Model? = nil -- the filter is rebuilt only when the character changes (QA r1: no per-step table)
 local FLOOR_RAY = 64 -- studs down from an anchor the floor under it is looked for, once, at rebuild
+local FLOOR_TRIES = 5 -- ... and again, a second apart, this many times while one is missing: the anchors are Persistent,
+-- so with streaming they can arrive before the map's parts do (QA round 2); a floor found late still caps the rope
+local floorTries = 0
 
 local function rebuild()
 	table.clear(anchors)
@@ -51,6 +54,12 @@ local function rebuild()
 		end
 	end
 	pick = nil
+	local missing = false
+	for _, a in anchors do if a.floor == nil then missing = true end end
+	if missing and floorTries < FLOOR_TRIES then
+		floorTries += 1
+		task.delay(1, rebuild)
+	end
 end
 
 local function part(name: string): BasePart

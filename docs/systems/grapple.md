@@ -25,8 +25,9 @@ Keys and the touch button: [controls.md](controls.md). QA goals: [../qa/grapple.
 
 ## 2. The design (each choice and why)
 
-- **Anchors** are map data: six on the test map (`Arena.ANCHORS`), over open floor and the gaps, 3-11 tiles up and
-  22-36 studs apart so one release reaches the next. Each is a gold neon ball (1.6 studs) on a dark disc: gold is free
+- **Anchors** are map data: six on the test map (`Arena.ANCHORS`), over open floor and the gaps, 5-11 tiles up and
+  22-48 studs apart so one release reaches the next. Standing under one, it must sit under the HUD banner's inset: over a
+  floor at y f that is f + 23.75 at most (QA round 2); `grapple.test.luau` stands under every anchor on the real map. Each is a gold neon ball (1.6 studs) on a dark disc: gold is free
   in the colour code (pads lime, ghost pieces violet, walls red, freeze cyan; rule 29). Not solid and not queried
   (T11: a queried part is a floor to the probes). PR 6 carries a list per map.
 - **Aim assist (rule 17)**, `Grapple.pick`: of the anchors at least `GRAPPLE_MIN_ABOVE` (4) above the runner,
@@ -191,3 +192,15 @@ out from under the HUD banner; a press made in the air and still held ARMS the h
 bigger and darker; the line-of-sight filter is rebuilt only when the character changes; a jump off the rope reports
 "double" so other screens play the mid-air puff. Measurements re-pinned: up budget 2.41 → 2.96 of 10.5, down 2.67 →
 2.21 of 16 (the chains hook earlier and higher). Deferred: leavers' hidden rope parts.
+
+## QA round 2 (2026-11-02, 7/10)
+
+The round 1 fixes held live (floor clearance, the behind-skip, the armed hook). One regression: `GRAPPLE_INSET_TOP` 6
+hid anchors 2 and 4 (y 24) from a runner standing under them, because the camera's centre sits `CAMERA_Y_OFFSET` 4
+above the runner (screen top 29.75, usable 23.75); round 1's test had centred the view on the runner. Fixed: anchors 2,
+3 and 4 lowered by half a tile (22, 30, 22) and anchor 2 moved to x -8 so its longest floor rope (19.25) stops short of
+PlatformLow's left edge (the swing bonked it at x -4); a test stands under every anchor from every block top in reach
+through the real framing (`test/luau/run.js` lifts `BLOCKS` and `ANCHORS` out of `server/Arena.lua` as `ArenaData`);
+the client looks for a missing floor again up to 5 times a second apart (Persistent anchors can arrive before the
+streamed map). Deferred: a keep-clear column under each anchor (a piece in the arc is a legitimate ghost play, and a
+column would only guard the low point); leavers' hidden rope parts.

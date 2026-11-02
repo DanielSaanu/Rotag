@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Runs test/luau/*.test.luau against the shared Roblox modules using the standalone Luau interpreter.
+// Runs test/luau/*.test.luau against the shared Roblox modules (plus the test map's data) using the standalone Luau interpreter.
 // Modules are bundled the way Roblox resolves them: `require(script.Parent.X)` becomes a registry lookup.
 // Needs the `luau` binary: set LUAU_BIN, put it on PATH, or drop it in tools/luau/ (gitignored).
 // Get it from https://github.com/luau-lang/luau/releases (luau-ubuntu.zip / luau-windows.zip / luau-macos.zip).
@@ -33,6 +33,13 @@ export function bundle(testSource) {
     src = src.replace(/^--!\w+\s*$/m, ''); // directives only count at file top
     parts.push(`__modules[${JSON.stringify(name)}] = function()`, src, 'end', '');
   }
+  // server/Arena.lua is not pure (Vector3, Instance.new), but its map data is: the BLOCKS and Arena.ANCHORS literals
+  // are lifted out as the `ArenaData` module ({ BLOCKS, ANCHORS }) so a test can stand on the real test map.
+  const arena = fs.readFileSync(path.join(ROOT, "roblox", "src", "server", "Arena.lua"), "utf8");
+  const blocks = arena.match(/^local BLOCKS = \{[\s\S]*?^\}/m)[0];
+  const anchors = arena.match(/^Arena\.ANCHORS = \{[\s\S]*?^\}/m)[0];
+  parts.push("__modules[\"ArenaData\"] = function()", "local Config = __require(\"Config\")", "local T = Config.STUDS_PER_TILE",
+    "local Arena = {}", blocks, anchors, "return { BLOCKS = BLOCKS, ANCHORS = Arena.ANCHORS }", "end", "");
   // A test may start with `--!include <file>` lines: that file (beside the tests) is inlined in its place, so
   // helpers shared by several tests live once and stay locals of each test.
   const here = path.dirname(fileURLToPath(import.meta.url));
