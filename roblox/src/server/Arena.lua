@@ -26,6 +26,10 @@ local BLOCKS = {
 
 Arena.SPAWN = Vector3.new(0, Config.RUNNER_HEIGHT / 2 + 0.05, 0)
 
+-- H26 (DESIGN §6.8, endgame.md §7.7): the closing walls' window bounds, world x: the inner faces of the end walls. No
+-- wall ever goes past them, so the moving box never wanders into the end walls. PR 6 carries one pair per map.
+Arena.WINDOW = { lo = -20 * T, hi = 30 * T }
+
 -- H18 (DESIGN §3 rule 42): three ghost-orb spots, each orb's centre ORB_SIZE / 2 + 1.5 above a floor: on the left floor,
 -- on PlatformMid (a jump from PlatformLow), and on the floor past the wall-jump walls. The Studio dummies stay on the
 -- floor, so they only ever reach the two floor ones (server/Bots).

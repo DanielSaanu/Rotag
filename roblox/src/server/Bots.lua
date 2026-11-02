@@ -73,7 +73,14 @@ function Bots.move(r: Tag.Round?, dt: number, now: number, history: { [number]: 
 				chase = if o and o.held[id] ~= nil then lastX(history, r.it) else orbX(o, x) -- any item: to the holder
 			end
 		end
-		if r and r.alive[id] then chase = Walls.backIn(id) or chase end -- outside the walls: back in first (H24)
+		if r and r.alive[id] then -- the walls (H24): never head out (H26 follow-up), and outside, back in first
+			local lo, hi = Walls.room(now)
+			if lo and hi then
+				if x >= hi - 0.5 then d.dir = -1 elseif x <= lo + 0.5 then d.dir = 1 end -- the patrol turns inside
+				chase = math.clamp(chase or (if d.dir > 0 then hi else lo), lo, hi)
+			end
+			chase = Walls.backIn(id) or chase
+		end
 		-- A held dummy stands still for any hold (it is a stand-in, not a body that stumbles or slides).
 		Dummy.step(d, dt, chase, (r ~= nil and r.it == id and Tag.frozen(r, now)) or Items.held(id, now))
 	end

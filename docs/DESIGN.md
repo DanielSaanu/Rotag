@@ -1,6 +1,6 @@
 # Parkour Tag (working title): Game Design Notes
 
-_Last updated: 1 Nov 2026 (H25: the grapple built, notes under rules 15 and 17; §2 unchanged). 1 Nov 2026 (H24: rule 3's map shrink built as the closing walls, rules 3 and 51, §6.8; §2 unchanged). 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
+_Last updated: 2 Nov 2026 (H26: rule 51's walls loosely follow the living and keep moving; §6.8; §2 unchanged). 1 Nov 2026 (H25: the grapple built, notes under rules 15 and 17; §2 unchanged). 1 Nov 2026 (H24: rule 3's map shrink built as the closing walls, rules 3 and 51, §6.8; §2 unchanged). 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
 
 This is the design contract. Code and art are judged against it. A change to §2 (locked decisions) or §3 (the
 adopted rules) is escalation trigger 1 (`CLAUDE.md`). Portable principles that are not about this game live in
@@ -188,9 +188,10 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
     every living runner's top speed is multiplied by `END_PHASE_SPEED` (trial 1.1), alongside rule 3's map shrink;
     the ramp and the grant apply on top. Never during a normal fuse.
     **The map shrink (H24, SpeedRunners' closing screen in world space):** when the end phase starts, two walls appear
-    just outside the living pack and close over `WALL_CLOSE_TIME` (trial 20 s) to a 48-stud box, their centre easing
-    after the living. They are not solid: a living runner past one has `WALL_GRACE` (trial 3 s, paused while held) to
-    get back in, reset the moment it is, and is eliminated like a burn-out at 0. The server decides on its own position
+    just outside the living pack and close over `WALL_CLOSE_TIME` (trial 20 s) to a 48-stud box, their centre loosely
+    following the living (H26: their mean, leaned toward "it", plus a slow wander that never repeats, never faster
+    than `WALL_FOLLOW`, inside the map's window bounds), so the box keeps moving. They are not solid: a living runner past one has `WALL_GRACE` (trial 3 s, paused while held) to
+    get back in, reset the moment its whole body is (H26 follow-up: no flapping at a swaying wall), and is eliminated like a burn-out at 0. The server decides on its own position
     record; every player keeps their own camera (§2). Detail and numbers: [endgame.md](systems/endgame.md) §7.
 
 ---
@@ -245,8 +246,8 @@ No 2D, side-on parkour tag game has made it big on Roblox. The few 2D projects o
 7. **Bots.** Scope for a basic bot that chases, flees and uses abilities.
 8. **Maps** (H16). 3-4 from the start, differing in layout (rule 48): Tower (vertical), Yard (open), Warren (maze),
    Rooftops (gaps); feels in [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md) §6. Open: which first, and size. The map shrink
-   came forward (H24, rule 51's closing walls); each map's data will carry its window bounds (a tall map may shrink
-   vertically too).
+   came forward (H24, rule 51's closing walls); each map's data will carry its window bounds (the test map's are
+   `Arena.WINDOW`, H26; a tall map may shrink vertically too).
 9. ~~**`END_PHASE_AFTER`.**~~ **Resolved-trial 2026-10-31 (H23, heavy; Danzo to confirm):** 120 s, not the
    proposal's 150: the final two normally arrive first (~83-100 s), and a round still 3+ alive at 2:00 ends near 3:00,
    inside the pillar (150 would end near 3:30). Reasoning: [endgame.md](systems/endgame.md) §5.

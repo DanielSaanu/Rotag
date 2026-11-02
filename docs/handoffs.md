@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-02 (H26 opened: the walls loosely follow the runners; H25 resolved, 8/10)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-02 (H26 built by the heavy, its flapping follow-up fixed: the moving walls, QA loop next; H25 resolved, 8/10)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -27,7 +27,20 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H26 — The closing walls loosely follow the runners, irregularly, so the pack is pushed together — 2026-11-02 — OPEN
+### H26 — The closing walls loosely follow the runners, irregularly, so the pack is pushed together — 2026-11-02 — BUILT (follow-up built too), QA loop next
+- **Follow-up (2026-11-02, seen in Studio after the merge) — BUILT 2026-11-02 by the heavy, seen in Studio:** hysteresis
+  (`WALL_BACK_IN` 2: back in = whole body in), out/in sends <= 5/s, dummies keep 4 studs inside; flap lines 1650 in 48 s
+  -> 0 in 60 s; a pinned-out dummy still dies at 3.00 s → `docs/systems/endgame.md` §7.4, §7.7, S16. Not committed. The ask was: the build works live (walls close 72.6 → 24
+  over 20 s, the closed box's centre ranged 17..38 over 20 s, never past -80..120, no errors), but a runner at the
+  box's edge FLAPS between outside and inside several times a second once the box sways: the server Output filled
+  with alternating `walls: -1002 is outside the walls` / `walls: -1002 is back inside` lines for the two living
+  dummies, and every flip is an at-once MatchState send. Likely `Bots.backIn` aims at the edge and the swaying edge
+  keeps crossing it; a human standing at the edge would see GET BACK IN flash the same way. Needed: hysteresis on the
+  outside test (back IN only a margin inside, a Config knob) and/or `backIn` aiming inside; the at-once resend bounded
+  to a few a second per runner; the grace reset's meaning stated in endgame.md §7.4/§7.7; a test that pins no flapping
+  for a runner sitting at a swaying wall (mutation-checked); Studio: `walls:` line count over 20 s before/after, and a
+  dummy that truly stays out still dies at 0. Config on disk is set for testing (`END_PHASE_AFTER` 15,
+  `STUDIO_DUMMY_TAGS` false): put back 120 / true before finishing.
 - **Trigger:** 1 (rule 51's map shrink, as built by H24, changes how its window moves: a design decision with more than
   one reasonable option), 2 (`shared/Walls` and `walls.test.luau`; the `MatchState.window` payload if its shape must
   change), 3 (the window stays server-owned and deterministic: nothing a client sends may steer it), 6 (a step every
@@ -76,6 +89,10 @@ Resolution (added by the heavy agent under the same entry):
   killed you by itself), verification steps 3-4 (1-2 only if a module is added). One worklog line. Mark H26 "Built,
   QA loop next". Do NOT commit. Name exactly what Danzo should feel with his hands.
 - **Blocked routine work:** the QA loop on the moving walls; Danzo's Play of it.
+- **Built 2026-11-02 (heavy, worktree, not committed, not seen in Studio):** (a) a wander + (b) a quarter-lean toward
+  "it" on the living mean, eased and capped as before, inside the map's bounds (`Arena.WINDOW`); `MatchState.window`
+  shape and `client/Walls` unchanged; `walls.test` +4 blocks, 16 mutants / 15 caught → `docs/systems/endgame.md` §7.7,
+  DESIGN rule 51, goals `docs/qa/ghosts-v2-walls-2.md`. **Built, QA loop next** (look in Play first).
 
 ## Resolved
 

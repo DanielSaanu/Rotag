@@ -57,3 +57,18 @@ projected the next position onto the rope and set the velocity to the chord: it 
 `w += a(th) dt/2; th += w dt; w += a(th1) dt/2` lost 0.1% over 4 s, and plain symplectic Euler overshot the start
 energy by 3%. Measure the energy per swing before trusting any constraint solver, and mutation-check that the test
 fails for Euler. *(2026-11-01, handoff H25, `shared/Grapple.swing`.)*
+
+**S15 — When a rule gains a motion of its own, re-pin "X changes nothing" against a twin, never by loosening the
+constant.** H24 pinned "an untrusted sample drags nothing" as `x == 0` after a step; H26's wander moves the box on its
+own clock, so that check failed although the property held. Widening the tolerance would have hidden a real drag of the
+same size. Step a twin with the same seed and clock but WITHOUT the input, and assert exact equality (`==`, every
+frame or at the end); measure a response the same way (difference from the twin). Mutation-check that a clock- or
+input-dependent mutant now fails the twin check. *(2026-11-02, handoff H26, `walls.test.luau`.)*
+
+**S16 — A yes/no judged against a MOVING line needs hysteresis, and a bot must aim inside the line, never at it.** H24's
+walls judged "outside" with one threshold; H26 made the wall sway, and a Studio dummy patrolling into it (whose
+`backIn` aimed only until it was in by a hair) flipped out/in every frame: ~1650 `walls:` lines in 48 s, each an at-once
+MatchState. Give the state two thresholds (enter at the line, leave only a body-width past it, a Config knob), say in
+the doc which event the reset belongs to, rate-limit the at-once send it drives (never a death), and keep a bot's goal
+a margin inside the zone. Pin it with a runner dancing ON the moving line (one flip, then it dies) and mutation-check
+"no hysteresis". *(2026-11-02, handoff H26 follow-up, `shared/Walls.outside`, `server/Bots`.)*

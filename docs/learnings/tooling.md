@@ -83,3 +83,12 @@ hook), which looked like a bug and was not. What works: one keyboard call (`wait
 seconds; restart Play for a fresh fuse. `VirtualInputManager` is not callable from `execute_luau` (no RobloxScript
 capability). A key left down by an earlier session stays down across Play restarts: send `keyUp` for W, A, D, Space
 and Shift first. *(2026-11-02, the grapple QA loop, H25.)*
+
+**T15 — `luau-analyze` cannot resolve a type from another shared module (`Tag.Round` behind `require(script.Parent...)`),
+and a CHAIN of functions taking that type breaks its generic inference.** H26's `Walls.target(w, r, ...)` called
+`Walls.centroid(r, ...)` and was called from `Walls.step(w, r, ...)`: lint gained "No valid instantiation could be
+inferred for generic type parameter" at the call and bogus `table.find` errors 40 lines away; neither is in the
+noise filter (Studio resolves the require, so it is likely analyzer-only, but lint must stay clean). One level (step calls centroid) is fine. Fix the shape, not the
+filter: let the function that reads the round return plain numbers, and make the maths take numbers
+(`target(w, now, mean, holderX)`).
+*(2026-11-02, handoff H26, `shared/Walls.lua`.)*

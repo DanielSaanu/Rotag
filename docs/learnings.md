@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-02 (grapple QA: T14; H25: S14, N16; H24: S13, T13)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-02 (grapple QA: T14; H26: S15, T15, S16). 2026-11-01 (H25: S14, N16; H24: S13, T13)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -29,9 +29,9 @@ format, its world sim) were left behind.
 ## The sections (one file each, split 2026-10-14 when this file passed 300 lines)
 
 - [`A — Art`](learnings/art.md): **A** — A1, …, A7
-- [`S — Shared Luau`](learnings/shared-luau.md): **S** — S1, …, S14
+- [`S — Shared Luau`](learnings/shared-luau.md): **S** — S1, …, S16
 - [`N — Networking and fairness`](learnings/networking.md): **N** — N1, …, N16
-- [`T — Tooling`](learnings/tooling.md): **T** — T1, …, T14
+- [`T — Tooling`](learnings/tooling.md): **T** — T1, …, T15
 - [`G — Git and generated files`](learnings/git.md): **G** — G1, …, G4
 - [`Q — QA loop and review`](learnings/qa.md): **Q** — Q1, …, Q5
 

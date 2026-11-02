@@ -66,18 +66,27 @@ do -- the follow: toward the living mean at WALL_FOLLOW at most, never a snap; a
 	assert(near(w.x, Config.WALL_FOLLOW * DT) and near(w.vx, Config.WALL_FOLLOW), "one frame: WALL_FOLLOW x dt")
 	run(w, r, DT, 1, record(xs))
 	assert(near(w.x, Config.WALL_FOLLOW * (1 + DT), 1e-3), "after 1 s it has moved WALL_FOLLOW studs, no more")
+	-- H26: the box now moves on its own clock (the wander), so "drags nothing" is pinned against a twin that never had
+	-- the sample, exactly, over 5 s (the old check, x still 0 after one frame, pinned a box with no motion of its own)
 	local w2 = Walls.open(r, 0, record({ [A] = 0, [B] = 0 })) :: any
-	Walls.step(w2, r, DT, DT, record({ [A] = 0, [B] = 900 }, { [B] = true }))
-	assert(near(w2.x, 0), "an untrusted sample drags nothing")
+	local twin = Walls.open(r, 0, record({ [A] = 0, [B] = 0 })) :: any
+	run(w2, r, 0, 5, record({ [A] = 0, [B] = 900 }, { [B] = true }))
+	run(twin, r, 0, 5, record({ [A] = 0 }))
+	assert(w2.x == twin.x and w2.vx == twin.vx, "an untrusted sample drags nothing, to the last bit")
+	assert(math.abs(w2.x) < 8, "and the box has not chased it (it only wandered)")
 	assert(Config.WALL_FOLLOW < Config.RUN_SPEED / 2, "a zone, not a camera: far slower than a run")
 	-- a pack swaying about one spot (Studio: three dummies patrolling) barely moves it: eased, not chased at the cap
+	-- (H26: measured against a twin whose pack stands still, same seed, so the wander cancels out: what is left is the
+	-- walls' answer to the sway alone)
 	local w3 = Walls.open(r, 0, record({ [A] = 0, [B] = 0 })) :: any
+	local still = Walls.open(r, 0, record({ [A] = 0, [B] = 0 })) :: any
 	local swing, lo, hi = { [A] = 0, [B] = 0 }, math.huge, -math.huge
 	for k = 1, 60 * 20 do
 		local m = 13 * math.sin(k / 60 * 2 * math.pi / 4.4) -- the patrol mean: +-13 studs, a 4.4 s period
 		swing[A], swing[B] = m, m
 		Walls.step(w3, r, k / 60, DT, record(swing))
-		if k > 60 * 10 then lo, hi = math.min(lo, w3.x), math.max(hi, w3.x) end
+		Walls.step(still, r, k / 60, DT, record({ [A] = 0, [B] = 0 }))
+		if k > 60 * 10 then lo, hi = math.min(lo, w3.x - still.x), math.max(hi, w3.x - still.x) end
 	end
 	assert(hi - lo < 10, ("a +-13 stud sway moves the walls %.1f studs end to end, under 10"):format(hi - lo))
 end
@@ -214,6 +223,150 @@ do -- two graces out on the same frame: the one that ran out first goes first; a
 	assert(#gone == 2 and gone[1] == B and gone[2] == D, "a tie between runners: join order")
 end
 
+-- H26 (endgame.md §7.7): the moving window. The target is the living mean, leaned toward the holder, plus a wander.
+do -- the wander: a pure function of the seed and the clock; 0 when the walls appear, full once closed, never past
+	-- WALL_DRIFT; a new seed, a new path
+	local r = Tag.newRound({ A, B }, A, 0)
+	local w = Walls.open(r, 50, record({ [A] = 0, [B] = 0 }), nil, 7.25) :: any
+	local same = Walls.open(r, 50, record({ [A] = 0, [B] = 0 }), nil, 7.25) :: any
+	local other = Walls.open(r, 50, record({ [A] = 0, [B] = 0 }), nil, 8.5) :: any
+	assert(Walls.drift(w, 50) == 0, "no wander when the walls appear: the opening sweep reads as a close")
+	local most, apart, early = 0, 0, 0
+	for k = 0, 200 * 10 do
+		local t = 50 + k / 10
+		local d = Walls.drift(w, t)
+		assert(math.abs(d) <= Config.WALL_DRIFT + 1e-9, "never past WALL_DRIFT")
+		assert(d == Walls.drift(same, t), "deterministic: the same seed and clock, the same wander")
+		apart = math.max(apart, math.abs(d - Walls.drift(other, t)))
+		if t - 50 >= Config.WALL_CLOSE_TIME then most = math.max(most, math.abs(d)) end
+		if t - 50 <= 2 then early = math.max(early, math.abs(d)) end
+	end
+	assert(most > 0.7 * Config.WALL_DRIFT, ("once closed it reaches %.1f of %g"):format(most, Config.WALL_DRIFT))
+	assert(early < 0.15 * Config.WALL_DRIFT, "and fades in: small in the first 2 s")
+	assert(apart > Config.WALL_DRIFT / 2, "another seed (another round), another path")
+	assert(w.seed == 7.25 and Walls.open(r, 3, record({ [A] = 0 })).seed == 3, "the seed defaults to the open time")
+end
+
+do -- the lean: WALL_LEAN of the way from the living mean toward the holder, on the holder's own trusted sample only
+	local r = Tag.newRound({ A, B }, A, 0)
+	local xs = { [A] = -20, [B] = 20 }
+	local w = Walls.open(r, 0, record(xs)) :: any
+	local t = 30 -- closed, past the start freeze
+	local function lean(p)
+		return Walls.target(w, t, Walls.centroid(r, p) :: number, Walls.holderX(r, p)) - Walls.drift(w, t)
+	end
+	assert(near(lean(record(xs)), Config.WALL_LEAN * -20), "toward A, the holder: the runner's room shrinks")
+	assert(Walls.holderX(r, record(xs, { [A] = true })) == nil, "the holder's untrusted sample is no holder at all")
+	assert(near(lean(record(xs, { [A] = true })), 20), "the holder untrusted: no lean (the mean of B alone)")
+	Tag.pass(r, B, t)
+	assert(near(lean(record(xs)), Config.WALL_LEAN * 20), "a pass: it leans toward the new holder")
+	assert(Walls.centroid(r, record(xs, { [A] = true, [B] = true })) == nil, "no trusted sample: nothing to follow")
+	local ghostIt = Tag.newRound({ A, B, C }, A, 0)
+	ghostIt.alive[A] = false
+	assert(Walls.holderX(ghostIt, record(xs)) == nil, "a holder that is not living leans nothing")
+	-- the same duel twice, same seed, "it" on either side: the box settles WALL_LEAN x 40 studs apart
+	local rA, rB = Tag.newRound({ A, B }, A, 0), Tag.newRound({ A, B }, B, 0)
+	local wA = Walls.open(rA, 0, record(xs), nil, 9) :: any
+	local wB = Walls.open(rB, 0, record(xs), nil, 9) :: any
+	local tt = 0
+	for _ = 1, 60 * 40 do
+		tt += DT
+		Walls.step(wA, rA, tt, DT, record(xs))
+		Walls.step(wB, rB, tt, DT, record(xs))
+		wA.left, wB.left = {}, {}
+	end
+	local gap = wB.x - wA.x
+	assert(math.abs(gap - Config.WALL_LEAN * 40) < 2, ("the box sits %.1f studs nearer the holder's side"):format(gap))
+	Walls.step(w, r, t, DT, record({ [A] = 300, [B] = 300 })) -- moving: vx is the cap
+	assert(near(w.vx, Config.WALL_FOLLOW), "a far target: the box moves at the cap")
+	local x = w.x
+	Walls.step(w, r, t + DT, DT, record(xs, { [A] = true, [B] = true }))
+	assert(w.x == x and w.vx == 0, "no trusted sample: the box stands still, its vx 0 (clients extrapolate nothing)")
+end
+
+do -- the box moves on its own: a still duel cannot sit in a closed box forever, yet never faster than WALL_FOLLOW
+	local r = Tag.newRound({ A, B }, A, 0)
+	local xs = { [A] = -12, [B] = 12 }
+	local w = Walls.open(r, 0, record(xs), nil, 1.5) :: any
+	local lo, hi, fastest, everOut, t = math.huge, -math.huge, 0, false, 0
+	for _ = 1, 60 * 120 do
+		t += DT
+		Walls.step(w, r, t, DT, record(xs))
+		fastest = math.max(fastest, math.abs(w.vx))
+		if t > Config.WALL_CLOSE_TIME then lo, hi = math.min(lo, w.x), math.max(hi, w.x) end
+		everOut = everOut or w.left[B] ~= nil
+		w.left[A], w.left[B] = nil, nil -- watch the box, not the graces
+	end
+	assert(fastest <= Config.WALL_FOLLOW + 1e-9, ("never faster than WALL_FOLLOW (%.2f)"):format(fastest))
+	assert(hi - lo > 15, ("closed, it still sways %.1f studs end to end (H24's box sat still)"):format(hi - lo))
+	assert(everOut, "a runner who never moves is pushed out at some point: it has to keep choosing where to be")
+	print(("moving box, a still duel +-12: sways %.1f studs end to end, fastest %.2f studs/s"):format(hi - lo, fastest))
+	-- ... but a pack that stays together (with "it") is never walled out by the wander alone
+	local r2 = Tag.newRound({ A, B, C }, A, 0)
+	local w2 = Walls.open(r2, 0, record({ [A] = 0, [B] = 0, [C] = 0 }), nil, 4.75) :: any
+	local gone = run(w2, r2, 0, 120, record({ [A] = 0, [B] = 0, [C] = 3 }))
+	assert(#gone == 0 and next(w2.left) == nil, "runners who stay with the pack are never outside")
+end
+
+do -- the map's window bounds (§6.8): no wall ever past them; a pack at one end gets a box shifted in, holding everyone
+	local bounds = { lo = -80, hi = 120 }
+	local r = Tag.newRound({ A, B, C }, A, 0)
+	local xs = { [A] = -79, [B] = -70, [C] = -60 }
+	local w = Walls.open(r, 0, record(xs), bounds, 2.5) :: any
+	assert(near(w.x - w.hw0, bounds.lo), "the box opens shifted into the map, its left wall on the bound")
+	for _, id in { A, B, C } do assert(not Walls.outside(w, 0, xs[id]), "and nobody starts outside") end
+	local t = 0
+	for k = 1, 60 * 120 do -- the pack wanders the map end to end (trusted), the box follows inside the bounds
+		t += DT
+		local m = 20 + 95 * math.sin(k / 60 * 2 * math.pi / 37)
+		xs[A], xs[B], xs[C] = math.clamp(m - 9, -79, 119), math.clamp(m, -79, 119), math.clamp(m + 9, -79, 119)
+		Walls.step(w, r, t, DT, record(xs))
+		local hw = Walls.halfWidth(w, t)
+		assert(w.x - hw >= bounds.lo - 1e-9 and w.x + hw <= bounds.hi + 1e-9, "never past the map's window bounds")
+		w.left = {}
+	end
+	local narrow = Walls.open(r, 0, record({ [A] = -38, [B] = 0, [C] = 38 }), { lo = -40, hi = 50 }) :: any
+	assert(near(narrow.x, 5), "a box wider than the map sits on the map's middle")
+	for _, x in { -38, 0, 38 } do assert(not Walls.outside(narrow, 0, x), "with everyone inside") end
+end
+
+do -- H26 follow-up: no flapping at a swaying wall. Out = the whole body past the wall; back IN (the grace reset) only
+	-- WALL_BACK_IN further in, so a runner on the line, or a still one the sway passes over, flips a handful of times
+	local r = Tag.newRound({ A, B, C }, A, 0)
+	local xs = { [A] = 0, [B] = 0, [C] = 0 }
+	local w = Walls.open(r, 0, record(xs), nil, 7.3) :: any
+	run(w, r, 0, Config.WALL_CLOSE_TIME, record(xs)) -- closed, and from here the box sways on its own
+	local t = Config.WALL_CLOSE_TIME
+	local line = function() return Walls.halfWidth(w, t) + Config.RUNNER_WIDTH / 2 end
+	assert(Walls.outside(w, t, w.x + line() - Config.WALL_BACK_IN + 0.01, true), "out: half a body back in is still out")
+	assert(not Walls.outside(w, t, w.x + line() - Config.WALL_BACK_IN - 0.01, true), "the whole body back: in")
+	assert(not Walls.outside(w, t, w.x + line() - 0.01, false), "in: still in until the whole body is past")
+	-- a runner dancing on the swaying wall's line (+-0.9 studs at 5 Hz): ONE out, never a reset, so it dies
+	local flips, wasOut, gone = 0, false, {}
+	for k = 1, 60 * (Config.WALL_GRACE + 0.5) do
+		t += DT
+		xs[C] = w.x + line() + 0.9 * math.sin(k / 60 * 2 * math.pi * 5)
+		local g = Walls.step(w, r, t, DT, record(xs))
+		for _, id in g do table.insert(gone, id) end
+		if (w.left[C] ~= nil) ~= wasOut then flips, wasOut = flips + 1, w.left[C] ~= nil end
+		if k == 60 * 2 then assert(flips == 1 and r.alive[C], ("on the line 2 s: out once, not %d flips"):format(flips)) end
+	end
+	assert(#gone == 1 and gone[1] == C, "a runner who never gets wholly back in still dies at 0: no dip resets the grace")
+	-- a runner standing still near the edge of a closed, swaying box for 60 s: it goes out and in with the sway only
+	local r2 = Tag.newRound({ A, B, C }, A, 0)
+	local w2 = Walls.open(r2, 0, record({ [A] = 0, [B] = 0, [C] = 0 }), nil, 7.3) :: any
+	local still = { [A] = 0, [B] = 0, [C] = Config.WALL_MIN_HW }
+	flips, wasOut, t = 0, false, 0
+	for _ = 1, 60 * 60 do
+		t += DT
+		Walls.step(w2, r2, t, DT, record(still))
+		w2.left[C] = if w2.left[C] then Config.WALL_GRACE else nil -- keep it alive: only the flips are measured here
+		if (w2.left[C] ~= nil) ~= wasOut then flips, wasOut = flips + 1, w2.left[C] ~= nil end
+	end
+	assert(flips >= 2 and flips <= 20, ("a still runner at a swaying edge: %d flips in 60 s, 2 to 20"):format(flips))
+	print(("no flapping: a still runner at the edge flips %d times in 60 s"):format(flips))
+end
+
 do -- the numbers' shape (endgame.md §7)
 	local screen = Config.CAMERA_VIEW_HEIGHT * 16 / 9 -- studs across a 16:9 screen
 	assert(Config.WALL_START_MIN >= screen / 2, "the walls start at least at a 16:9 screen's edges")
@@ -224,6 +377,11 @@ do -- the numbers' shape (endgame.md §7)
 		"a running runner always outruns a wall")
 	assert(Config.WALL_GRACE * Config.RUN_SPEED > 2 * Config.WALL_START_PAD, "the grace is longer than a short way back")
 	assert(Config.WALL_GRACE <= 3, "a SHORT time frame (Danzo, H24)")
+	assert(Config.WALL_BACK_IN >= Config.RUNNER_WIDTH and Config.WALL_BACK_IN < Config.WALL_MIN_HW / 4,
+		"back in = the whole body back inside, never a deep demand (H26 follow-up)")
+	-- H26: the wander alone never puts a still pack outside a closed box; the lean never turns into following "it"
+	assert(Config.WALL_DRIFT < Config.WALL_MIN_HW, "the wander's reach is under the closed box's half-width")
+	assert(math.abs(Config.WALL_LEAN) <= 0.5, "a lean, not a follow: the mean still counts at least as much as it")
 end
 
 print("walls ok")

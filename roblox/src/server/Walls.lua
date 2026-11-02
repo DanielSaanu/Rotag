@@ -8,12 +8,16 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Tag = require(Shared:WaitForChild("Tag"))
 local Rules = require(Shared:WaitForChild("Walls"))
+local Arena = require(script.Parent:WaitForChild("Arena")) -- H26: the map's window bounds (DESIGN §6.8)
 
 local Walls = {}
 
 local SEND_GAP = 0.25 -- seconds between MatchStates while the walls move (clients extrapolate in between)
+local CHANGE_GAP = 0.2 -- H26 follow-up: an out or a back-in is sent at once, but never more than 5 a second in all
+-- (a death always goes at once); the HUD predicts its own runner's out locally, so the wait never shows
+local BOT_INSET = 4 -- studs inside each wall a dummy keeps to (Walls.room)
 local state: Rules.State? = nil
-local lastNow, lastSend = 0, -math.huge
+local lastNow, lastSend, pending = 0, -math.huge, false
 local studio = RunService:IsStudio()
 local function log(...) if studio then print("[Rotag] walls:", ...) end end
 
@@ -33,11 +37,11 @@ function Walls.step(r: Tag.Round, now: number, history: { [number]: { Tag.Sample
 	local w = state
 	if not w then
 		if not Tag.endPhase(r, now) then return false end
-		w = Rules.open(r, now, pos)
+		w = Rules.open(r, now, pos, Arena.WINDOW) -- the wander's seed: the server's clock now (a new path every round)
 		if not w then return false end
-		state = w
-		log(("closing in: centre %.1f, half-width %.1f -> %g over %gs"):format(w.x, w.hw0, Config.WALL_MIN_HW,
-			Config.WALL_CLOSE_TIME))
+		state, pending = w, false
+		log(("closing in: centre %.1f, half-width %.1f -> %g over %gs, in x %g..%g, seed %.3f"):format(w.x, w.hw0,
+			Config.WALL_MIN_HW, Config.WALL_CLOSE_TIME, Arena.WINDOW.lo, Arena.WINDOW.hi, w.seed))
 		lastSend = now
 		return true
 	end
@@ -54,10 +58,13 @@ function Walls.step(r: Tag.Round, now: number, history: { [number]: { Tag.Sample
 			if r.over then ("round over, winner " .. tostring(r.winner)) else (tostring(r.it) .. " is it")))
 	end
 	-- QA round 1: only while the walls still MOVE (closing, or the centre drifting) does the 4-a-second resend run; a
-	-- closed, settled box sends on changes only.
+	-- closed, settled box sends on changes only. H26: the wander keeps a closed box moving, so in practice the resend
+	-- runs for the whole end phase (4 small MatchStates a second; the client's 0.25 s extrapolation error < 0.25 stud).
 	local moving = Rules.closeRate(w, now) > 0 or math.abs(w.vx) > 0.05
-	if changed or (moving and now - lastSend >= SEND_GAP) then
-		lastSend = now
+	pending = pending or changed
+	local gap = now - lastSend
+	if #out > 0 or (pending and gap >= CHANGE_GAP) or (moving and gap >= SEND_GAP) then
+		lastSend, pending = now, false
 		return true
 	end
 	return false
@@ -75,6 +82,15 @@ function Walls.backIn(id: number): number?
 	local w = state
 	if w and not w.round.over and w.left[id] ~= nil then return w.x end
 	return nil
+end
+
+-- For server/Bots (H26 follow-up): the x range a dummy inside should keep to, BOT_INSET inside each wall (nil, nil
+-- with no walls). A dummy that patrolled into a swaying wall flapped out and in every frame (hundreds of log lines).
+function Walls.room(now: number): (number?, number?)
+	local w = state
+	if not w or w.round.over then return nil, nil end
+	local hw = Rules.halfWidth(w, now) - BOT_INSET
+	return w.x - hw, w.x + hw
 end
 
 return Walls

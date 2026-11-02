@@ -83,8 +83,17 @@ Config.WALL_MIN_HW = 24           -- studs: they stop closing here, a 48-stud bo
 Config.WALL_CLOSE_TIME = 20       -- seconds from appearing to closed, whatever the start width
 Config.WALL_FOLLOW = 8            -- studs/s at most the window's centre drifts after the living (a run is 45: a zone,
                                   -- not a camera; nobody can drag it)
-Config.WALL_EASE = 0.5            -- 1/s: the centre eases toward the living mean (a 2 s time constant) under that cap
-Config.WALL_GRACE = 3             -- seconds a living runner may be past a wall; reset the moment it is back inside
+Config.WALL_EASE = 0.5            -- 1/s: the centre eases toward its target (a 2 s time constant) under that cap
+-- H26 (endgame.md §7.7): the moving window. The target is the living mean, leaned toward the holder, plus a wander.
+Config.WALL_LEAN = 0.25           -- share of the way from the living mean to the holder (0: the plain mean; < 0 leans
+                                  -- toward the others). A duel: the runner may be at most 38 studs from "it", not 48
+Config.WALL_DRIFT = 20            -- studs: the wander's reach in the target (two sines); after the ease the box sways
+                                  -- ~24 studs end to end at up to ~7.9 studs/s. Fades in with the close (0 at the start)
+Config.WALL_DRIFT_PERIOD = 8      -- seconds: the wander's main period; the second sine runs 1.618x slower (never repeats)
+Config.WALL_GRACE = 3             -- seconds a living runner may be past a wall; reset once it is back inside (below)
+Config.WALL_BACK_IN = 2           -- studs: out once the whole body is past a wall, back IN (grace reset) only this much
+                                  -- further in: 2 = RUNNER_WIDTH, the whole body back inside. Stops a runner at a
+                                  -- swaying wall flapping out/in every frame (H26 follow-up, endgame.md §7.4)
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
