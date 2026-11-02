@@ -31,9 +31,13 @@
 
 ## To do
 
-- [ ] **Danzo (2026-11-02): the end-game walls should loosely follow the runners, irregularly** ("track around the map and
+- [x] **Danzo (2026-11-02): the end-game walls loosely follow the runners, irregularly** ("track around the map and
       force players to interact/run away from each other ... it always follows the runner but in a sort of irregular
-      manner"). → handoff H26 (heavy agent building it). Then its QA loop, then Danzo's Play.
+      manner"). Built (H26, heavy) and QA'd 8/10 in round 1, pushed. Summary and the checklist:
+      `docs/qa/ghosts-v2-walls-2-summary.md`. Detail: `docs/systems/walls.md` §7.7.
+- [ ] **Danzo: Play the moving walls checklist** (in the summary). The calls: a wander + a quarter-lean toward "it"
+      (`WALL_LEAN` 0.25; -0.25 if you meant the chased runner), `WALL_DRIFT` 20 / period 8 s, the wander fading in
+      with the close. The question: pressure, or a cheap death?
 - [x] **Grapple (H25) built and QA'd 7 → 7 → 8/10 (2026-11-02), pushed.** Summary and the checklist: `docs/qa/grapple-summary.md`.
 - [ ] **Danzo: Play the grapple checklist** (in the summary). The calls: the 120 cap, a hook behind you at a walk, the
       refresh on the hook, no boost on a dash off the rope, hold-to-hang; the pump, the 1.1 boost, a side hook's pull.

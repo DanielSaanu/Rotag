@@ -178,10 +178,20 @@ the wander off while closing (fades in). **Not seen in Studio** (the main tree w
 
 ### 7.8 Left for later
 
-Per-map window bounds (one pair, `Arena.WINDOW`, built in H26) and a vertical shrink (PR 6's map data: a tall map may want a floor and ceiling band too); a
+The mean and the lean read each runner's NEWEST sample, so an untrusted one drops that runner for a frame and in a
+duel the target jumps to the other (hidden by the easing; not exploitable, it only moves the box against the cheater):
+read the last TRUSTED sample instead (QA H26 round 1, deferred). Per-map window bounds (one pair, `Arena.WINDOW`, built in H26) and a vertical shrink (PR 6's map data: a tall map may want a floor and ceiling band too); a
 countdown over OTHER runners outside (a world label needs a SurfaceGui, A5); sounds; art for the walls (sheet,
 behind `Sprites.Has`). A wall-kill burst on a runner that LEFT in the same frame can play at its last drawn spot (the
 same harmless race as §6).
+
+### QA round 1 on the moving window (2026-11-02, 8/10: target met)
+
+Five rounds in Play: a new seed each round, the box never past -80, the fastest wall 8.2 studs/s, 0 flap lines over 8
+minutes, GET BACK IN on and off once with no flicker. Fixed after it: `client/Walls` draws from a smoothed window
+(`SMOOTH` 15/s; the wander's acceleration put each MatchState ~0.29 studs off the extrapolation: the largest per-frame
+jump fell 0.290 → 0.037 studs over 2882 frames), the local prediction got the server's hysteresis band, and this
+section left endgame.md (G3). Summary: `docs/qa/ghosts-v2-walls-2-summary.md`.
 
 ### Sources (H24)
 

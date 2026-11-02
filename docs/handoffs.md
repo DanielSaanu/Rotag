@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-02 (H26 built by the heavy, its flapping follow-up fixed: the moving walls, QA loop next; H25 resolved, 8/10)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-02 (H26 resolved: the moving walls, 8/10; H25 resolved, 8/10)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -27,74 +27,12 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H26 — The closing walls loosely follow the runners, irregularly, so the pack is pushed together — 2026-11-02 — BUILT (follow-up built too), QA loop next
-- **Follow-up (2026-11-02, seen in Studio after the merge) — BUILT 2026-11-02 by the heavy, seen in Studio:** hysteresis
-  (`WALL_BACK_IN` 2: back in = whole body in), out/in sends <= 5/s, dummies keep 4 studs inside; flap lines 1650 in 48 s
-  -> 0 in 60 s; a pinned-out dummy still dies at 3.00 s → `docs/systems/endgame.md` §7.4, §7.7, S16. Not committed. The ask was: the build works live (walls close 72.6 → 24
-  over 20 s, the closed box's centre ranged 17..38 over 20 s, never past -80..120, no errors), but a runner at the
-  box's edge FLAPS between outside and inside several times a second once the box sways: the server Output filled
-  with alternating `walls: -1002 is outside the walls` / `walls: -1002 is back inside` lines for the two living
-  dummies, and every flip is an at-once MatchState send. Likely `Bots.backIn` aims at the edge and the swaying edge
-  keeps crossing it; a human standing at the edge would see GET BACK IN flash the same way. Needed: hysteresis on the
-  outside test (back IN only a margin inside, a Config knob) and/or `backIn` aiming inside; the at-once resend bounded
-  to a few a second per runner; the grace reset's meaning stated in endgame.md §7.4/§7.7; a test that pins no flapping
-  for a runner sitting at a swaying wall (mutation-checked); Studio: `walls:` line count over 20 s before/after, and a
-  dummy that truly stays out still dies at 0. Config on disk is set for testing (`END_PHASE_AFTER` 15,
-  `STUDIO_DUMMY_TAGS` false): put back 120 / true before finishing.
-- **Trigger:** 1 (rule 51's map shrink, as built by H24, changes how its window moves: a design decision with more than
-  one reasonable option), 2 (`shared/Walls` and `walls.test.luau`; the `MatchState.window` payload if its shape must
-  change), 3 (the window stays server-owned and deterministic: nothing a client sends may steer it), 6 (a step every
-  server frame; the client extrapolates with `vx`).
-- **Doc:** `docs/DESIGN.md` §3 rules 3, 51 (the map shrink; "the window's centre eases toward the living mean"), §6.8
-  (maps carry window bounds); `docs/systems/endgame.md` §7.2 (the translation table: "the camera follows the leader" →
-  "the window's centre eases toward the living mean (2 s time constant), never faster than 8 studs/s ... a slow mean
-  is a zone nobody can drag"), §7.4 (the rules), §7.5 (the numbers), §7.6 (what was seen: the hard chase swung the
-  walls 16 studs with the dummies' patrol, hence `WALL_EASE`); `docs/qa/ghosts-v2-walls-summary.md` (PRESERVE list);
-  `docs/PRINCIPLES.md`; `docs/systems/trust.md` §4-5 (untrusted samples change nothing).
-- **Observed:** Danzo (2026-11-02, mid-session, verbatim): "can we also modify the end game bars i want them to sort
-  of track around the map and force players to interact/run away from each other i.e im thinking a rule like it
-  always follows the runner but in a sort of irregular manner forcing the runner to be careful while also forcing
-  hime to run from the chaser if that makes sense like it "looseley" follows the runners". Today the window's centre
-  only eases toward the living MEAN at `WALL_EASE` 0.5 /s under a `WALL_FOLLOW` 8 studs/s cap, and the walls close
-  from the pack's extent to a 48-stud box in 20 s then sit still: once closed, the box is a static arena and the runner
-  being chased can run laps inside it. He wants the box itself to move: loosely after the runners, irregularly enough
-  that a runner cannot settle, so the chase is forced by the box as well as by the fuse.
-- **Evidence:** `roblox/src/shared/Walls.lua` (143 lines: `centroid`, `open`, `halfWidth`, `closeRate`, `outside`,
-  `step` (the eased follow, the grace, the death order), `rows` (the `{ x, hw, vx, vhw }` window and the outside rows));
-  `server/Walls.lua` (80; steps it every frame after `Tag.tick`, sends `MatchState.window` 4 a second while the walls
-  move, at once on an outside change); `client/Walls.lua` (132; draws and extrapolates up to 0.5 s with `vx`);
-  `test/luau/walls.test.luau` (229, mutation-checked in H24); Config `WALL_START_PAD` 8, `WALL_START_MIN` 44,
-  `WALL_MIN_HW` 24, `WALL_CLOSE_TIME` 20, `WALL_FOLLOW` 8, `WALL_EASE` 0.5, `WALL_GRACE` 3. PRs 4, 5, 5b signed off by
-  Danzo 2026-11-01 ("all working nicely"); the walls loop closed 8/10 (`docs/qa/ghosts-v2-walls-summary.md`).
-- **Routine session's read (guess):** keep the window server-owned, deterministic and smooth (the client's `vx`
-  extrapolation and the 4 Hz resend must still look right), and give its CENTRE a motion of its own on top of the
-  follow. Three shapes worth weighing: (a) **a wander**: the target is the living mean plus a slow deterministic drift
-  (a sum of two or three sines with incommensurate periods of 6-11 s, amplitude 1-3 tiles, phase seeded per round so a
-  test can pin it), so the box sways and nobody can stand still at an edge; (b) **a lean toward the chaser**: the
-  target is weighted toward the holder (say 60/40 holder/mean), so the box drags the chased runner back toward "it"
-  (Danzo's "forcing him to run from the chaser"); (c) **a patrol**: once closed, the box sweeps slowly between the map's
-  window bounds (§6.8) and back. The guess is (a) + (b) together, bounded by `WALL_FOLLOW` so a cap on the walls' own
-  speed keeps it fair (a runner at a run, 45, always out-paces a wall at 8-12), with the drift turned off while the
-  walls are still closing if that reads as chaos, and with the grace unchanged. Anything that makes the wall faster
-  than a run, or lets a client's sample steer it (an untrusted sample must still change nothing), is out. Whether a
-  moving box in the final duel feels like pressure or like a cheap death is Danzo's call by hand; the knobs must be
-  Config. The client should need no change beyond what `vx` already carries; if the drift needs its own
-  extrapolation, say so and keep `MatchState.window`'s shape, or declare the new field in `docs/systems/README.md`.
-- **Decision needed:** choose and build the follow rule (a, b, c or a blend), with trial numbers in Config and the
-  reasons in endgame.md §7 (a new §7.7 "the moving window", and the translation table row updated), DESIGN rule 51's
-  wording updated (say the line), `walls.test.luau` extended (the drift is deterministic and pinned: never faster than
-  `WALL_FOLLOW`, never past the map's window bounds, untrusted samples change nothing, the grace and death order
-  unchanged; mutation-check the new rule), the QA goals file `docs/qa/ghosts-v2-walls-2.md` in the shape of
-  `docs/qa/ghosts-v2-walls.md` (the loop question: does the moving box force the chase without ever feeling like it
-  killed you by itself), verification steps 3-4 (1-2 only if a module is added). One worklog line. Mark H26 "Built,
-  QA loop next". Do NOT commit. Name exactly what Danzo should feel with his hands.
-- **Blocked routine work:** the QA loop on the moving walls; Danzo's Play of it.
-- **Built 2026-11-02 (heavy, worktree, not committed, not seen in Studio):** (a) a wander + (b) a quarter-lean toward
-  "it" on the living mean, eased and capped as before, inside the map's bounds (`Arena.WINDOW`); `MatchState.window`
-  shape and `client/Walls` unchanged; `walls.test` +4 blocks, 16 mutants / 15 caught → `docs/systems/endgame.md` §7.7,
-  DESIGN rule 51, goals `docs/qa/ghosts-v2-walls-2.md`. **Built, QA loop next** (look in Play first).
-
 ## Resolved
+
+### H26 — The closing walls loosely follow the runners, irregularly, so the pack is pushed together — 2026-11-02 — RESOLVED
+- **Resolved 2026-11-02:** built by the heavy (a lean toward "it" plus a seeded wander on the living mean, inside
+  `Arena.WINDOW`; hysteresis at the edge after a flapping dummy in Studio), QA loop 8/10 in round 1 → `docs/systems/walls.md`
+  §7.7, `docs/qa/ghosts-v2-walls-2-summary.md`.
 
 ### H25 — The living grapple: hold to hang on marked anchors, release keeps the swing — 2026-11-01 02:10 — RESOLVED
 - **Resolved 2026-11-02:** built by the heavy, QA loop 7 → 7 → 8/10 (target met in round 3). Anchors, aim assist, the
