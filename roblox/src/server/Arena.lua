@@ -1,87 +1,31 @@
--- The first-playable test map: plain Parts in Workspace.Map, built at boot (docs/systems/movement.md, "The map").
+-- The map: plain Parts in Workspace.Map, built at boot from the map data Config.MAP names (H27, docs/systems/maps.md).
 -- Workspace.Map is a Folder made HERE, not in default.project.json: nothing in the project file declares it and the
 -- client never waits for it by name (it raycasts against everything but its own character).
--- Units are studs; one tile is Config.STUDS_PER_TILE. Every part spans the plane z = 0 with MAP_DEPTH of thickness.
+-- Units are studs. Every part spans the plane z = 0 with MAP_DEPTH of thickness.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local Maps = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Maps"))
 
+-- H27 (PR 6, docs/systems/maps.md): the map is data in shared/ (Maps, MapYard, MapTest), picked by Config.MAP; this
+-- file loads it and builds it, and hands every dependant the same fields the hand-built test arena had (SPAWN,
+-- WINDOW, the orbs, KEEP_CLEAR, ANCHORS, static), so no caller changed. The rules each map is held to: maps.test.
 local Arena = {}
 
 local MAP_DEPTH = 8
-local T = Config.STUDS_PER_TILE
-
--- {name, left x, bottom y, right x, top y}. The floor's top is y = 0. Heights are picked against the measured jump
--- (movement.md): a full jump clears 3.5 tiles, a full jump plus the double jump about 7.
-local BLOCKS = {
-	{ "Floor", -20 * T, -2 * T, 30 * T, 0 },
-	{ "EndWallLeft", -21 * T, -2 * T, -20 * T, 20 * T },
-	{ "EndWallRight", 30 * T, -2 * T, 31 * T, 20 * T },
-	{ "PlatformLow", 3 * T, 2 * T - 1, 7 * T, 2 * T }, -- 2 tiles up: a hop
-	{ "PlatformMid", 9 * T, 5 * T - 1, 12 * T, 5 * T }, -- 3 tiles above the low one: a full jump from it
-	{ "PlatformHigh", -8 * T, 3 * T - 1, -4 * T, 3 * T }, -- a ledge to walk off (coyote) and dash off
-	-- Two walls three tiles apart to wall-jump between; the right one is lower so you can climb out over it.
-	{ "WallLeft", 18 * T, 0, 19 * T, 9 * T },
-	{ "WallRight", 22 * T, 0, 23 * T, 7 * T },
-}
-
-Arena.SPAWN = Vector3.new(0, Config.RUNNER_HEIGHT / 2 + 0.05, 0)
-
--- H26 (DESIGN §6.8, endgame.md §7.7): the closing walls' window bounds, world x: the inner faces of the end walls. No
--- wall ever goes past them, so the moving box never wanders into the end walls. PR 6 carries one pair per map.
-Arena.WINDOW = { lo = -20 * T, hi = 30 * T }
-
--- H18 (DESIGN §3 rule 42): three ghost-orb spots, each orb's centre ORB_SIZE / 2 + 1.5 above a floor: on the left floor,
--- on PlatformMid (a jump from PlatformLow), and on the floor past the wall-jump walls. The Studio dummies stay on the
--- floor, so they only ever reach the two floor ones (server/Bots).
-local ORB_UP = Config.ORB_SIZE / 2 + 1.5
-Arena.GHOST_ORBS = {
-	{ x = -10 * T, y = ORB_UP, kind = "ghost" },
-	{ x = 10.5 * T, y = 5 * T + ORB_UP, kind = "ghost" },
-	{ x = 26 * T, y = ORB_UP, kind = "ghost" },
-}
--- H19 (rules 42, 43): three living-orb spots: on the floor in the dummies' patrol lane (x 12-52, so a solo test sees
--- dummies take and use living items), on PlatformHigh, and on the floor at the far left.
-Arena.LIVING_ORBS = {
-	{ x = 8 * T, y = ORB_UP, kind = "living" },
-	{ x = -6 * T, y = 3 * T + ORB_UP, kind = "living" },
-	{ x = -16 * T, y = ORB_UP, kind = "living" },
-}
-Arena.ORBS = table.clone(Arena.GHOST_ORBS) -- every spot server/Orbs runs: ghost ones first (the indices clients see)
-for _, s in Arena.LIVING_ORBS do table.insert(Arena.ORBS, s) end
-
--- H22 (DESIGN §3 rules 47-48, docs/systems/placement.md §3): what a ghost's part may never cover. The keep-clear zone
--- is the test map's one corridor, the wall-jump shaft: from a tile before WallLeft's face to a tile past WallRight,
--- floor to 3 tiles above WallLeft's top, so no stack of pieces can cap the climb or seal the far side. An orb box over
--- each orb spot (the orb must stay reachable), and every map block. No spawn boxes: every placed part is cleared at
--- round start, so a spawn spot needs no protection mid-round (QA round 1). { x0, y0, x1, y1, why }, studs.
-Arena.KEEP_CLEAR = { { 17 * T, 0, 24 * T, 12 * T, "keep-clear" } }
-
--- H25 (DESIGN §3 rules 17, 29; docs/systems/grapple.md §5): the grapple anchors, { x, y } studs, numbered by their
--- place in this list (the snapshot's anchor byte). Over open floor and the gaps, 5-11 tiles up, 22-48 studs apart so
--- one swing's release reaches the next. Built as gold marked balls tagged ANCHOR_TAG; clients read them from the
--- workspace (no remote). PR 6 carries a list per map. Standing under one, it must show under the HUD banner: the
--- camera's centre sits CAMERA_Y_OFFSET above the runner, so over a floor at y f an anchor is picked only up to
--- f + RUNNER_HEIGHT / 2 + CAMERA_Y_OFFSET + CAMERA_VIEW_HEIGHT / 2 - GRAPPLE_INSET_TOP = f + 23.75 (QA round 2: 6 tiles
--- was 0.25 over; grapple.test.luau now stands under every anchor from every block top in reach, through run.js).
+local map = Maps.get(Config.MAP)
+Arena.MAP = map
+Arena.SPAWN = Vector3.new(map.spawn.x, map.spawn.y + Config.RUNNER_HEIGHT / 2 + 0.05, 0)
+Arena.WINDOW = map.window -- the closing walls' bounds, world x (H26, DESIGN §6.8): the end walls' inner faces
+Arena.GHOST_ORBS = map.ghostOrbs -- H18 (rule 42)
+Arena.LIVING_ORBS = map.livingOrbs -- H19 (rules 42, 43)
+Arena.ORBS = Maps.orbs(map) -- every spot server/Orbs runs: ghost ones first (the indices clients see)
+Arena.KEEP_CLEAR = map.keepClear -- H22 (rules 47-48): every exit and corridor
+Arena.PADS = map.pads -- H27: the map's own boost pads (DESIGN §2 kit), built by server/Placement each round
+-- H25 (rule 17, grapple.md §5): the anchors, numbered by their place in the list (the snapshot's anchor byte). Built as
+-- gold marked balls tagged ANCHOR_TAG; clients read them from the workspace (no remote).
 Arena.ANCHOR_TAG = "RotagAnchor"
-Arena.ANCHORS = {
-	{ x = -14 * T, y = 5 * T }, -- the open floor left of PlatformHigh
-	{ x = -2 * T, y = 5.5 * T }, -- over the spawn, between PlatformHigh and PlatformLow (x -8: the longest rope from the
-	-- floor, 19.25, ends 0.75 short of PlatformLow's left edge at 12, so a swing never bonks it; QA round 2 saw it at -4)
-	{ x = 8 * T, y = 7.5 * T }, -- over the gap from PlatformLow up to PlatformMid (from PlatformLow's edge: 20.6 away)
-	{ x = 15 * T, y = 5.5 * T }, -- over the floor between PlatformMid and the wall-jump shaft
-	{ x = 20.5 * T, y = 11 * T }, -- above the shaft
-	{ x = 26.5 * T, y = 5 * T }, -- the floor past the shaft
-}
-function Arena.static(): { { any } }
-	local out = {}
-	for _, b in BLOCKS do table.insert(out, { b[2], b[3], b[4], b[5], "map" }) end
-	for _, z in Arena.KEEP_CLEAR do table.insert(out, z) end
-	local o = Config.ORB_SIZE / 2
-	for _, s in Arena.ORBS do table.insert(out, { s.x - o, s.y - o, s.x + o, s.y + o, "orb" }) end
-	for _, a in Arena.ANCHORS do table.insert(out, { a.x - 2, a.y - 2, a.x + 2, a.y + 2, "anchor" }) end -- H25
-	return out
-end
+Arena.ANCHORS = map.anchors
+function Arena.static(): { { any } } return Maps.static(map) end
 
 -- The stock Studio template puts a Baseplate and a SpawnLocation at the origin. Seen side-on, the baseplate's top is
 -- a grey plane running toward the camera, and the spawn pad sits in the runner's plane. Remove both for this Play
@@ -91,7 +35,7 @@ local function clearTemplate()
 		local part = workspace:FindFirstChild(name)
 		if part and part:IsA("BasePart") then
 			part:Destroy()
-			print(("[Rotag] test map: removed Workspace.%s for this Play (the place file is unchanged)"):format(name))
+			print(("[Rotag] map: removed Workspace.%s for this Play (the place file is unchanged)"):format(name))
 		end
 	end
 end
@@ -102,7 +46,7 @@ function Arena.build(): Folder
 	if old then old:Destroy() end
 	local map = Instance.new("Folder")
 	map.Name = "Map"
-	for _, b in BLOCKS do
+	for _, b in map.blocks do
 		local name, x0, y0, x1, y1 = b[1], b[2], b[3], b[4], b[5]
 		local part = Instance.new("Part")
 		part.Name = name
@@ -141,7 +85,8 @@ function Arena.build(): Folder
 	end
 	anchors.Parent = map
 	map.Parent = workspace
-	print(("[Rotag] test map: %d parts and %d grapple anchors in Workspace.Map"):format(#BLOCKS, #Arena.ANCHORS))
+	print(("[Rotag] map %q: %d parts, %d grapple anchors, %d pads, window x %g..%g"):format(map.name, #map.blocks,
+		#Arena.ANCHORS, #Arena.PADS, Arena.WINDOW.lo, Arena.WINDOW.hi))
 	return map
 end
 

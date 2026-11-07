@@ -73,24 +73,24 @@ end
 do -- QA round 2: every anchor on the test map is picked from every stand in reach, through the REAL camera framing
 	-- (the camera's centre sits CAMERA_Y_OFFSET above the runner; round 1's banner test used a view centred on the runner
 	-- and missed two anchors just under GRAPPLE_INSET_TOP). A stand: the nearest point to the anchor on a block's top,
-	-- at least MIN_ABOVE below it and within RANGE, on the narrowest screen (4:3). The test map's data: test/luau/run.js.
-	local Data = __require("ArenaData")
+	-- at least MIN_ABOVE below it and within RANGE, on the narrowest screen (4:3). H27: on every map in shared/Maps.
 	local halfH = Config.CAMERA_VIEW_HEIGHT / 2
-	for _, a in Data.ANCHORS do
+	local Maps = __require("Maps")
+	for _, mapName in Maps.NAMES do for _, a in Maps.ALL[mapName].anchors do
 		local anchor = { x = a.x, y = a.y, id = 1 }
 		local stands = 0
-		for _, b in Data.BLOCKS do
+		for _, b in Maps.ALL[mapName].blocks do
 			local sx, sy = math.clamp(a.x, b[2], b[4]), b[5] + HH
 			local dx, dy = a.x - sx, a.y - sy
 			if dy >= Config.GRAPPLE_MIN_ABOVE and dx * dx + dy * dy <= Config.GRAPPLE_RANGE ^ 2 then
 				stands += 1
 				local view = { x = sx, y = sy + Config.CAMERA_Y_OFFSET, halfW = halfH * 4 / 3, halfH = halfH }
 				assert(Grapple.pick(sx, sy, 1, { anchor }, view) == anchor,
-					("anchor (%g, %g) is picked standing on %s at (%g, %g)"):format(a.x, a.y, b[1], sx, sy))
+					("%s: anchor (%g, %g) is picked standing on %s at (%g, %g)"):format(mapName, a.x, a.y, b[1], sx, sy))
 			end
 		end
-		assert(stands > 0, ("anchor (%g, %g) has a stand in reach"):format(a.x, a.y))
-	end
+		assert(stands > 0, ("%s: anchor (%g, %g) has a stand in reach"):format(mapName, a.x, a.y))
+	end end
 end
 
 do -- QA round 1: an air hook on a long rope never swings into the floor under the anchor: the rope reels to clear it

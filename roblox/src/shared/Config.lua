@@ -99,6 +99,7 @@ Config.WALL_BACK_IN = 2           -- studs: out once the whole body is past a wa
 Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
+Config.MAP = "yard"               -- H27: the map every round is played on (shared/Maps.lua: "yard", "test"; maps.md)
 Config.READY_TIMEOUT = 5          -- seconds a due round waits for every present client's Ready (H11, players.md §5)
 Config.OTHERS_DRAW_DELAY = 0.1    -- H13: other runners are drawn this far behind their replicated position, sliding
 -- between the positions that arrived, so a body that lands in steps draws smoothly (players.md §3). 0 = raw. Cosmetic:

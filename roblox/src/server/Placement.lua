@@ -138,13 +138,27 @@ function Placement.step(now: number)
 	end
 end
 
--- Round start: every part gone (the round's `sync` from server/Orbs has already cleared each client's).
+-- H27: the map's own boost pads (Arena.PADS, DESIGN §2 kit), owner MAP_OWNER (no runner), permanent: placed things in
+-- the same state, so a ghost part never covers one, every client mirrors and launches from it like a ghost's pad, and
+-- a late joiner gets it in syncTo. Rebuilt with every round's reset, after the round's `sync` cleared the clients.
+local MAP_OWNER = 0
+local function mapPads(now: number)
+	for _, pad in Arena.PADS do
+		local p = Rules.record(state, state.nextN + 1, MAP_OWNER, "pad", nil, 0, pad.x - Config.PAD_W / 2, pad.y, 1, now)
+		parts[p.n] = build(p)
+		fire(placedPayload(p, now))
+	end
+end
+
+-- Round start: every part gone (the round's `sync` from server/Orbs has already cleared each client's), the map's
+-- pads back.
 function Placement.reset()
 	for _, list in parts do
 		for _, b in list do b:Destroy() end
 	end
 	table.clear(parts)
 	state = Rules.new()
+	if folder then mapPads(os.clock()) end
 end
 
 -- A late joiner: the static boxes, then every live part (and any fade in progress).
@@ -167,7 +181,8 @@ function Placement.start(items: RemoteEvent?, context: Context)
 	f.Name = "RotagFixtures" -- made here; nothing waits for it by name (clients use ItemEvent, probes hit its parts)
 	f.Parent = workspace
 	folder = f
-	log(("%d static boxes (map, keep-clear, orbs)"):format(#static))
+	Placement.reset() -- the map's pads, before any round (a client that joins now gets them in syncTo)
+	log(("%d static boxes (map, keep-clear, orbs, anchors), %d map pads"):format(#static, #Arena.PADS))
 end
 
 return Placement
