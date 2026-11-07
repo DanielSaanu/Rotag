@@ -35,11 +35,11 @@
       force players to interact/run away from each other ... it always follows the runner but in a sort of irregular
       manner"). Built (H26, heavy) and QA'd 8/10 in round 1, pushed. Summary and the checklist:
       `docs/qa/ghosts-v2-walls-2-summary.md`. Detail: `docs/systems/walls.md` §7.7.
-- [ ] **Danzo: Play the moving walls checklist** (in the summary). The calls: a wander + a quarter-lean toward "it"
+- [x] **Danzo: Play the moving walls checklist (signed off 2026-11-07: "tested and good").** (In the summary.) The calls: a wander + a quarter-lean toward "it"
       (`WALL_LEAN` 0.25; -0.25 if you meant the chased runner), `WALL_DRIFT` 20 / period 8 s, the wander fading in
       with the close. The question: pressure, or a cheap death?
 - [x] **Grapple (H25) built and QA'd 7 → 7 → 8/10 (2026-11-02), pushed.** Summary and the checklist: `docs/qa/grapple-summary.md`.
-- [ ] **Danzo: Play the grapple checklist** (in the summary). The calls: the 120 cap, a hook behind you at a walk, the
+- [x] **Danzo: Play the grapple checklist (signed off 2026-11-07: "tested and good").** (In the summary.) The calls: the 120 cap, a hook behind you at a walk, the
       refresh on the hook, no boost on a dash off the rope, hold-to-hang; the pump, the 1.1 boost, a side hook's pull.
 - [x] **Tag built (H5, 2026-10-11):** `shared/Tag`, `server/Match`, remotes `TagClaim`/`TagVerdict`/`MatchState`, HUD,
       an orange Studio-only dummy to chase. Server side seen in Play; client side needs a `rojo serve` restart first.
@@ -146,11 +146,14 @@
       research and design: `docs/systems/endgame.md` §7.
 - [x] **Danzo: Play the PR 5b checklist (signed off 2026-11-01: "all working nicely")** (in the summary). Confirm: 3 s grace, walls from the end phase (not the first
       burn-out), the slow follow of the living mean, the 48-stud box, no zoom, +10% kept with the walls.
-- [ ] **The grapple (H25) is built and mid-loop (2026-11-01, paused at bedtime):** round 1 scored 7/10, its fixes are in and
+- [x] **The grapple (H25) is built and mid-loop (2026-11-01, paused at bedtime; loop closed 8/10 2026-11-02, signed off 2026-11-07):** round 1 scored 7/10, its fixes are in and
       pushed (air hooks clear the floor, no hook behind a sprint, anchors out from under the HUD, hold-to-arm). Round 2 not
       yet run. Next session: `/qa-loop docs/qa/grapple.md` from round 2, then Danzo's feel checklist (`docs/qa/grapple.md`:
       the 120 cap, the 1.1 boost, the pump, refresh on the hook).
-- [ ] **Next (2026-11-01):** after the grapple loop: PR 6 (maps with their own window bounds and anchors), then the art
+- [x] **Danzo (2026-11-07): more time in the red zone for the moving walls** ("maybe 9 seconds or less or more, u
+      decide"). `Config.WALL_GRACE` 3 → 6 s: under a third of the 20 s close, and too short to make the outside a hiding
+      place (a dip back in resets the grace in full). 9 s would be nearly half the close. Say if 6 still feels tight.
+- [ ] **Next (2026-11-01; PR 6 handed to the heavy as H27, 2026-11-07):** after the grapple loop: PR 6 (maps with their own window bounds and anchors), then the art
       block for pieces, pads, the grant, the ignition, the walls and the hang pose (placeholders now, behind `Sprites.Has`). Build on in the PR order of
       `docs/systems/ghosts-v2-proposal.md` §12 (1 core: no comeback, ghost orbs, hex; 2 living orbs + holds; 3 controls;
       4 fixtures + placement; 5 ignition + end-phase speed; 6 maps). Phone test still pending. Open number: `END_PHASE_AFTER`

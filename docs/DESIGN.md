@@ -190,7 +190,7 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
     **The map shrink (H24, SpeedRunners' closing screen in world space):** when the end phase starts, two walls appear
     just outside the living pack and close over `WALL_CLOSE_TIME` (trial 20 s) to a 48-stud box, their centre loosely
     following the living (H26: their mean, leaned toward "it", plus a slow wander that never repeats, never faster
-    than `WALL_FOLLOW`, inside the map's window bounds), so the box keeps moving. They are not solid: a living runner past one has `WALL_GRACE` (trial 3 s, paused while held) to
+    than `WALL_FOLLOW`, inside the map's window bounds), so the box keeps moving. They are not solid: a living runner past one has `WALL_GRACE` (6 s since 2026-11-07, 3 s before; paused while held) to
     get back in, reset the moment its whole body is (H26 follow-up: no flapping at a swaying wall), and is eliminated like a burn-out at 0. The server decides on its own position
     record; every player keeps their own camera (§2). Detail and numbers: [endgame.md](systems/endgame.md) §7.
 

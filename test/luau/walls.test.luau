@@ -376,7 +376,7 @@ do -- the numbers' shape (endgame.md §7)
 	assert((125 - Config.WALL_MIN_HW) / Config.WALL_CLOSE_TIME + Config.WALL_FOLLOW < Config.RUN_SPEED / 2,
 		"a running runner always outruns a wall")
 	assert(Config.WALL_GRACE * Config.RUN_SPEED > 2 * Config.WALL_START_PAD, "the grace is longer than a short way back")
-	assert(Config.WALL_GRACE <= 3, "a SHORT time frame (Danzo, H24)")
+	assert(Config.WALL_GRACE <= Config.WALL_CLOSE_TIME / 3, "a short time frame: under a third of the close (Danzo, H24; 6 s for the moving box, 2026-11-07)")
 	assert(Config.WALL_BACK_IN >= Config.RUNNER_WIDTH and Config.WALL_BACK_IN < Config.WALL_MIN_HW / 4,
 		"back in = the whole body back inside, never a deep demand (H26 follow-up)")
 	-- H26: the wander alone never puts a still pack outside a closed box; the lean never turns into following "it"

@@ -70,7 +70,7 @@ No new remote. Nothing new trusted from a client.
   sample in Match's history (the snapshot stream, the record a tag is judged on, netcode.md §8).
 - **Back inside** (H26 follow-up, §7.7) = the whole body back in: `|x - centre| <= hw + RUNNER_WIDTH / 2 - WALL_BACK_IN`
   (2 studs, so the centre is `RUNNER_WIDTH / 2` inside the wall). Straddling the wall keeps whatever you were.
-- **The grace** starts at `WALL_GRACE` (3 s) on the first frame outside, runs down (straddling the wall included), and is
+- **The grace** starts at `WALL_GRACE` (6 s; 3 s until 2026-11-07) on the first frame outside, runs down (straddling the wall included), and is
   cleared the frame the runner is back inside; going out again starts a full grace. A dip of half a body resets nothing. At 0: `Tag.eliminate`, exactly like a burn-out (a ghost; the next
   fresh fuse shrinks; the holder's death gives the next runner in rotation a fresh fuse and the tag freeze).
 - **Paused, never reset, while held:** the holder's tag freeze, and any item hold (trap, freeze, stumble). A hold
@@ -88,7 +88,7 @@ No new remote. Nothing new trusted from a client.
 
 | Knob | Value | Why |
 |---|---|---|
-| `WALL_GRACE` | 3 s | Danzo's "short time frame"; at a run (45) that is 135 studs back, far more than the pad |
+| `WALL_GRACE` | 6 s | 3 s was Danzo's "short time frame" for the still box (H24); doubled for the moving box (Danzo, 2026-11-07): under a third of the close, and too short to hide outside and dip back in for a full reset. At a run (45) that is 270 studs back |
 | `WALL_START_PAD` | 8 studs | two tiles: nobody starts outside, and the walls appear near the pack |
 | `WALL_START_MIN` | 44 studs | half a 16:9 screen (85.3 wide): centred, the walls appear at the screen's edges |
 | `WALL_MIN_HW` | 24 studs | a 48-stud box (12 tiles): both walls on one 16:9 screen, still room for a duel |

@@ -90,7 +90,9 @@ Config.WALL_LEAN = 0.25           -- share of the way from the living mean to th
 Config.WALL_DRIFT = 20            -- studs: the wander's reach in the target (two sines); after the ease the box sways
                                   -- ~24 studs end to end at up to ~7.9 studs/s. Fades in with the close (0 at the start)
 Config.WALL_DRIFT_PERIOD = 8      -- seconds: the wander's main period; the second sine runs 1.618x slower (never repeats)
-Config.WALL_GRACE = 3             -- seconds a living runner may be past a wall; reset once it is back inside (below)
+Config.WALL_GRACE = 6             -- seconds a living runner may be past a wall; reset once it is back inside (below).
+                                  -- 3 s for the still box (H24); 6 s once the box moved on its own (Danzo, 2026-11-07):
+                                  -- under a third of the close, too short to hide outside and dip back in for a reset
 Config.WALL_BACK_IN = 2           -- studs: out once the whole body is past a wall, back IN (grace reset) only this much
                                   -- further in: 2 = RUNNER_WIDTH, the whole body back inside. Stops a runner at a
                                   -- swaying wall flapping out/in every frame (H26 follow-up, endgame.md §7.4)
