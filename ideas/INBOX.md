@@ -31,6 +31,10 @@
 
 ## To do
 
+- [ ] **Danzo: feel the grapple yoink (H28, 2026-11-07).** A hook now whips you along the swing toward under the
+      anchor, `Config.GRAPPLE_YOINK = 20` studs/s x sin(angle) (0 = off). Built and tested outside Studio only; the
+      checklist is in `docs/qa/grapple-yoink.md` ("What Danzo should feel"): a hook at a walk, at a sprint, a floor
+      hook from the side, a level hook. The ask: a yoink, or too subtle / a free dash? Then the short QA loop.
 - [x] **Danzo (2026-11-02): the end-game walls loosely follow the runners, irregularly** ("track around the map and
       force players to interact/run away from each other ... it always follows the runner but in a sort of irregular
       manner"). Built (H26, heavy) and QA'd 8/10 in round 1, pushed. Summary and the checklist:

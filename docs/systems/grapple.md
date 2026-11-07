@@ -9,6 +9,7 @@ Keys and the touch button: [controls.md](controls.md). QA goals: [../qa/grapple.
 
 **Status:** BUILT 2026-11-01, QA loop next. Rules tested outside Studio (`grapple.test.luau`,
 `move_check_grapple.test.luau`, 20 mutations each caught); seen in solo Play (§8). **The feel is Danzo's call by hand.**
+**2026-11-07, H28:** the yoink (§2, [the yoink](#the-yoink-h28-2026-11-07)): built and tested outside Studio, not yet seen in Play.
 
 ## 1. Who owns what
 
@@ -44,6 +45,11 @@ Keys and the touch button: [controls.md](controls.md). QA goals: [../qa/grapple.
   it past the length it catches (the outward part of the velocity is lost: an inelastic catch); swung up past the
   anchor too slowly to go over, the rope would have to push, so it goes slack and the runner falls inside the circle.
   `MIN_LEN` 8 means no loop round the anchor under the speed cap (a loop needs 5 g L > cap squared: 18 000 > 14 400).
+- **The yoink (H28)**: the first step a hook's rope is taut at its length, it whips you `GRAPPLE_YOINK` (20 studs/s)
+  x sin(angle) along the swing toward under the anchor: gravity's own direction, so all of it hooked level with the
+  anchor, half of it at 30 degrees out, none straight under (a dead hang stays dead). Once a hook (`Rope.bit`): a slack
+  spell and a second catch get none. A floor hook's waits until the reel is done. Under the cap like the rest (§4).
+  Why this shape and size: [the yoink](#the-yoink-h28-2026-11-07).
 - **The pump**: the stick pushes `GRAPPLE_PUMP` (60 studs/s^2) along the swing. From a dead hang, pushing the way
   you swing for 2 s reaches 9.2 studs out on a 12-stud rope (pinned print). Easy to start (rule 18).
 - **The speed cap**: the swing never goes faster than `GRAPPLE_MAX_SPEED` = `DASH_SPEED` (120). Why: DESIGN §2's chain
@@ -83,6 +89,9 @@ anchor distance would be the server re-judging the swing. Instead the swing's ow
   no faster than a dash as tried). **Raising `GRAPPLE_MAX_SPEED` above 120 raises the x rate for everyone, always**:
   the cost is stated where the knob is.
 - The release boost (132) and the jump off the rope bleed back inside the burst, like a dash-jump (140) already does.
+- **The yoink (H28)** adds at most 20 to the swing, inside the same clamp to the cap, so it adds no rate: re-driven,
+  the five chains are still never flagged, fastest swing 120.0, overall 147.5, x budget 1.38 unchanged; up 2.96 → 2.47,
+  down 2.21 → 2.77 (re-pinned). `MoveCheck` is untouched.
 - **Driven** (`move_check_grapple.test.luau`, five 10 s chains on a long course: dash into every hook, pump the whole
   way, release low / high / at the peak, jump off, dash, double jump; 11-17 hooks each): never flagged. Worst budget
   used, **pinned as measurements (S11): x 1.38 of 24, up 2.41 of 10.5, down 2.67 of 16.** Fastest swing 120.0, fastest
@@ -126,6 +135,7 @@ anchor distance would be the server re-judging the swing. Instead the swing's ow
 | `GRAPPLE_INSET` | 2 studs | inside the screen edge (never off-screen) |
 | `GRAPPLE_MIN_LEN` | 8 studs | the shortest rope (no loops) |
 | `GRAPPLE_LIFT` / `GRAPPLE_REEL` | 1 stud / 40 studs/s | a floor hook reels you off the floor |
+| `GRAPPLE_YOINK` | 20 studs/s | H28: the rope's bite along the swing toward under the anchor, x sin(angle) (0 = off) |
 | `GRAPPLE_PUMP` | 60 studs/s^2 | the stick along the swing |
 | `GRAPPLE_MAX_SPEED` | 120 (= `DASH_SPEED`) | the swing's cap; above 120 raises the server's x rate (§4) |
 | `GRAPPLE_RELEASE_BOOST` | 1.1 | on letting go or jumping off (1 = off) |
@@ -159,12 +169,17 @@ anchor distance would be the server re-judging the swing. Instead the swing's ow
 line of sight); the hook's rope length; the length held within 0.5 stud over 2 s; energy never grows and the swing
 does not die; no swing from a dead hang; the pump starts one; slack inward, the catch, slack over the top; the cap;
 the release keeps the swing x the boost; the cooldown; the jump off (not the double jump); refresh on the hook; a hold,
-a dash, a landing end it; the buffer (in time, too early, a tap already let go); a floor hook reels and swings; the pose.
+a dash, a landing end it; the buffer (in time, too early, a tap already let go); a floor hook reels and swings; the pose;
+H28's yoink (the bite adds `YOINK` x sin 45 at 45 degrees out, toward under the anchor, mirrored; none again after a
+slack spell; none while a floor reel runs, and a fast floor hook from the side keeps its rope; a walking floor hook
++4.9, pinned).
 `test/luau/move_check_grapple.test.luau`: the rates; five driven chains never flagged; the budgets pinned; a fake
 swing caught. `snapshot.test.luau`: 14 bytes, the anchor round-trips. **Mutation-checked (Q5)**: removing the cap,
 the taut clamp, the min-above, either screen edge, the behind score, the sticky, the line of sight, the boost, the
 cooldown, the floor lift, leapfrog (to Euler), the slack, the catch, the refresh, the hold release, the buffer, the
-landing release, the dash release, or spending the double jump on the rope jump: each fails a named assertion.
+landing release, the dash release, or spending the double jump on the rope jump: each fails a named assertion. H28's
+five: `GRAPPLE_YOINK` 0, the bite before the reel ends, the sign flipped, a second yoink after slack, a flat kick in
+place of x sin: each fails a named assertion.
 
 ## 10. Calls for Danzo, and what is not built
 
@@ -214,3 +229,34 @@ dash off the rope (-15 → -120 the way it steered, which then landed a tag). Fi
 floor retry in flight at most (six tag signals in a frame could spend all five at once), and hysteresis on the
 behind-skip (`GRAPPLE_BEHIND_SLOW` 0.7: the halo blinked for a frame while slowing past a ball at the 0.8 threshold).
 Left as is: the disc reads as a rim under bloom (the art block's call); leavers' hidden rope parts.
+
+## The yoink (H28, 2026-11-07)
+
+Danzo, after signing the grapple off: "have them sort of yoink the player a little bit in their direction, increasing
+their velocity a bit". Two shapes were on the table (handoff H28); both were built and measured in the box world.
+
+- **(a) A short reel on every hook, keeping angular momentum** (a pulled-in pendulum spins up): built first, with
+  `GRAPPLE_YOINK` as a share of the rope (0.15). **Dropped on the numbers:** its gain is a share of the speed you bring,
+  so a hook at a walk gains nearly nothing, and a side hook LOST speed (69.3 → 60.1 at the swing's fastest, air hook 10
+  out at 30): the shorter rope raises the low point, so the fall that feeds the swing is shorter. It also changed every
+  floor hook's reel, which was signed off.
+- **(b) A kick along the swing, chosen.** On the rope's first taut step at its length, `w -= YOINK sin(a) / len`: the
+  direction gravity pulls along the arc, toward under the anchor. It is felt the moment the rope bites (the whip),
+  adds a little to the swing's top speed (a walking floor hook 10 out: 56.9 → 61.8; a sprinting one 15 out: 71.9 →
+  77.0), and cannot make a free dash (+20 at most, never past the cap). x sin(a), not a flat kick: smooth through
+  straight under (a flat kick would flip at a = 0 and swing a dead hang by itself).
+- **When:** at the first taut step at the rope's length, not at the hook. A kick at the bite of a floor hook, before
+  the reel had lifted the runner, swept a 45 studs/s runner 15 out into the floor and the landing took the rope
+  (measured at 20 and 25; fine at 15). Once a hook: a slack spell over the top and a second catch get none.
+- **A hook behind you at a walk** (allowed under `GRAPPLE_BEHIND_SLOW`) is yanked back toward the anchor a little: the
+  yoink is toward the anchor, not "faster whatever way". Under 0.7 x run only.
+- **The size, 20:** 15 / 20 / 25 measured; at 20 a 45-degree bite adds 14 at once and +5 to +7 at the swing's
+  fastest. The knob is `Config.GRAPPLE_YOINK` (studs/s, 0 = off). Up for more whip; past ~40 a level hook's downward
+  kick will start to feel like a yank down.
+- **Tests changed:** the energy test's "peak set in the first swing" tolerance went from 1e-6 absolute to 1e-5 of the
+  energy: the yoink's wider arc makes leapfrog's bounded error envelope settle +0.0045 over the first 4 s (then flat
+  to 1e-8 over 100 s, measured), which is noise; Euler's growth was +110. The chains' up and down budgets re-pinned
+  (S11). Nothing else loosened.
+- **Found, not caused:** a floor hook at a dash's speed from 15 out loses its rope at once with or without the yoink
+  (the reel is too slow to lift a runner sweeping that fast along the floor). Left for a later QA round.
+- **Not seen in Studio** (another agent held the Studio link). What to feel for: [../qa/grapple-yoink.md](../qa/grapple-yoink.md).

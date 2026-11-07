@@ -16,7 +16,8 @@ export type Anchor = { x: number, y: number, id: number, floor: number? }
 export type View = { x: number, y: number, halfW: number, halfH: number }
 -- The rope: the anchor's centre and id, its length now and the length it reels in to.
 -- `w`: the swing's angular speed while taut (radians/s, counter-clockwise), nil while slack.
-export type Rope = { x: number, y: number, id: number, len: number, target: number, w: number? }
+-- `bit`: the yoink has been given (H28: once a hook, never again after a slack spell).
+export type Rope = { x: number, y: number, id: number, len: number, target: number, w: number?, bit: boolean? }
 
 -- Aim assist (rule 17): of the anchors at least GRAPPLE_MIN_ABOVE above (x, y), within GRAPPLE_RANGE, and inside the
 -- view by GRAPPLE_INSET (never off-screen), the one with the lowest score: its distance, + GRAPPLE_BEHIND if it is
@@ -109,6 +110,13 @@ function Grapple.swing(s: any, moveX: number, dt: number)
 	local w = r.w
 	if w ~= nil then
 		local a, len = angle(r, s.x, s.y), r.len
+		-- H28, the yoink: the first step the rope is taut at its length (a floor hook's reel done: a bite before it
+		-- swept a fast runner into the floor), the rope whips the runner along the swing toward under the anchor:
+		-- GRAPPLE_YOINK x sin(angle), gravity's own direction (all of it level with the anchor, none straight under).
+		if not r.bit and len <= r.target then
+			r.bit = true
+			w -= Config.GRAPPLE_YOINK * math.sin(a) / len
+		end
 		local pump = moveX * Config.GRAPPLE_PUMP
 		local function accel(at: number): number return (-g * math.sin(at) + pump * math.cos(at)) / len end
 		w += accel(a) * dt / 2 -- leapfrog: half a kick, the drift, half a kick (energy error O(dt^2), §3)

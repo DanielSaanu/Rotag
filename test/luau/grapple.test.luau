@@ -159,7 +159,9 @@ do -- energy: never grows on the rope with no stick; hanging still stays still
 		100 * (e0 - energy(s)) / (G * (a.y - 12 - (a.y - s.rope.len)))))
 	print(("    swing energy peak: %.1f in the first second, %.1f over 4 s"):format(firstTop, top))
 	assert(top <= e0 + 0.02 * G * 5, ("energy never grows on the rope: %.1f against %.1f at the hook"):format(top, e0))
-	assert(top <= firstTop + 1e-6, "and its peak is set in the first swing, never later: no slow pumping by the maths")
+	-- 1e-5 of the energy: leapfrog's error is bounded, not monotone; its envelope settles over a few swings (H28: the
+	-- yoink's wider arc, peak +0.0045 by 4 s, then flat to 1e-8 over 100 s, measured). Euler's growth was +110 (§3; → S18).
+	assert(top <= firstTop + 1e-5 * e0, "and its peak is set in the first swing, never later: no slow pumping by the maths")
 	assert(energy(s) > e0 - 0.05 * G * 12, "and the swing does not die out in 4 s (under 5% of its drop lost)")
 	local still = hooked(0, 8, a)
 	for _ = 1, 120 do tick(OPEN, still, gin({ hook = true })) end
@@ -293,6 +295,61 @@ do -- from the floor the rope reels in so the runner swings clear of it; it neve
 	for _ = 1, 60 do tick(FLOOR, s, gin({ hook = true })) end
 	assert(s.rope, "still swinging after 1 s: the low point clears the floor")
 	assert(math.abs(s.rope.len - (a.y - feet - Config.GRAPPLE_LIFT)) < 1e-6, "reeled to the lift")
+end
+
+do -- H28, the yoink: the first step the rope is taut at its length, it adds GRAPPLE_YOINK x sin(angle) along the swing
+	-- toward under the anchor (gravity's direction); once a hook; a floor hook's waits for the reel; no free dash
+	local Y = Config.GRAPPLE_YOINK
+	assert(Y > 0, "the yoink is on")
+	local a = { x = 0, y = 20, id = 1 }
+	-- the same hook with the knob as set and with it at 0; `world`, `floorAt`: a floor hook from (floorAt, standing)
+	local function twin(fn)
+		local got = fn()
+		Config.GRAPPLE_YOINK = 0
+		local ok, base = pcall(fn)
+		Config.GRAPPLE_YOINK = Y
+		assert(ok, base)
+		return got, base
+	end
+	local function speed(s) return s.rope.w * s.rope.len end
+	local s, s0 = twin(function() return hooked(-12, 8, a) end) -- 45 degrees out, at rest
+	assert(near(speed(s) - speed(s0), Y * math.sin(math.pi / 4), 0.3),
+		("hooked 45 degrees out: the bite adds YOINK x sin 45 (%.2f) along the swing, got %.2f")
+			:format(Y * math.sin(math.pi / 4), speed(s) - speed(s0)))
+	assert(s.vx > s0.vx and s.vy < s0.vy, "... toward under the anchor: right and down from the left")
+	local m, m0 = twin(function() return hooked(12, 8, a) end)
+	assert(m.vx < m0.vx and near(speed(m0) - speed(m), Y * math.sin(math.pi / 4), 0.3), "mirrored from the right")
+	-- once a hook: straight under at 115 (no yoink at the bite: sin 0), up past the anchor's side, slack, caught again
+	local up, up0 = twin(function()
+		local u = hooked(0, 8, a, 115, 0)
+		for _ = 1, 90 do tick(OPEN, u, gin({ hook = true })) end
+		return u
+	end)
+	assert(up.rope.bit and near(up.x, up0.x, 1e-9) and near(up.y, up0.y, 1e-9),
+		"no second yoink when the rope catches again after a slack spell")
+	-- a floor hook: the yoink waits until the reel is done (a bite at once swept a fast runner into the floor, H28)
+	local function floorHook(x, vx)
+		local f = standing(FLOOR, x)
+		f.vx = vx
+		local fa = { x = 0, y = 20, id = 1, floor = 0 }
+		tick(FLOOR, f, gin({ hook = true, press = true, anchor = fa, moveX = 1 }))
+		local reeled, fastest = false, 0
+		for _ = 1, 60 do
+			tick(FLOOR, f, gin({ hook = true, moveX = 1 }))
+			if not f.rope then break end
+			if f.rope.len > f.rope.target then assert(not f.rope.bit, "no yoink while the floor reel runs") end
+			reeled = reeled or f.rope.bit == true
+			if f.rope.w then fastest = math.max(fastest, math.abs(speed(f))) end
+		end
+		assert(f.rope and reeled, ("a floor hook from %d at %d keeps its rope and gets its yoink"):format(x, vx))
+		return fastest
+	end
+	floorHook(-15, Config.RUN_SPEED) -- 15 out at a sprint: the case that lost its rope when the yoink came at the bite
+	local walk, walk0 = twin(function() return floorHook(-10, Config.RUN_SPEED / 2) end)
+	print(("    yoink: a walking floor hook 10 out swings at %.1f (%.1f without), a dash is %d"):format(walk, walk0,
+		Config.DASH_SPEED))
+	assert(walk > walk0 and walk - walk0 <= Y, "a hook at a walk swings a little faster, never by more than YOINK")
+	assert(walk - walk0 > 3 and walk - walk0 < 7, ("measurement (S11), at YOINK 20: +%.1f at a walk"):format(walk - walk0))
 end
 
 do -- the pose: on the rope, the swing sprite

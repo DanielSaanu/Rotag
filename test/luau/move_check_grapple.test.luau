@@ -90,9 +90,10 @@ end
 -- Pinned as MEASUREMENTS (→ S11, 2026-11-01): the worst of the five chains. A tuning change shows here as a diff.
 assert(math.abs(worst.swing - Config.GRAPPLE_MAX_SPEED) < 1e-6, ("the fastest swing reaches the cap: %.2f"):format(worst.swing))
 assert(worst.x > 1.2 and worst.x < 1.6, ("x budget used at most (measurement): %.2f of %.0f"):format(worst.x, CAP_X))
--- (QA round 1: 2.41 -> 2.96 once a held W hooks the moment an anchor is in reach; the chains hook earlier and higher.)
-assert(worst.up > 2.7 and worst.up < 3.2, ("up budget used at most (measurement): %.2f of %.1f"):format(worst.up, CAP_U))
-assert(worst.down > 2.0 and worst.down < 2.5, ("down budget used at most (measurement): %.2f of %.0f"):format(worst.down, CAP_D)) -- 2.67 -> 2.21 (QA r1)
+-- (QA round 1: 2.41 -> 2.96 once a held W hooks the moment an anchor is in reach; the chains hook earlier and higher.
+-- H28, the yoink at 20: up 2.96 -> 2.47, down 2.21 -> 2.77; x unchanged at 1.38. Still a quarter of the burst at most.)
+assert(worst.up > 2.2 and worst.up < 2.7, ("up budget used at most (measurement): %.2f of %.1f"):format(worst.up, CAP_U))
+assert(worst.down > 2.5 and worst.down < 3.0, ("down budget used at most (measurement): %.2f of %.0f"):format(worst.down, CAP_D)) -- 2.67 -> 2.21 (QA r1) -> 2.77 (H28)
 
 do -- a cheat that claims a swing it is not on gains nothing: no rate is granted by the rope (the server never sees it)
 	local c = MoveCheck.new(0, 0, 0)

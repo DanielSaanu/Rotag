@@ -166,6 +166,8 @@ Config.GRAPPLE_INSET = 2          -- studs inside the screen edge an anchor must
 Config.GRAPPLE_MIN_LEN = 8        -- the shortest rope (no loops round the anchor below the speed cap: 5 g L > cap^2)
 Config.GRAPPLE_LIFT = 1           -- hooked from the floor, the rope reels in to this far above your feet's height ...
 Config.GRAPPLE_REEL = 40          -- ... at this many studs/s, so a floor hook swings instead of dragging on the floor
+Config.GRAPPLE_YOINK = 20         -- H28: studs/s the rope's bite adds along the swing toward under the anchor (all of it
+                                  -- hooked level with the anchor, none straight under it). 0 = no yoink. Danzo's to tune
 Config.GRAPPLE_PUMP = 60          -- studs/s^2 the stick pushes along the swing: a hanging runner can get going
 Config.GRAPPLE_MAX_SPEED = Config.DASH_SPEED -- the swing never goes faster than a dash: the dash still redirects it
                                   -- without a loss (DESIGN §2), and the server's speed check needs no new rate

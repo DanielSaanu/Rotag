@@ -79,3 +79,12 @@ tile the rule lets a part cover, then demands every orb and anchor stand is stil
 tile-grid runner that jumps lower and drifts less than the game's (no dash, grapple or pad), so "reachable" in the
 test is reachable in Play. Mutation-check it: remove the zones and watch it fail (the Yard: a floor orb walled in), and
 let it judge old content too (the test map failed it and gained a zone). *(2026-11-07, handoff H27, `test/luau/maps.test.luau`.)*
+
+**S18 — A test window or tolerance fitted to one start is a hidden assumption: state it in the system's own terms.**
+The grapple's energy test asked "the peak is set in the first 60 frames, to 1e-6 absolute". That held for a swing
+starting at rest at the arc's end; H28's yoink starts the swing mid-arc, and leapfrog's bounded error envelope (flat
+to 1e-8 over 100 s, measured) settled 0.0045 above its first-second value, failing a test whose real question (does
+the maths pump energy? Euler's +110 does) was untouched. Before changing such a test, measure over a long run that
+the property still holds, then write the window as the system's own scale (a period, a close time) and the tolerance
+relative to the quantity, with the measured number beside it. Never just widen it until it passes. *(2026-11-07,
+handoff H28, `test/luau/grapple.test.luau`.)*

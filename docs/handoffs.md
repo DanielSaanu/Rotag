@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-07 (H27 resolved: maps, the Yard; H28 opened: the grapple yoink; H26 and H25 signed off by Danzo)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-07 (H27 resolved: maps, the Yard; H28 resolved: the grapple yoink; H26 and H25 signed off by Danzo)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -27,32 +27,13 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H28 — The grapple yoinks: a hook tugs the runner toward the anchor, adding a little speed — 2026-11-07 16:54 — OPEN
-- **Trigger:** 2 (`shared/Grapple.lua` and the hook phases in `shared/Movement.lua`, both pure and tested) and 3
-  (any speed added on the hook sits under the server's x rate, `MoveCheck.RATE_X` = max(DASH_SPEED, GRAPPLE_MAX_SPEED)
-  = 120; grapple.md §4 says nothing new is trusted because the swing's own cap is the dash rate: keep that true).
-- **Doc:** `docs/systems/grapple.md` §2 (the rope, the reel, the pump, the cap, release), §3 (angle + leapfrog), §4
-  (trust), §7 (the numbers); `docs/DESIGN.md` §2 (run builds, the swing releases, the dash redirects) and §3 rules 15-21.
-- **Observed:** Danzo, 2026-11-07, after signing the grapple off: "can we modify the grapples and have them sort of
-  yoink the player a little bit in their direction, increasing their velocity a bit". Today a hook sets the rope to the
-  distance at the hook (floor hooks reel in at `GRAPPLE_REEL` 40/s to `GRAPPLE_LIFT`), the rope only pulls, and the
-  swing's speed comes from the fall and the pump; a hook at a walk starts a slow swing.
-- **Evidence:** `roblox/src/shared/Config.lua` lines 156-175 (the grapple knobs); `test/luau/grapple.test.luau`,
-  `test/luau/move_check_grapple.test.luau` (five driven 10 s chains never flagged, budgets pinned); HEAD 7df4ac3.
-- **Routine session's read (a guess):** two shapes: (a) a short reel on EVERY hook, not only floor ones, pulling the
-  runner toward the anchor for the first ~0.15-0.25 s (a shortening pendulum keeps its angular momentum, so the swing
-  speeds up by itself, and the tug toward the anchor is literally the yoink); (b) a one-off tangential impulse on the
-  hook, `GRAPPLE_YOINK` studs/s along the swing toward the anchor's side, clamped by the cap. (a) is more physical and
-  reads as a pull; (b) is one line and one knob. Either way the cap (120) stays, so the trust story holds; check the
-  driven chains and the release boost x1.1 still fit the burst (grapple.md §4, §4's worst budget). "A little bit":
-  small enough that a hook at a walk does not become a free dash.
-- **Decision needed:** which shape, the size (a knob in Config with Danzo's one-line comment), and that `MoveCheck`
-  needs no new allowance. Then build, re-pin tests (mutation-check the new knob: 0 fails a named assertion), update
-  grapple.md §2, §7, §9, a `docs/qa/grapple-yoink.md` goals file for a short QA loop, worklog, and if Studio is connected
-  see it in Play (a hook at a walk, a hook at a sprint, a floor hook). Say what Danzo should feel for.
-- **Blocked routine work:** none. H27 (maps) runs in parallel on the branch; work in a worktree and merge, as H26 did.
-
 ## Resolved
+
+### H28 — The grapple yoinks: a hook tugs the runner toward the anchor, adding a little speed — 2026-11-07 16:54 — RESOLVED
+- **Resolved 2026-11-07 (heavy, worktree; not seen in Studio):** shape (b), a whip: the rope's first taut step at its
+  length adds `GRAPPLE_YOINK` 20 studs/s x sin(angle) along the swing toward under the anchor (once a hook; a floor
+  hook's after the reel); (a), a reel on every hook, measured and dropped (side hooks lost speed). `MoveCheck` untouched,
+  the chains never flagged → `docs/systems/grapple.md` "The yoink", goals `docs/qa/grapple-yoink.md`, → S18.
 
 ### H27 — PR 6, maps: map data instead of the hand-built test arena, the first real map, per-map window bounds — 2026-11-07 16:37 — RESOLVED
 - **Resolved 2026-11-07 (heavy):** maps are pure data in `shared/` (`Maps`, `MapYard`, `MapTest`), `server/Arena` the
