@@ -72,3 +72,10 @@ MatchState. Give the state two thresholds (enter at the line, leave only a body-
 the doc which event the reset belongs to, rate-limit the at-once send it drives (never a death), and keep a bot's goal
 a margin inside the zone. Pin it with a runner dancing ON the moving line (one flip, then it dies) and mutation-check
 "no hysteresis". *(2026-11-02, handoff H26 follow-up, `shared/Walls.outside`, `server/Bots`.)*
+
+**S17 — "Nothing can ever be sealed" is tested in its worst case, with a reach model WEAKER than the real moves.** A
+box rule (parts never overlap keep-clear zones) is only as good as the zones a map author drew. H27's test fills EVERY
+tile the rule lets a part cover, then demands every orb and anchor stand is still joined to the spawn both ways, on a
+tile-grid runner that jumps lower and drifts less than the game's (no dash, grapple or pad), so "reachable" in the
+test is reachable in Play. Mutation-check it: remove the zones and watch it fail (the Yard: a floor orb walled in), and
+let it judge old content too (the test map failed it and gained a zone). *(2026-11-07, handoff H27, `test/luau/maps.test.luau`.)*

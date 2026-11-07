@@ -44,8 +44,8 @@ function Arena.build(): Folder
 	clearTemplate()
 	local old = workspace:FindFirstChild("Map")
 	if old then old:Destroy() end
-	local map = Instance.new("Folder")
-	map.Name = "Map"
+	local folder = Instance.new("Folder")
+	folder.Name = "Map"
 	for _, b in map.blocks do
 		local name, x0, y0, x1, y1 = b[1], b[2], b[3], b[4], b[5]
 		local part = Instance.new("Part")
@@ -58,7 +58,7 @@ function Arena.build(): Folder
 		part.Color = if name == "Floor" then Color3.fromRGB(70, 72, 84) else Color3.fromRGB(110, 114, 132)
 		part.TopSurface = Enum.SurfaceType.Smooth
 		part.BottomSurface = Enum.SurfaceType.Smooth
-		part.Parent = map
+		part.Parent = folder
 	end
 	-- H25: the anchors, in a Persistent model so streaming never drops one from a screen. Not solid and not queried:
 	-- they are never a floor or a wall to the probes (T11), nor block a rope's line of sight.
@@ -83,11 +83,11 @@ function Arena.build(): Folder
 			part.Parent = anchors
 		end
 	end
-	anchors.Parent = map
-	map.Parent = workspace
+	anchors.Parent = folder
+	folder.Parent = workspace
 	print(("[Rotag] map %q: %d parts, %d grapple anchors, %d pads, window x %g..%g"):format(map.name, #map.blocks,
 		#Arena.ANCHORS, #Arena.PADS, Arena.WINDOW.lo, Arena.WINDOW.hi))
-	return map
+	return folder
 end
 
 return Arena

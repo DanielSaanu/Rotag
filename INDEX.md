@@ -36,6 +36,8 @@ to (`roblox/default.project.json`).
   server owns, hysteresis at the edge, the wander and the lean, the numbers, what was seen. Before any walls change.
 - [`docs/systems/endgame.md`](docs/systems/endgame.md): the endgame as built (v2 PR 5, H23; PR 5b, H24): the end phase, its speed, the
   ignition and burn-out, the closing walls (SpeedRunners research, the grace, what the server trusts; H26: the moving window, §7.7). Before any end-phase change.
+- [`docs/systems/maps.md`](docs/systems/maps.md): maps as built (PR 6, H27): the data format, the Yard, the map rule as a test (reach, no
+  dead ends, no sealing), per-map window bounds, map pads, what was seen. Before any map, orb-spot, anchor or keep-clear change.
 - [`docs/systems/placement.md`](docs/systems/placement.md): placement as built (v2 PR 4, H22): the seven tetromino fixtures, boost pads,
   the boost grant, the fit test and keep-clear zones, what the server trusts, the payloads. Before any fixture, pad, grant or map-zone change.
 - [`docs/systems/ghosts-v2-proposal.md`](docs/systems/ghosts-v2-proposal.md): H16, ADOPTED spec (PR 1 built, H18): no comeback, orbs and

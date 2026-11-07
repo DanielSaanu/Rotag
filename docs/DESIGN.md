@@ -245,9 +245,10 @@ No 2D, side-on parkour tag game has made it big on Roblox. The few 2D projects o
 6. **Name.**
 7. **Bots.** Scope for a basic bot that chases, flees and uses abilities.
 8. **Maps** (H16). 3-4 from the start, differing in layout (rule 48): Tower (vertical), Yard (open), Warren (maze),
-   Rooftops (gaps); feels in [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md) §6. Open: which first, and size. The map shrink
-   came forward (H24, rule 51's closing walls); each map's data will carry its window bounds (the test map's are
-   `Arena.WINDOW`, H26; a tall map may shrink vertically too).
+   Rooftops (gaps); feels in [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md) §6. *Answered for the first map 2026-11-07 (H27, heavy;
+   Danzo to confirm):* **the Yard first**, 88 x 24 tiles (352 x 96 studs: the proposal's width, two screens tall so the
+   horizontal box still forces the duel), maps as pure data with their own window bounds; the vertical shrink is the
+   Tower's PR. Open: the next maps, a per-round rotation. Detail: [maps.md](systems/maps.md).
 9. ~~**`END_PHASE_AFTER`.**~~ **Resolved-trial 2026-10-31 (H23, heavy; Danzo to confirm):** 120 s, not the
    proposal's 150: the final two normally arrive first (~83-100 s), and a round still 3+ alive at 2:00 ends near 3:00,
    inside the pillar (150 would end near 3:30). Reasoning: [endgame.md](systems/endgame.md) §5.

@@ -29,7 +29,7 @@ Keys and the touch button: [controls.md](controls.md). QA goals: [../qa/grapple.
   22-48 studs apart so one release reaches the next. Standing under one, it must sit under the HUD banner's inset: over a
   floor at y f that is f + 23.75 at most (QA round 2); `grapple.test.luau` stands under every anchor on the real map. Each is a gold neon ball (1.6 studs) on a dark disc: gold is free
   in the colour code (pads lime, ghost pieces violet, walls red, freeze cyan; rule 29). Not solid and not queried
-  (T11: a queried part is a floor to the probes). PR 6 carries a list per map.
+  (T11: a queried part is a floor to the probes). Each map carries its own list since H27 ([maps.md](maps.md)).
 - **Aim assist (rule 17)**, `Grapple.pick`: of the anchors at least `GRAPPLE_MIN_ABOVE` (4) above the runner,
   within `GRAPPLE_RANGE` (28) and inside this screen by `GRAPPLE_INSET` (2), the one with the lowest score: its
   distance, +8 if behind the facing, -2 if it is the last pick (so the pick never flickers between two). The line of

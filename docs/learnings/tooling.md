@@ -92,3 +92,9 @@ noise filter (Studio resolves the require, so it is likely analyzer-only, but li
 filter: let the function that reads the round return plain numbers, and make the maths take numbers
 (`target(w, now, mean, holderX)`).
 *(2026-11-02, handoff H26, `shared/Walls.lua`.)*
+
+**T16 — Lint cannot see a Roblox Instance's members, so a local Instance named like a module-level data table passes
+`lint:luau` and fails in Play.** H27's `Arena.build` made `local map = Instance.new("Folder")` inside a file whose
+module-level `map` was the map data; the next line's `map.blocks` linted clean and errored at boot (`blocks is not a
+valid member of Folder "Map"`). Never reuse a data name for an Instance local (`folder`, `part`, `model`), and treat a
+first Play after any server-file edit as part of the test, not a formality. *(2026-11-07, handoff H27, `server/Arena.lua`.)*

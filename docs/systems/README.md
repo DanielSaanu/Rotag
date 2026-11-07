@@ -106,7 +106,7 @@ One file each. Read only the one your task touches.
 | Ghosts as built (v2 PR 1, H18): no comeback, ghost orbs, the hex, the shared ward | [ghosts.md](ghosts.md) | `shared/Ghost`, `shared/Orbs`, `server/Ghosts`, `server/Orbs`, `server/Bots`, `client/Items`, `client/Tagging`, `client/Look`, `client/Hud`, `client/Arrows` |
 | Items as built (v2 PR 2, H19): living orbs and pools, Use, the holds (crate, bear trap, ice beam), i-frames, the per-target ward | [items.md](items.md) | `shared/Items`, `shared/Movement` (hold), `shared/MoveCheck` (hold), `server/Items`, `server/Snapshots`, `server/Bots`, `client/Use`, `client/Items`, `client/Controls`, `client/Hud` |
 | Placement as built (v2 PR 4, H22): fixtures (tetrominoes), boost pads, the boost grant, keep-clear zones | [placement.md](placement.md) | `shared/Placement`, `server/Placement`, `client/Place`, `Items.grants`, `Tag.speedMult`, `Movement` (launch) |
-| Maps | the first-playable test map only: [movement.md](movement.md) §7 | `server/Arena` |
+| Maps (H27): map data, the Yard, the map rule as a test, per-map window bounds | [maps.md](maps.md) | `shared/Maps`, `shared/MapYard`, `shared/MapTest`, `server/Arena`, `server/Placement` (map pads) |
 | HUD and mobile controls | the two touch buttons: [movement.md](movement.md) §5; the fuse HUD: [tag.md](tag.md) §6 | `client/Controls`, `client/Hud` |
 
 The per-module "who owns what" tables are the folder READMEs under [`roblox/src/`](../../roblox/src/README.md).

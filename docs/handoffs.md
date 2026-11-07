@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-07 (H27 opened: PR 6, maps; H28 opened: the grapple yoink; H26 and H25 signed off by Danzo)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-07 (H27 resolved: maps, the Yard; H28 opened: the grapple yoink; H26 and H25 signed off by Danzo)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -52,36 +52,14 @@ Resolution (added by the heavy agent under the same entry):
   see it in Play (a hook at a walk, a hook at a sprint, a floor hook). Say what Danzo should feel for.
 - **Blocked routine work:** none. H27 (maps) runs in parallel on the branch; work in a worktree and merge, as H26 did.
 
-### H27 — PR 6, maps: map data instead of the hand-built test arena, the first real map, per-map window bounds — 2026-11-07 16:37 — OPEN
-- **Trigger:** 1 (which map first; the shrink's shape per map: DESIGN §6.8, rule 48, rule 51) and 2 (a map format other
-  modules depend on: `server/Arena.lua` is read by `server/Walls`, `server/Match`, `server/Placement`, `server/Server`,
-  `client/Grapple` via `ANCHOR_TAG`).
-- **Doc:** `docs/systems/ghosts-v2-proposal.md` §6 (the four feels) and §12 item 6 (the PR); `docs/DESIGN.md` §3 rules
-  25-30 and 48, §6.8; `docs/systems/placement.md` (keep-clear, `Arena.static()`), `docs/systems/walls.md` (`Arena.WINDOW`),
-  `docs/systems/grapple.md` (anchors), `docs/systems/orbs.md` if present (spots).
-- **Observed:** every system so far runs on one hand-built test arena (`server/Arena.lua`, 148 lines: BLOCKS, SPAWN,
-  WINDOW, GHOST_ORBS, LIVING_ORBS, KEEP_CLEAR, ANCHORS, `static()`, `build()`). PRs 1-5b and the grapple are built,
-  QA'd and signed off by Danzo (2026-11-07). Nothing else is left before PR 6 in the §12 order.
-- **Evidence:** `git log --oneline -8` (b41e10e H26 closed, 90b7b39 the grace to 6 s); `npm test` fail 0 and
-  `npm run lint:luau` clean at 90b7b39; line ceiling headroom: `server/Match.lua` 391/400, `client/Client.client.lua`
-  314, `client/Hud.lua` 288 (`test/structure.test.js`), so new logic goes in NEW modules.
-- **Routine session's read (a guess):** one map module per map under `server/` (data only: blocks, spawn, window,
-  orb spots, keep-clear, anchors, pads), `Arena` becomes the loader that picks one and exposes today's fields unchanged,
-  so no dependant changes its calls. The window may need a vertical pair for a tall map (walls.md says so); if the
-  walls' maths changes for that, it is this PR's trigger 2. First map: Danzo was asked to pick in §12 and today said
-  "go ahead with whatever is next", so pick one with a recorded reason and the others follow in later sessions; the
-  routine's lean is the Yard (open, closest to the test arena's style, shows pads, anchors and fixtures the most), the
-  Tower second (vertical shrink is the new maths). A guess, not a decision.
-- **Decision needed:** the map data format (what a map file carries, pure or server-only), which map is built first
-  and its size (proposal: ~340 x 150 studs, 6 orb spots, rules 25-29 kept), how the window bounds and the shrink work
-  per map (horizontal only, or vertical too), how a map is chosen per round (one fixed map first is fine). Then build
-  it, playable, with tests for the map rule (no sealing, keep-clear) and the window inside the bounds, a
-  `docs/qa/maps.md` goals file for the QA loop, and `docs/systems/maps.md` (or the right existing doc) with the reasoning.
-  Danzo tests in Studio afterwards: say what he should look at.
-- **Blocked routine work:** the art block (pieces, pads, the grant, the ignition, the walls, the hang pose) waits
-  behind this PR in the §12 order; nothing else.
-
 ## Resolved
+
+### H27 — PR 6, maps: map data instead of the hand-built test arena, the first real map, per-map window bounds — 2026-11-07 16:37 — RESOLVED
+- **Resolved 2026-11-07 (heavy):** maps are pure data in `shared/` (`Maps`, `MapYard`, `MapTest`), `server/Arena` the
+  loader (same fields, no dependant changed); the Yard built first (88 x 24 tiles, three tiers, shafts, 8 anchors, 3
+  permanent map pads), window per map, horizontal only (the vertical shrink is the Tower's); `maps.test` holds every
+  map to reach, no dead ends and rule 48's fill-everything worst case; seen in Studio → `docs/systems/maps.md`,
+  `docs/qa/maps.md` (QA loop next), DESIGN §6.8, learnings S17, T16.
 
 ### H26 — The closing walls loosely follow the runners, irregularly, so the pack is pushed together — 2026-11-02 — RESOLVED
 - **Resolved 2026-11-02:** built by the heavy (a lean toward "it" plus a seeded wander on the living mean, inside

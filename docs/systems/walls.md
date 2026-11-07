@@ -56,7 +56,7 @@ still normalise `endPhase == true`. `MoveCheck` untouched: nothing physical chan
 | The window, the follow, the grace, the order of deaths | `shared/Walls.lua` (new, pure) | the server calls `open` / `step`; tested in `walls.test.luau` |
 | An elimination (burn-out or walls) | `shared/Tag.eliminate` (new; `Tag.tick` calls it) | one path: a ghost, the next fuse shrinks; the holder's death passes a fresh fuse |
 | Stepping it on the server's record | `server/Walls.lua` (new) | server, every frame after `Tag.tick`; Studio log `walls: ...` |
-| The map's window bounds (H26) | `server/Arena.WINDOW` `{ lo, hi }` (the end walls' inner faces) | passed to `open`; PR 6 gives each map its own |
+| The map's window bounds (H26) | `server/Arena.WINDOW` `{ lo, hi }` (the end walls' inner faces) | passed to `open`; each map's own `window` since H27 ([maps.md](maps.md) §4) |
 | Telling clients | `MatchState.window` `{ x, hw, vx, vhw }` (absent: no walls) and `MatchState.outside` `{ { id, left, held? } }` | server; sent at once when anyone goes out or comes back (at most 5 a second, a death always at once), 4 a second while the walls move |
 | A dummy outside walks back in; inside, it keeps 4 studs in from each wall | `server/Bots` via `Walls.backIn`, `Walls.room` | Studio only |
 | The walls, the red band, the edge glow, `GET BACK IN  2.1` | `client/Walls.lua` (new) | client only, from `MatchState`; extrapolates the window up to 0.5 s |
