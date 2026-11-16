@@ -107,6 +107,20 @@ function BoxWorld.clear(world: { Box }, x0: number, y0: number, x1: number, y1: 
 	return true
 end
 
+-- How far a level line from (x, y) the way `dir` (+1 right, -1 left) runs before the first box, at most `max` (the
+-- ice beam stops at a wall: H33, QA round 3). 0 when (x, y) is inside a box.
+function BoxWorld.reach(world: { Box }, x: number, y: number, dir: number, max: number): number
+	local best = max
+	for _, b in world do
+		if y > b[2] and y < b[4] then
+			if x >= b[1] and x <= b[3] then return 0 end
+			local d = if dir > 0 then b[1] - x else x - b[3]
+			if d >= 0 and d < best then best = d end
+		end
+	end
+	return best
+end
+
 -- The top of the highest box under the point (x, y), or nil (an anchor's `floor`, shared/Grapple.attach).
 function BoxWorld.floorUnder(world: { Box }, x: number, y: number): number?
 	local best = nil

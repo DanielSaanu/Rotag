@@ -71,6 +71,19 @@ local function setUp(i: number, up: boolean)
 	o.up = up
 end
 
+-- What stops a beam on this screen: the map's blocks and the ghosts' fixtures (never a runner or an item).
+local rayParams: RaycastParams? = nil
+local function beamParams(): RaycastParams
+	local p = rayParams
+	if not p then
+		p = RaycastParams.new()
+		p.FilterType = Enum.RaycastFilterType.Include
+		rayParams = p
+	end
+	p.FilterDescendantsInstances = { workspace:FindFirstChild("Map") :: Instance, workspace:FindFirstChild("RotagFixtures") :: Instance }
+	return p
+end
+
 local function drop(t: any)
 	if t.part then t.part:Destroy() end
 	if t.charge then t.charge:Destroy() end
@@ -247,7 +260,12 @@ function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boo
 		if t.beam then
 			local at = drawnAt[t.owner]
 			if at then t.ox, t.oy = at.X, at.Y end
-			if Beam.draw(t.beam, t.ox, t.oy, now - t.born, if t.endedAt then now - t.endedAt else nil) or now > t.untilT then
+			-- the beam stops at a wall, as the server cuts it (shared/Items.beam's reach): a ray from the hand
+			local dir = t.beam.dir
+			local from = Vector3.new(t.ox + dir * Config.RUNNER_WIDTH / 2, t.oy, 0)
+			local hit = workspace:Raycast(from, Vector3.new(dir * Config.ICE_LENGTH, 0, 0), beamParams())
+			if Beam.draw(t.beam, t.ox, t.oy, now - t.born, if t.endedAt then now - t.endedAt else nil,
+				if hit then hit.Distance else nil) or now > t.untilT then
 				drop(t)
 				things[n] = nil
 			end
@@ -270,6 +288,7 @@ function Items.start(player: Player)
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "RotagItems"
 	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 3
 	local l = Instance.new("TextLabel")
 	l.BackgroundTransparency = 1
 	-- Top left, UNDER the scoreboard strip (client/Board: 6 + up to 130 design pixels; QA round 2: at (12, 12) the

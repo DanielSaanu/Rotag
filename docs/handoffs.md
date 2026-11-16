@@ -35,7 +35,7 @@ Resolution (added by the heavy agent under the same entry):
 - **Trigger:** 1 (how a crowd plays; §2's "4 per match" kept), 3 (who is seated where), 5-adjacent (TeleportService).
 - **Observed (Danzo):** "is it possible to queue up multiple lobbies in the one server ... to have them play
   simultaneously"; shown four options with their cost, he picked "hub with match servers".
-- **Resolved 2026-11-16 (same Fable session):** `server/Hub.lua` (hub / match / solo by the server's kind), the
+- **Resolved 2026-11-16 (same Fable session; QA round 3 hardened it):** `server/Hub.lua` (hub / match / solo by the server's kind), the
   queue in `server/Session` (full, or `LOBBY_TIME`), launch and the trip home, a failed launch requeues and two
   in a row fall back to solo, the relay chunked, the lobby and title lines. **Unrun code**: Studio cannot
   teleport; the live test and the off switch (`Config.HUB`) are in INBOX → session.md §8.

@@ -10,10 +10,14 @@ local Tag = require(Shared:WaitForChild("Tag"))
 local Ghost = require(Shared:WaitForChild("Ghost"))
 local OrbRules = require(Shared:WaitForChild("Orbs"))
 local Rules = require(Shared:WaitForChild("Items"))
+local Config = require(Shared:WaitForChild("Config"))
+local BoxWorld = require(Shared:WaitForChild("BoxWorld"))
 local MoveCheck = require(Shared:WaitForChild("MoveCheck"))
 local Orbs = require(script.Parent:WaitForChild("Orbs"))
 local MoveGuard = require(script.Parent:WaitForChild("MoveGuard"))
 local Placement = require(script.Parent:WaitForChild("Placement")) -- H22: fixtures and pads (docs/systems/placement.md)
+local Arena = require(script.Parent:WaitForChild("Arena"))
+local mapBoxes = BoxWorld.fromBlocks(Arena.MAP.blocks) -- what stops an ice beam (with the fixtures)
 
 local Items = {}
 
@@ -163,7 +167,18 @@ function Items.step(r: Tag.Round, now: number, present: (number) -> boolean)
 		if s and present(id) then return s.x, s.y end
 		return nil, nil
 	end
-	for _, e in Rules.step(state, now, victims, if g then g.wards else {}, where) do
+	-- QA round 3: a beam stops at the first block or ghost fixture ahead of it (it froze runners through walls)
+	local boxes = table.clone(mapBoxes)
+	for _, p in Placement.placed() do
+		if p.item == "fixture" then
+			local b = p.boxes
+			for i = 0, p.count - 1 do table.insert(boxes, { b[i * 4 + 1], b[i * 4 + 2], b[i * 4 + 3], b[i * 4 + 4] }) end
+		end
+	end
+	local function reach(x: number, y: number, dir: number): number
+		return BoxWorld.reach(boxes, x, y, dir, Config.ICE_LENGTH)
+	end
+	for _, e in Rules.step(state, now, victims, if g then g.wards else {}, where, reach) do
 		if e.kind == "hold" then
 			-- its speed from the server's own samples, never the client's word (QA round 1: the freeze's allowance)
 			local speed = MoveCheck.recentSpeed(c.history[e.id :: number] or {})

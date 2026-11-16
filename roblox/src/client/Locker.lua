@@ -71,7 +71,11 @@ local function fill()
 		local text, kind, op = "WHEEL ONLY", "ghost", nil
 		if worn[it.id] then text, kind = "WEARING", "ghost"
 		elseif owned[it.id] then text, kind, op = "WEAR", "primary", "equip"
-		elseif it.price then text, kind, op = ("BUY  %d"):format(it.price), "gold", "buy" end
+		elseif it.price then
+			-- a price you cannot pay yet is quiet, not gold (QA round 3): it still says what to save for
+			local can = p ~= nil and p.coins >= it.price
+			text, kind, op = ("BUY  %d"):format(it.price), if can then "gold" else "ghost", if can then "buy" else nil
+		end
 		local b = Ui.button(card, text, kind, UDim2.new(1, -20, 0, 38), UDim2.new(0, 10, 1, -48), function()
 			if op then Flow.shop(op, it.id) end
 		end)
@@ -193,6 +197,7 @@ function Locker.start(root: Frame, back: () -> ())
 	buildWheel(root, back)
 	Flow.onProfile(function(p)
 		if locker.Visible then fill() end
+		spinButton.BackgroundTransparency = if p.coins >= Config.SPIN_COST then 0 else 0.55
 		if type(p.spin) == "table" and type(p.spin.id) == "string" then land(p.spin.id, tonumber(p.spin.back) or 0) end
 		if type(p.note) == "string" and wheel.Visible and type(p.spin) ~= "table" then -- the spin was refused
 			spinning = false

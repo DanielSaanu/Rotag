@@ -114,7 +114,8 @@ function Stage.dress(folder: Instance, map: any)
 		x += bw + seed:NextInteger(2, 14)
 	end
 	-- Below the floor: darkness, so the bottom of the screen is never the backdrop.
-	part(look, "Under", Vector3.new(w + 600, 80, DEPTH + 2), CFrame.new(cx, -48, 0), Color3.fromRGB(14, 16, 24))
+	part(look, "Under", Vector3.new(w + 600, 80, DEPTH + 2), CFrame.new(cx, -48, 0), FLOOR) -- the floor's own colour: the
+	-- ground goes on down (QA round 3: a fifth of every frame under the floor was pure black)
 	look.Parent = folder
 	print(("[Rotag] stage: dressed %q (%d blocks lit, backdrop %d studs wide)"):format(map.name, #map.blocks, w + 600))
 end

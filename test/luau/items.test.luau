@@ -215,6 +215,13 @@ do -- H33 (Danzo 2026-11-16): the beam is a body tall, SHOOTS OUT over ICE_GROW,
 	at3.x = -100 -- the shooter is thrown far left: the beam still points right from it
 	Items.step(s3, Config.ICE_GROW + 0.05, {}, {}, where)
 	assert(near(beam.x - beam.hw, -100 + HW) and beam.dir == 1, "the direction is the shot's, only the place moves")
+	-- QA round 3: it stops at a wall. `reach` is the clear distance ahead of the hand; nobody behind the wall is hit
+	local s5 = Items.new()
+	local b5 = Items.use(s5, A, "ice", false, 0, Y, 1, 0)
+	local function wall() return 10 end -- a wall 10 studs ahead of the front edge
+	assert(#Items.step(s5, Config.ICE_GROW, { at(B, 20, Y) }, {}, nil, wall) == 0, "behind the wall: not hit")
+	assert(near(b5.hw * 2, 10) and near(b5.x - b5.hw, HW), "the beam is cut at the wall")
+	assert(kinds(Items.step(s5, Config.ICE_GROW, { at(C, 6, Y) }, {}, nil, wall)) == "hold:303:freeze", "in front of it: hit")
 	local s4 = Items.new() -- a shooter the server has lost (it left): the beam stays where it last was
 	local b4 = Items.use(s4, A, "ice", false, 5, Y, 1, 0)
 	Items.step(s4, 0.2, {}, {}, function() return nil, nil end)

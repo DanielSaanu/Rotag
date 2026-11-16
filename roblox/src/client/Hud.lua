@@ -134,6 +134,7 @@ function Hud.start(player: Player)
 	gui.Name = "RotagHud"
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = false
+	gui.DisplayOrder = 2 -- over the off-screen arrows (QA round 3: an arrow sat on the fuse and the item readout)
 	-- QA round 1: every line below is in design pixels on a scaled root (client/Ui), as the menu and the cards are:
 	-- at a phone's size the unscaled HUD ran into the "ROUND n" card and its text did not shrink with the rest.
 	local root = Ui.scaled(gui)

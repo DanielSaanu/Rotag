@@ -127,7 +127,7 @@ function Arrows.start(player: Player, names: (number?) -> string)
 	g.Name = "RotagArrows"
 	g.ResetOnSpawn = false
 	g.IgnoreGuiInset = true -- the camera's viewport includes the top bar, so the edge maths does too
-	g.DisplayOrder = 1
+	g.DisplayOrder = 0 -- under the HUD (2), the item readout (3), the scoreboard (5) and the menu (20): QA round 3
 	g.Parent = player:WaitForChild("PlayerGui")
 	gui = g
 end

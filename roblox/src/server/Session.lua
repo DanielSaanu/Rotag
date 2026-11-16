@@ -41,6 +41,13 @@ local due: { number }? = nil -- the roster of the round that may start now
 local queueSince: number? = nil
 local launching: { [number]: number } = {}
 local LAUNCH_STALE = 20
+local RETRY = 3 -- seconds a group waits after a failed launch (QA round 3: it restarted the whole LOBBY_TIME)
+-- H34, a match server only (QA round 3): how many players the hub sent here, since when the first of them arrived,
+-- and how long the lobby's countdown is held for the rest (a phone can take 20 s to load: without this a friend
+-- arrived to watch round 1 with a bot in their seat).
+local expected, firstAt = 1, nil :: number?
+local waitingFor: number? = nil
+local GROUP_WAIT = 25
 local ctx: Context? = nil
 local remote: RemoteEvent? = nil
 local lastMenu: { [number]: number } = {}
@@ -68,6 +75,7 @@ local function view(now: number): any
 	v.playing = ins
 	v.seed = Bots.SEED -- H32: the bots' names (shared/Session.botName) are the same on every screen
 	v.mode = Hub.MODE -- H34: "hub" | "match" | "solo": what PLAY means on this server, and what the lobby line says
+	if waitingFor then v.waiting = { #people(), waitingFor } end -- a match server holding its lobby for its group
 	if Hub.MODE == "hub" then -- a queue, not a countdown to a round here
 		local sent = {}
 		for id in launching do table.insert(sent, id) end
@@ -149,7 +157,16 @@ function Session.step(now: number)
 		stepHub(now, ins)
 		return
 	end
-	local what = Rules.tick(state, now, #ins)
+	local count = #ins
+	if Hub.MODE == "match" and state.phase == "lobby" and state.match == 0 and count > 0 and count < expected
+		and now - (firstAt or now) < GROUP_WAIT then
+		count = 0 -- the lobby idles (no countdown) until the group is here, or GROUP_WAIT is up
+		waitingFor = expected
+	elseif waitingFor then
+		waitingFor = nil
+		dirty = true
+	end
+	local what = Rules.tick(state, now, count)
 	if what == "start" then
 		due = Rules.pick(state, ins, Config.BOTS)
 		seatBots(due)
@@ -235,6 +252,8 @@ function Session.start(session: RemoteEvent?, menu: RemoteEvent?, context: Conte
 			-- H34: a match server's players were sent here to play: in at once, no title screen to click through
 			playing[player.UserId] = true
 			Runners.spawn(player, context.spawn)
+			expected = math.max(expected, Hub.groupOf(player))
+			firstAt = firstAt or os.clock()
 		end
 		send(os.clock(), player)
 		if studio then -- Studio only: a test session presses Play from a script (the command bar cannot fire a remote)
@@ -246,8 +265,9 @@ function Session.start(session: RemoteEvent?, menu: RemoteEvent?, context: Conte
 	end
 	Players.PlayerAdded:Connect(onPlayer)
 	for _, player in Players:GetPlayers() do onPlayer(player) end
-	Hub.onFailed(function(player: Player) -- its teleport did not happen: queued again at once
+	Hub.onFailed(function(player: Player) -- its teleport did not happen: queued again, and tried again in RETRY s
 		launching[player.UserId] = nil
+		queueSince = os.clock() - Config.LOBBY_TIME + RETRY
 		dirty = true
 	end)
 	Players.PlayerRemoving:Connect(function(player)

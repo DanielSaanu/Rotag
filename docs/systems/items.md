@@ -261,6 +261,9 @@ change, only its location."
   `ICE_LIFE` 0.7 s (was a fixed box for 0.5 s). Every server frame it is re-placed on the shooter's newest recorded
   position (living or ghost); its direction is the shot's. It never hits its shooter, catches each runner once,
   and a dash's i-frames still go through it (rule 45). The freeze is unchanged (1 s, rule 11).
+- **It stops at a wall** (QA round 3): `Items.beam`'s `reach` is the clear distance ahead of the hand at the beam's
+  centre line (`BoxWorld.reach` over the map's blocks and the ghosts' fixtures); nobody behind cover is frozen. The
+  client cuts its drawing at the same place with a ray.
 - **What the server trusts:** nothing new. The beam's place is the server's own sample of the shooter, as the shot's
   was; `put` gained `owner` and `age` so a client can draw it on the shooter.
 - **On screen (`client/Beam.lua`):** a cone of slices at the hand, a straight body, two bright edges, nine bands

@@ -65,10 +65,11 @@ function Beam.new(folder: Instance, dir: number): any
 end
 
 -- Every frame: the beam `age` seconds after the shot, on a shooter now drawn at (ox, oy). `ended`: seconds since the
--- server said it is gone (nil: still out); returns true once it has thinned away and may be destroyed.
-function Beam.draw(b: any, ox: number, oy: number, age: number, ended: number?): boolean
+-- server said it is gone (nil: still out); `reach`: the clear studs ahead of the hand (a wall cuts the beam short).
+-- Returns true once it has thinned away and may be destroyed.
+function Beam.draw(b: any, ox: number, oy: number, age: number, ended: number?, reach: number?): boolean
 	local dir = b.dir
-	local _, cy, hw, hh = ItemRules.beam(dir, ox, oy, age)
+	local _, cy, hw, hh = ItemRules.beam(dir, ox, oy, age, reach)
 	local len, h = hw * 2, hh * 2
 	if ended then
 		if ended >= FADE then return true end

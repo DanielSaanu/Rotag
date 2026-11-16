@@ -142,7 +142,13 @@ local function startRound(now: number, roster: { number })
 	end
 	local anyPlayer = false
 	for _, id in ids do if not Bots.isBot(id) then anyPlayer = true end end
-	local starter = Tag.nextStarter(ids, present, lastStarter)
+	local previous = lastStarter
+	if previous == nil then -- a server's very first round: a bot holds the fuse first when there is one (QA round 3:
+		for i, id in ids do -- a new player was "it" in the first second of the first round they ever saw)
+			if Bots.isBot(id) and i > 1 then previous = ids[i - 1] break end
+		end
+	end
+	local starter = Tag.nextStarter(ids, present, previous)
 	if not (starter and anyPlayer) then return end -- bots never play alone
 	local since = dueSince or now
 	if not dueSince then

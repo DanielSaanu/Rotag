@@ -166,7 +166,10 @@ function Board.update(match: any, hidden: boolean)
 		key = "hidden"
 	elseif phase == "lobby" then
 		big.TextSize, big.Position = 54, UDim2.new(0.5, 0, 0, topY + 92)
-		if s.mode == "hub" then -- H34: a queue for a match server, not a countdown to a round here
+		if type(s.waiting) == "table" then -- a match server holding its lobby until the group has arrived
+			big.Text, big.TextColor3 = "WAITING FOR YOUR GROUP", C.text
+			sub.Text = ("%d of %d here  ·  warm up!"):format(tonumber(s.waiting[1]) or 1, tonumber(s.waiting[2]) or 1)
+		elseif s.mode == "hub" then -- H34: a queue for a match server, not a countdown to a round here
 			if type(s.launching) == "table" and table.find(s.launching, me) then
 				big.Text, big.TextColor3, sub.Text = "MATCH FOUND!", C.gold, "taking you there..."
 			elseif Flow.playing() then

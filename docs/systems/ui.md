@@ -119,6 +119,10 @@ Then, looking (Studio captures, and Danzo: "a bit difficult to see walls and the
 - Traps and crates are marked, a pickup is announced, the ice beam is a beam (items.md). The first mark was a glowing
   plate behind the whole thing (Danzo: "big glowing boxes"); it is now a thin lit line along the base and a soft light.
 
+QA round 3 (the reviewer played a whole match on screen, 8/10) then fixed: the off-screen arrows sat over the HUD
+(now the lowest layer), Enter did not close the first-run cards, a fifth of the frame under the floor was black
+(the ground is the floor's colour now), an unaffordable BUY was as gold as an affordable one.
+
 Seen and fine: the title, the scoreboard strip, the fuse pill, name tags (readable, a fixed size), the IT marker,
 bots' names, the end-phase line, a hex pop, dust, the beam. **Still not judged:** whether the music FITS (it loads
 and switches), volumes, a phone, the locker and the wheel on screen, the podium, confetti.

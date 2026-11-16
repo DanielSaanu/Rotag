@@ -28,6 +28,12 @@ do -- line of sight: a box between two points blocks, a box beside the line does
 	assert(BoxWorld.clear(world, 12, -5, 12, 15), "beside it")
 	assert(BoxWorld.clear({}, 0, 0, 100, 100), "an empty world is clear")
 	assert(BoxWorld.floorUnder(world, 5, 30) == 10 and BoxWorld.floorUnder(world, 50, 30) == nil, "the floor under a point")
+	-- reach: how far a level line runs before the first box (the ice beam stops at a wall)
+	assert(BoxWorld.reach(world, -8, 5, 1, 24) == 8, "8 studs to the box's near face")
+	assert(BoxWorld.reach(world, 14, 5, -1, 24) == 4, "and from the other side")
+	assert(BoxWorld.reach(world, -8, 5, -1, 24) == 24, "nothing that way: the whole length")
+	assert(BoxWorld.reach(world, -8, 15, 1, 24) == 24, "over the box: clear")
+	assert(BoxWorld.reach(world, 5, 5, 1, 24) == 0, "from inside a box: nothing")
 end
 
 local function hooksOf(map, world)

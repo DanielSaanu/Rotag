@@ -39,7 +39,7 @@ Items.BY_TOUCH = { hex = "the hex is used by touch", grant = "the boost grant is
 -- it every step (Items.beam): it grows, and it rides with the shooter.
 export type Thing = {
 	n: number, item: string, owner: number, ghost: boolean, x: number, y: number, hw: number, hh: number, dir: number,
-	from: number, untilT: number, armed: boolean, hit: { [number]: boolean }, ox: number?, oy: number?,
+	from: number, untilT: number, armed: boolean, hit: { [number]: boolean }, ox: number?, oy: number?, reach: number?,
 }
 export type Hold = { kind: string, from: number, untilT: number, presses: number, over: boolean }
 export type State = { things: { Thing }, nextN: number, holds: { [number]: Hold }, grants: { [number]: number } }
@@ -92,9 +92,11 @@ end
 
 -- The ice beam `age` seconds after the shot, fired the way `dir` by a runner now centred at (ox, oy): a box from the
 -- runner's front edge, ICE_HEIGHT tall, growing to ICE_LENGTH over ICE_GROW (never under 1 stud, so the first frame
--- already has a body). Returns its centre and half size. The client draws the very same box (client/Beam).
-function Items.beam(dir: number, ox: number, oy: number, age: number): (number, number, number, number)
+-- already has a body), and no longer than `reach` when given: the clear distance ahead of the front edge at the
+-- beam's centre line (a wall stops it). Returns its centre and half size. The client draws the same box (client/Beam).
+function Items.beam(dir: number, ox: number, oy: number, age: number, reach: number?): (number, number, number, number)
 	local len = math.max(1, Config.ICE_LENGTH * math.clamp(age / Config.ICE_GROW, 0, 1))
+	if reach then len = math.max(0.2, math.min(len, reach)) end -- it stops at a wall (`reach`: clear studs ahead)
 	return ox + dir * (Config.RUNNER_WIDTH / 2 + len / 2), oy, len / 2, Config.ICE_HEIGHT / 2
 end
 
@@ -244,9 +246,10 @@ end
 -- order: a tie goes to the first). A crate or trap that catches someone is gone; a beam stays out ICE_LIFE and catches
 -- each runner once. `wards` is the ghosts' per-target ward table (Ghost.Ghosts.wards), read and written. `where(id)`
 -- (H33): where the SERVER last recorded runner `id` (living or ghost), or nil; a beam rides with its shooter, its
--- direction as fired. A shooter with no position (it left) leaves the beam where it last was.
+-- direction as fired. A shooter with no position (it left) leaves the beam where it last was. `reach(x, y, dir)`:
+-- the clear studs ahead of the front edge (the map's blocks and the ghosts' fixtures stop a beam).
 function Items.step(st: State, now: number, victims: { Victim }, wards: { [number]: number },
-	where: ((number) -> (number?, number?))?): { Event }
+	where: ((number) -> (number?, number?))?, reach: ((number, number, number) -> number)?): { Event }
 	local ev: { Event } = {}
 	for id, h in st.holds do
 		if not h.over and now >= h.untilT then
@@ -261,7 +264,10 @@ function Items.step(st: State, now: number, victims: { Victim }, wards: { [numbe
 			local x, y = nil, nil
 			if where then x, y = where(t.owner) end
 			if x and y then t.ox, t.oy = x, y end
-			t.x, t.y, t.hw, t.hh = Items.beam(t.dir, t.ox or t.x, t.oy or t.y, now - t.from)
+			local bx, by = t.ox or t.x, t.oy or t.y
+			-- `reach(x, y, dir)`: the clear studs ahead of a front edge at (x, y): the beam is cut off at a wall
+			if reach then t.reach = reach(bx + t.dir * Config.RUNNER_WIDTH / 2, by, t.dir) end
+			t.x, t.y, t.hw, t.hh = Items.beam(t.dir, bx, by, now - t.from, t.reach)
 		end
 		if not gone then
 			for _, v in victims do

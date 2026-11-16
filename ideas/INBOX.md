@@ -38,7 +38,9 @@
 
 ## To do
 
-- [ ] **Danzo: unlock the PC and Play the finished game (H31, 2026-11-16).** Nothing visual was checked (Studio draws
+- [ ] **Danzo: the QA loop is closed at 8/10 (2026-11-16).** Summary and your checklist: `docs/qa/showable-summary.md`.
+- [x] **Danzo: unlock the PC and Play the finished game (H31, 2026-11-16).** Done the same day: you played it and it
+      was looked at through Studio (ui.md §8). Original note: nothing visual had been checked (Studio draws
       nothing behind the lock screen). The checklist is `docs/qa/showable.md` ("What Danzo should look for"): the
       title, PLAY, a match against the bots, the cards, the locker, the wheel, the music (three picks made by
       description only: the ids are at the top of `roblox/src/client/Audio.lua`), the stage's look, a phone.

@@ -202,6 +202,7 @@ function Menu.update()
 	sitButton.Visible = Flow.playing()
 	Ui.setText(sitButton, if s and s.mode == "match" then "BACK TO THE LOBBY" else "SIT OUT AND WATCH")
 	statusLabel.Text = if not s then "connecting..."
+		elseif type(s.waiting) == "table" then ("Waiting for your group  ·  %d of %d here"):format(tonumber(s.waiting[1]) or 1, tonumber(s.waiting[2]) or 1)
 		elseif s.mode == "hub" and Flow.playing() then "In the queue  ·  a match starts when four are in, or in a few seconds"
 		elseif s.mode == "hub" then "Press PLAY to find a match"
 		elseif Flow.playing() and phase ~= "lobby" and phase ~= "podium" then ("You are in  ·  round %d of %d"):format(s.round, s.rounds)
@@ -225,6 +226,9 @@ function Menu.start(player: Player)
 			if screen == "none" then show("title") else back() end
 		elseif screen == "title" and (input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.ButtonA) then
 			play() -- Enter / A on the title is PLAY
+		elseif screen == "how" and (input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.Space
+			or input.KeyCode == Enum.KeyCode.ButtonA) then
+			back() -- ... and GOT IT on the cards (QA round 3: only a click closed them)
 		end
 	end)
 end

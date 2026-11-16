@@ -116,9 +116,14 @@ One place, three kinds of server, decided at boot (`server/Hub.lua`, `Hub.MODE`)
 | **match** | a reserved server a hub made (`PrivateServerId ~= ""`, owner 0) | nothing to press: you arrive seated, bots fill the empty seats, the lobby counts down, three rounds, the podium, then everybody is sent back to a hub. SIT OUT reads BACK TO THE LOBBY |
 | **solo** | Studio, a player's own private server, or `Config.HUB` false | the game as before H34: matches run here |
 
-- **A failed launch** (a teleport error, `TeleportInitFailed`): the players are queued again at once. Two whole
-  launches failing in a row turns the hub into a solo server for its life (it runs the matches itself) with a
-  warning in the log: a Roblox outage costs a wait, never the game.
+- **A failed launch** (a teleport error, `TeleportInitFailed`): the players are queued again and retried in 3 s.
+  Whoever left while the server was being reserved is dropped from the group first. Only a server that could not be
+  RESERVED counts toward giving up (QA round 3: one departed player must not): two of those in a row turn the hub
+  into a solo server for its life (it runs the matches itself) with a warning in the log: a Roblox outage costs a
+  wait, never the game.
+- **A match server waits for its group** (QA round 3): the group's size rides the teleport (`Hub.groupOf`); the
+  lobby idles ("WAITING FOR YOUR GROUP 2 of 3") until that many have arrived or 25 s, then counts down. The number
+  passes through the client, so it is only ever used to wait, never to seat anyone.
 - **A match server whose trip home fails** keeps its players in a counting lobby: they play another match there.
 - **The save crosses the hop**: leaving a server saves and releases the profile's lock; the next server's load waits
   for it (§5). This hop is exactly what the lock was written for.
