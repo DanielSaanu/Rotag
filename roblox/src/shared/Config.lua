@@ -111,6 +111,9 @@ Config.MATCH_ROUNDS = 3           -- rounds in a match (rule 33: one bad round d
 Config.LOBBY_TIME = 12            -- seconds of warm-up in the lobby once somebody has pressed Play
 Config.PODIUM_TIME = 12           -- seconds the podium and the rewards stay up
 Config.BOTS = true                -- bots fill a round up to PLAYERS_PER_MATCH (rule 31); false: only people play
+Config.HUB = true                 -- H34: a public server is a HUB (PLAY queues you; groups of PLAYERS_PER_MATCH are sent
+                                  -- to their own match server after at most LOBBY_TIME, and come back after the match).
+                                  -- false: every server runs its own matches, as before (server/Hub; Studio always does)
 Config.BOT_SPEED = 0.93           -- a bot's run speed x this: a person who runs clean gets away, and catches one
 Config.BOT_THINK = 0.3            -- seconds between a bot's plans (shared/BotBrain); also its reaction time
 Config.BOT_LABEL = false          -- true: the scoreboard and the cards mark each bot "AI" and the how-to cards say

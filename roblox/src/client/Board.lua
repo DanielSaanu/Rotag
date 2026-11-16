@@ -5,6 +5,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local SessionRules = require(Shared:WaitForChild("Session"))
+local SEATS = require(Shared:WaitForChild("Config")).PLAYERS_PER_MATCH
 local Ui = require(script.Parent:WaitForChild("Ui"))
 local Flow = require(script.Parent:WaitForChild("Flow"))
 
@@ -164,8 +165,16 @@ function Board.update(match: any, hidden: boolean)
 	if hidden then
 		key = "hidden"
 	elseif phase == "lobby" then
-		if left then
-			big.TextSize, big.Position = 54, UDim2.new(0.5, 0, 0, topY + 92)
+		big.TextSize, big.Position = 54, UDim2.new(0.5, 0, 0, topY + 92)
+		if s.mode == "hub" then -- H34: a queue for a match server, not a countdown to a round here
+			if type(s.launching) == "table" and table.find(s.launching, me) then
+				big.Text, big.TextColor3, sub.Text = "MATCH FOUND!", C.gold, "taking you there..."
+			elseif Flow.playing() then
+				big.Text, big.TextColor3 = "FINDING A MATCH", C.text
+				sub.Text = ("%d / %d runners%s  ·  warm up!"):format(tonumber(s.queued) or 1, SEATS,
+					if left then ("  ·  starting in %d"):format(math.ceil(left)) else "")
+			end
+		elseif left then
 			big.Text = if left > 3.5 then "GET READY" else tostring(math.max(1, math.ceil(left)))
 			big.TextColor3 = if left > 3.5 then C.text else C.gold
 			sub.Text = if left > 3.5 then ("match starts in %d  ·  warm up!"):format(math.ceil(left)) else ""

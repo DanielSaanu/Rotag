@@ -118,33 +118,34 @@ function Fx.ring(x: number, y: number, color: Color3, size: number?)
 	Debris:AddItem(ring, 0.4)
 end
 
--- Make a thing lying in the world stand out on the dark stage (a trap, a crate): a glowing plate behind it, a
--- little larger, and a light on the floor and the blocks round it. `alarm`: sparks rise off it too (a trap).
--- Returns what was made, for the caller to destroy with the thing.
+-- Make a thing lying in the world findable on the dark stage (a trap, a crate) without dressing it up: a thin lit
+-- line along its base, a little wider than it, and a soft light on the floor round it. `alarm`: a few sparks rise
+-- off it too (a trap). (The first try was a glowing plate behind the whole thing; Danzo: "the traps and the like
+-- just have big glowing boxes on them now".) Returns what was made, for the caller to destroy with the thing.
 function Fx.mark(p: BasePart, color: Color3, alarm: boolean): { Instance }
-	local plate = Instance.new("Part")
-	plate.Name = "RotagMark"
-	plate.Anchored, plate.CanCollide, plate.CanQuery, plate.CanTouch, plate.CastShadow = true, false, false, false, false
-	plate.Material, plate.Color, plate.Transparency = Enum.Material.Neon, color, 0.35
-	plate.Size = Vector3.new(p.Size.X + 1.1, p.Size.Y + 1.1, 0.2)
-	plate.CFrame = p.CFrame * CFrame.new(0, 0, -(p.Size.Z / 2 + 0.2))
-	plate.Parent = p.Parent
+	local line = Instance.new("Part")
+	line.Name = "RotagMark"
+	line.Anchored, line.CanCollide, line.CanQuery, line.CanTouch, line.CastShadow = true, false, false, false, false
+	line.Material, line.Color, line.Transparency = Enum.Material.Neon, color, 0.1
+	line.Size = Vector3.new(p.Size.X + 0.8, 0.14, 0.2)
+	line.CFrame = p.CFrame * CFrame.new(0, -p.Size.Y / 2 + 0.07, p.Size.Z / 2 + 0.15)
+	line.Parent = p.Parent
 	local light = Instance.new("PointLight")
-	light.Color, light.Range, light.Brightness, light.Shadows = color, 11, 2.6, false
-	light.Parent = plate
+	light.Color, light.Range, light.Brightness, light.Shadows = color, 7, 1.1, false
+	light.Parent = line
 	if alarm then
 		local at = Instance.new("Attachment")
-		at.Parent = plate
+		at.Parent = line
 		local e = Instance.new("ParticleEmitter")
-		e.Color, e.LightEmission, e.Rate, e.ZOffset = ColorSequence.new(color), 1, 7, 2
-		e.Size = NumberSequence.new(0.45, 0)
+		e.Color, e.LightEmission, e.Rate, e.ZOffset = ColorSequence.new(color), 1, 4, 2
+		e.Size = NumberSequence.new(0.3, 0)
 		e.Transparency = NumberSequence.new(0, 1)
-		e.Lifetime, e.Speed = NumberRange.new(0.5, 0.9), NumberRange.new(3, 6)
+		e.Lifetime, e.Speed = NumberRange.new(0.5, 0.9), NumberRange.new(3, 5)
 		e.SpreadAngle, e.Acceleration = Vector2.new(25, 25), Vector3.new(0, 6, 0)
 		e.EmissionDirection = Enum.NormalId.Top
 		e.Parent = at
 	end
-	return { plate }
+	return { line }
 end
 
 -- A tag landed at (x, y) (the victim): the hit ring, sparks, and a shake for whoever is in it.

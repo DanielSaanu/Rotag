@@ -90,8 +90,10 @@ only the calls into it, the camera's shake offset and the spectator camera (no b
 
 Built once at boot from the map data: every block slate graphite, outlined all the way round with thin lit strips on
 its front face (a brighter one along the top), a darker floor, a dusk backdrop with ruled lines (the sketchbook) and
-a far skyline with a few lit windows, darkness under the floor; flat full ambient light with a stop of exposure, a
-modest bloom and a slight grade. Nothing a runner collides with or a probe hits; `shared/Maps` and `maps.test` never
+a far skyline with a few lit windows, darkness under the floor; flat full ambient light with a little exposure, a
+modest bloom and a slight grade. Two passes the same day: the first relight (blocks at (64, 72, 104), exposure
+1.15) Danzo found "too bright in the arena"; it now sits between that and the first, too-dark stage (blocks (48, 55,
+82), exposure 0.6). The knobs are the colours at the top of `server/Stage.lua` and `ExposureCompensation`. Nothing a runner collides with or a probe hits; `shared/Maps` and `maps.test` never
 read it. `Workspace.Map` is a Persistent Model (`server/Arena`): the whole map is on a client before its first frame.
 
 ## 8. What was seen, and what it changed (2026-11-16)
@@ -114,7 +116,8 @@ Then, looking (Studio captures, and Danzo: "a bit difficult to see walls and the
 - **A ghost was a shadow** (65% see-through on the dark stage): now 35%, and your own ghost keeps its YOU tag.
 - **A falling runner's trail was a 25-stud searchlight**: shorter, narrower, fainter.
 - **The walls' red was a solid sheet** under the new exposure: thinner.
-- Traps and crates glow, a pickup is announced, the ice beam is a beam (items.md).
+- Traps and crates are marked, a pickup is announced, the ice beam is a beam (items.md). The first mark was a glowing
+  plate behind the whole thing (Danzo: "big glowing boxes"); it is now a thin lit line along the base and a soft light.
 
 Seen and fine: the title, the scoreboard strip, the fuse pill, name tags (readable, a fixed size), the IT marker,
 bots' names, the end-phase line, a hex pop, dust, the beam. **Still not judged:** whether the music FITS (it loads

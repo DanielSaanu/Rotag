@@ -98,9 +98,19 @@ end
 
 -- One batch to everyone per Heartbeat: { [runner id] = { t = server stamp, b = the client's buffer } }. Each client
 -- skips its own id. Four runners are ~150 bytes, well inside the unreliable limit (900).
+local RELAY_CHUNK = 10 -- runners per event (H34: a hub's warm-up can hold many more than four; ~30 bytes a runner)
 local function relay()
 	if not (dirty and remote) then return end
-	remote:FireAllClients(batch)
+	local chunk, n = {}, 0
+	for id, e in batch do
+		chunk[id] = e
+		n += 1
+		if n >= RELAY_CHUNK then
+			remote:FireAllClients(chunk)
+			chunk, n = {}, 0
+		end
+	end
+	if n > 0 then remote:FireAllClients(chunk) end
 	batch, dirty = {}, false
 end
 

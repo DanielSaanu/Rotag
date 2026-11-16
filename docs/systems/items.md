@@ -269,8 +269,8 @@ change, only its location."
 - **It is stronger than it was** (taller, longer-lived, and it sweeps with a moving shooter). The checks on it are
   the grow time (60 studs/s: slower than a dash), the dash's i-frames, once per runner, and the ghost ward (rule
   41). If it dominates, the knobs are `ICE_GROW`, `ICE_LIFE`, `ICE_LENGTH` and its 25 / 50 / 10 weights in the pools.
-- Also from the same play: a trap or a crate in the world sits on a glowing plate with a light round it (and a trap
-  throws sparks) (`Fx.mark`), and taking an orb rings and sparks on the taker on every screen and shows the taker a
+- Also from the same play: a trap or a crate in the world has a thin lit line along its base and a soft light round
+  it (and a trap throws a few sparks) (`Fx.mark`; a glowing plate at first, which Danzo called "big glowing boxes"), and taking an orb rings and sparks on the taker on every screen and shows the taker a
   banner, "YOU GOT: ICE BEAM" with what it does and the key (`Present`, `Board.toast`).
 
 ## Expansion: deficits at scale

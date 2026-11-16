@@ -117,7 +117,7 @@ function Walls.update(state: any, myX: number?, grace: number?)
 		p.edge.CFrame = CFrame.new(x + side * hw, 0, Z + 0.05)
 		p.band.CFrame = CFrame.new(x + side * (hw + BAND / 2), 0, Z)
 		p.edge.Transparency = 0.35 * beat
-		p.band.Transparency = 0.84 - 0.06 * beat -- H31: 0.6 under the stage's new exposure was a solid red sheet (seen)
+		p.band.Transparency = 0.76 - 0.06 * beat -- H31: 0.6 under the stage's exposure was a solid red sheet (seen)
 	end
 	local camera = workspace.CurrentCamera
 	if camera and camera.ViewportSize.Y > 0 then -- an off-screen wall glows on the edge it is coming from

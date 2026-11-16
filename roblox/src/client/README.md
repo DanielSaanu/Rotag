@@ -28,6 +28,7 @@ windows, momentum, the side-on camera, juice and the HUD. It predicts with the s
 | `Board.lua` | `Board` (ModuleScript) | H31: the scoreboard strip, the lobby countdown, ROUND n, the round's results card, the podium | 186 |
 | `Audio.lua` | `Audio` (ModuleScript) | H31: effects from Roblox's built-in sounds, the fuse's beep, three music tracks that follow the match (ids at the top: swap freely) | 132 |
 | `Fx.lua` | `Fx` (ModuleScript) | H31: screen shake, the edge flash, bursts (the burn-out styles), rings, and the worn cosmetics on every runner (`wear`: trail, glow) | 218 |
+| `Beam.lua` | `Beam` (ModuleScript) | H33 ([items.md](../../../docs/systems/items.md)): the ice beam drawn on its shooter: a cone at the hand, a body, winding bands, a bright head | 122 |
 | `Present.lua` | `Present` (ModuleScript) | H31: the glue between the game's events and the menu, cards, sound and punch; the seat colours and name tags; the spectator camera's focus | 157 |
 
 Why it is split this way, and the character choice: [`docs/systems/movement.md`](../../../docs/systems/movement.md).

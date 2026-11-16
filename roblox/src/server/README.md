@@ -23,6 +23,7 @@ only side that changes a player's state (DESIGN §3 rule 6). Update this table i
 | `Shop.lua` | H31: `Remotes.Shop` judged with `shared/Profile` on the server's own profile and `Catalog` (buy, equip, spin), the owner told over `Remotes.Profile`, everyone's worn cosmetics over `Remotes.Looks`; bots wear random items | 125 |
 | `BotMind.lua` | H31 ([bots.md](../../../docs/systems/bots.md) §3): what a bot wants: its goal (chase, flee, fetch an orb, haunt, wander, back inside the walls) and when to use the item it holds | 168 |
 | `Stage.lua` | H31 ([ui.md](../../../docs/systems/ui.md) §7): the stage's look: the blocks' colour and lit top edges, the backdrop, the far skyline, night lighting and bloom. No rule reads it | 97 |
+| `Hub.lua` | H34 ([session.md](../../../docs/systems/session.md) §8): what kind of server this is (`MODE`: hub, match, solo), `launch` (a queued group to a reserved match server), `home` (back to a hub), a failed teleport requeued, two failed launches fall back to solo | 82 |
 | `TagLog.lua` | the Studio-only "why was this claim dropped" maths, split out of `Match` for the line ceiling (H31) | 46 |
 
 Planned: a second map and a rotation. Keep each under the 400-line

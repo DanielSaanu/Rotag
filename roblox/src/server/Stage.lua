@@ -11,10 +11,11 @@ local Stage = {}
 -- under a 60% ambient left only the lit top edges; a wall with no top in view was invisible. Now the light is flat
 -- and full (a colour here is the colour on screen), a block is clearly LIGHTER than the backdrop, and every block
 -- is outlined all the way round, walls included.
-local BLOCK = Color3.fromRGB(64, 72, 104) -- a map block: slate, two clear steps lighter than the backdrop
+local BLOCK = Color3.fromRGB(48, 55, 82) -- a map block: slate, a clear step lighter than the backdrop (Danzo, the
+-- same day, of the first relight at (64, 72, 104) and exposure 1.15: "too bright in the arena now")
 local EDGE = Color3.fromRGB(120, 200, 255) -- the lit top edge of every block
-local FLOOR = Color3.fromRGB(44, 50, 74) -- the floor is a third of the screen: quieter than a deck
-local SIDE = Color3.fromRGB(92, 124, 190) -- its sides and underside: an outline, quieter than the top
+local FLOOR = Color3.fromRGB(34, 39, 60) -- the floor is a third of the screen: quieter than a deck
+local SIDE = Color3.fromRGB(78, 104, 160) -- its sides and underside: an outline, quieter than the top
 local FLOOR_EDGE = Color3.fromRGB(90, 130, 220)
 local BACK = Color3.fromRGB(22, 25, 38) -- the backdrop: darker than everything that matters
 local FAR = { Color3.fromRGB(29, 33, 50), Color3.fromRGB(26, 30, 45), Color3.fromRGB(33, 38, 57) } -- skyline
@@ -50,10 +51,10 @@ local function light()
 	Lighting.FogEnd = 100000
 	-- Seen in Studio: under ambient light alone a part draws at under half its colour (a slate block came out navy).
 	-- One stop and a bit of exposure brings the screen back to the colours written above.
-	Lighting.ExposureCompensation = 1.15
+	Lighting.ExposureCompensation = 0.6 -- (1.15 at first: Danzo found the arena too bright)
 	Lighting.EnvironmentDiffuseScale, Lighting.EnvironmentSpecularScale = 0, 0
 	local bloom = Instance.new("BloomEffect")
-	bloom.Intensity, bloom.Size, bloom.Threshold = 0.4, 16, 2.2 -- a glow on the neon, not a smear (seen: 0.9 / 26 smeared)
+	bloom.Intensity, bloom.Size, bloom.Threshold = 0.4, 16, 1.6 -- a glow on the neon, not a smear (seen: 0.9 / 26 smeared)
 	bloom.Parent = Lighting
 	local grade = Instance.new("ColorCorrectionEffect")
 	grade.Contrast, grade.Saturation, grade.TintColor = 0.08, 0.12, Color3.fromRGB(246, 248, 255)

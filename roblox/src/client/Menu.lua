@@ -20,6 +20,7 @@ local sitButton: TextButton, unsaved: TextLabel = nil :: any, nil :: any
 local screen = "title" -- "title" | "how" | "locker" | "wheel" | "none"
 local shownCoins = -1
 local taught, playAfterHow = false, false
+local autoHid = false
 local PLAY_SIZE = 40 -- PLAY's text; "BACK TO THE GAME" is smaller
 local asked = -math.huge -- when PLAY was last asked for: no bouncing back to the title while the answer is on its way
 
@@ -190,12 +191,19 @@ function Menu.update()
 		-- the server says we are out (sat out, or it never got our Play): the title is where to be
 		if os.clock() - asked > 3 then show("title") end
 	end
+	local s = Flow.session()
+	if s and s.mode == "match" and Flow.playing() and screen == "title" and not autoHid then
+		autoHid = true -- H34: sent to a match server to play: straight in (M brings the title back)
+		show("none")
+	end
 	if screen ~= "title" then return end
 	local phase, left = Flow.phase(), Flow.left()
-	local s = Flow.session()
 	Ui.setText(playButton, if Flow.playing() then "BACK TO THE GAME" else "PLAY", if Flow.playing() then 26 else PLAY_SIZE)
 	sitButton.Visible = Flow.playing()
+	Ui.setText(sitButton, if s and s.mode == "match" then "BACK TO THE LOBBY" else "SIT OUT AND WATCH")
 	statusLabel.Text = if not s then "connecting..."
+		elseif s.mode == "hub" and Flow.playing() then "In the queue  ·  a match starts when four are in, or in a few seconds"
+		elseif s.mode == "hub" then "Press PLAY to find a match"
 		elseif Flow.playing() and phase ~= "lobby" and phase ~= "podium" then ("You are in  ·  round %d of %d"):format(s.round, s.rounds)
 		elseif phase == "lobby" and left then ("Match starts in %d"):format(math.ceil(left))
 		elseif phase == "lobby" then "Press PLAY to start a match"

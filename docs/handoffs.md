@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-16 (H31 resolved: the match, bots, the menu, coins and cosmetics; H32: bots that pass for people; H33: Danzo's first play, the ice beam). 2026-11-11 (H29, H30: the Yard relaid, pads and the haul)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-16 (H31 resolved: the match, bots, the menu, coins and cosmetics; H32: bots that pass for people; H33: Danzo's first play, the ice beam; H34: the hub, untested live). 2026-11-11 (H29, H30: the Yard relaid, pads and the haul)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -30,6 +30,15 @@ Resolution (added by the heavy agent under the same entry):
 *(none)*
 
 ## Resolved
+
+### H34 — A hub server that queues groups of four into their own match servers — 2026-11-16 — RESOLVED (built, NOT tested live)
+- **Trigger:** 1 (how a crowd plays; §2's "4 per match" kept), 3 (who is seated where), 5-adjacent (TeleportService).
+- **Observed (Danzo):** "is it possible to queue up multiple lobbies in the one server ... to have them play
+  simultaneously"; shown four options with their cost, he picked "hub with match servers".
+- **Resolved 2026-11-16 (same Fable session):** `server/Hub.lua` (hub / match / solo by the server's kind), the
+  queue in `server/Session` (full, or `LOBBY_TIME`), launch and the trip home, a failed launch requeues and two
+  in a row fall back to solo, the relay chunked, the lobby and title lines. **Unrun code**: Studio cannot
+  teleport; the live test and the off switch (`Config.HUB`) are in INBOX → session.md §8.
 
 ### H33 — Danzo's first play of the finished game: the ice beam as a body-sized beam that shoots out and rides with you; traps, pickups, visibility — 2026-11-16 — RESOLVED
 - **Trigger:** 2 (`shared/Items`, `Config`), 3 (what a beam hits), 1 (rule 43-45's ice beam is stronger).

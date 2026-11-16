@@ -51,11 +51,16 @@
 - [x] **Danzo (2026-11-16, playing): hard to see walls and items; ghost mode broken; traps, pickups, a bigger ice
       beam.** All done (H33): the ghost bug was one crash; the stage is relit and outlined; the beam is body-sized,
       shoots out and rides with you; traps glow; a pickup tells you what you got. `docs/systems/items.md`, `ui.md` §8.
-- [ ] **Danzo's call (2026-11-16): how a Discord crowd plays together.** A: Max Players 4 (separate servers, no
-      code). B: bigger matches, 6-8 runners (hours; changes DESIGN §2's "4 per match"). C: a hub server that queues
-      groups of four into their own match servers and back (about half a day; only testable on the published
-      game). D: several matches inside one server (1-2 days, touches everything). Claude's lean: C, or B.
-- [ ] **Danzo, before the Discord link (H31):** (1) Game Settings → Players → **Max Players 4**; (2) Game Settings →
+- [ ] **Danzo: test the hub on the PUBLISHED game before the Discord link (H34, 2026-11-16).** You picked "hub with
+      match servers"; it is built and has never run (Studio cannot teleport). With two accounts or devices:
+      (1) both join: you land on the title in the hub; (2) both press PLAY: "FINDING A MATCH 2 / 4", and within 12 s
+      "MATCH FOUND" and a teleport; (3) in the match server you are seated at once with two bots, three rounds, the
+      podium; (4) after the podium both are sent back to the hub, coins kept. Also try one account alone (a match
+      with three bots). If a teleport fails you are queued again; after two failed launches the hub runs matches
+      itself. **If it misbehaves:** `Config.HUB = false` in `roblox/src/shared/Config.lua`, Max Players 4, publish.
+      Detail: `docs/systems/session.md` §8.
+- [ ] **Danzo, before the Discord link (H31):** (1) Game Settings → Players → **Max Players 20** (the hub's size, H34;
+      4 only if you turn the hub off); (2) Game Settings →
       Security → **Enable Studio Access to API Services** (so coins save in Studio tests; a live server saves
       anyway); (3) File → **Publish to Roblox**; (4) set the experience to Public. No sprite upload is needed:
       H31 added no art.
