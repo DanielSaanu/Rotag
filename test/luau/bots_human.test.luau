@@ -206,7 +206,7 @@ end
 
 do -- names: player-like, the same for the same seat and seed, different between seats, different between servers
 	local a, b, c = Session.botName(Session.botId(1), 77), Session.botName(Session.botId(2), 77), Session.botName(Session.botId(3), 77)
-	assert(type(a) == "string" and #a >= 3 and #a <= 20, "a name of a sensible length: " .. tostring(a))
+	assert(type(a) == "string" and #a >= 5 and #a <= 20, "a name of a sensible length: " .. tostring(a))
 	assert(a ~= b and b ~= c and a ~= c, "no two seats share a name")
 	assert(Session.botName(Session.botId(1), 77) == a, "the same seat and seed: the same name (every screen agrees)")
 	local differ = 0
@@ -216,7 +216,8 @@ do -- names: player-like, the same for the same seat and seed, different between
 		assert(x ~= y and y ~= z and x ~= z, "seats differ on every server")
 		for _, name in { x, y, z } do
 			assert(not string.find(string.lower(name), "bot"), "no name says bot: " .. name)
-			assert(string.match(name, "^[%w_]+$"), "letters, digits and underscores only: " .. name)
+			assert(string.match(name, "^[%w ]+$"), "letters, digits and spaces only: " .. name)
+			assert(string.find(name, " ", 1, true), "always a space: never a possible Roblox username (QA round 2): " .. name)
 		end
 	end
 	assert(differ >= 40, "another server, other names")

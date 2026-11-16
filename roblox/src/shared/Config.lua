@@ -39,9 +39,14 @@ Config.ITEM_LIFE = 20             -- seconds a dropped crate or a set trap stays
 Config.CRATE_SIZE = 3             -- studs across a crate, dropped behind you
 Config.TRAP_W = 3                 -- studs: the bear trap, set at your feet
 Config.TRAP_H = 1
-Config.ICE_LENGTH = 24            -- studs the ice beam reaches ahead the way you face; it does not turn with you
-Config.ICE_HEIGHT = 2
-Config.ICE_LIFE = 0.5             -- seconds the beam is out
+-- The ice beam (H33, Danzo 2026-11-16: "as large as a player's body ... we should see it shoot out ... it should
+-- stay attached to the front of the player's body, moving the entire beam with the player, but the direction should
+-- not change"). It grows from the shooter's front edge to ICE_LENGTH over ICE_GROW, rides with the shooter, and goes
+-- at ICE_LIFE. The freeze itself is unchanged (FREEZE_TIME, rule 11), and a dash still goes through it (rule 45).
+Config.ICE_LENGTH = 24            -- studs the beam reaches at full length, the way you faced when you fired
+Config.ICE_HEIGHT = 3.5           -- studs tall: a runner's body (RUNNER_HEIGHT; was 2)
+Config.ICE_GROW = 0.4             -- seconds from the shot to full length (60 studs/s: slower than a dash, faster than a run)
+Config.ICE_LIFE = 0.7             -- seconds the beam is out in all: it stands at full length for the rest (was 0.5)
 Config.STUMBLE_TIME = 0.7         -- crate: carry on at STUMBLE_SPEED x run speed, no steer, jump, dash or item
 Config.STUMBLE_SPEED = 0.5
 Config.FREEZE_TIME = 1            -- ice: no input, sliding on your momentum, which bleeds to 0 over the hold
@@ -108,6 +113,9 @@ Config.PODIUM_TIME = 12           -- seconds the podium and the rewards stay up
 Config.BOTS = true                -- bots fill a round up to PLAYERS_PER_MATCH (rule 31); false: only people play
 Config.BOT_SPEED = 0.93           -- a bot's run speed x this: a person who runs clean gets away, and catches one
 Config.BOT_THINK = 0.3            -- seconds between a bot's plans (shared/BotBrain); also its reaction time
+Config.BOT_LABEL = false          -- true: the scoreboard and the cards mark each bot "AI" and the how-to cards say
+                                  -- empty seats are filled by AI runners. false (Danzo, 2026-11-16: "unknowingly"):
+                                  -- nothing marks one. QA round 2 advises true for a kids' audience: his call
 -- Rewards (H31, DESIGN §6.5; shared/Profile). Coins buy cosmetics and spins, never moves or power (rule 36).
 Config.COINS_MATCH = 10           -- for finishing a match ...
 Config.COINS_POINT = 5            -- ... plus this per match point ...

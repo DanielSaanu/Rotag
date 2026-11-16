@@ -106,3 +106,12 @@ the server and the move rules can be tested, and anything in a render step (the 
 Check first (`Get-Process LogonUI`, or count `RenderStepped` for a second), say so plainly, and drive what a click
 would do through a Studio-only Player attribute (`RotagMenu`, `RotagShop`: the command bar cannot fire a remote) and
 a hand-driven loop over the UI modules. Never report a look as checked from this. *(2026-11-16, handoff H31.)*
+
+**T18 — On a Luau object, a field hides a method of the same name; and a check that never reaches a state never
+tests it.** `Look:ignite` kept its PointLight in `self.glow`; a new method `Look:glow` then worked on every runner
+until the first one ignited, and from that frame `look:glow(...)` called an Instance, threw in the render step, and
+took the HUD, the camera's cards and the ghost's whole screen down with it. Lint cannot see it (→ T16) and 1200
+hand-driven frames passed, because no fuse in them ever dropped under 10 s. So: grep a class for a field of the
+name before adding a method (`self%.name =`); drive a smoke test through the states that matter (ignite, freeze,
+ghost, the end phase), not just many frames; keep cosmetics LAST in a frame and under `pcall`, so a slip in polish
+cannot stop the game. *(2026-11-16, handoffs H31 and H33, `client/Look`, `client/Present`.)*

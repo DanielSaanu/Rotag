@@ -45,7 +45,7 @@ end
 -- (server/Placement adds zones / placed / fade / unplaced.)
 local function put(t: Rules.Thing, now: number)
 	return { kind = "put", n = t.n, item = t.item, x = t.x, y = t.y, w = t.hw * 2, h = t.hh * 2, dir = t.dir,
-		life = t.untilT - now }
+		life = t.untilT - now, owner = t.owner, age = now - t.from } -- owner, age (H33): a beam is drawn on its shooter
 end
 
 -- A late joiner: every live thing and hold (after server/Orbs' sync, which clears the client's).
@@ -156,7 +156,14 @@ function Items.step(r: Tag.Round, now: number, present: (number) -> boolean)
 				frozenUntil = if r.it == id then r.frozenUntil else nil })
 		end
 	end
-	for _, e in Rules.step(state, now, victims, if g then g.wards else {}) do
+	-- H33: a beam rides with its shooter, wherever the server last recorded it (a ghost shoots too: not a victim)
+	local function where(id: number): (number?, number?)
+		local h = c.history[id]
+		local s = h and h[#h]
+		if s and present(id) then return s.x, s.y end
+		return nil, nil
+	end
+	for _, e in Rules.step(state, now, victims, if g then g.wards else {}, where) do
 		if e.kind == "hold" then
 			-- its speed from the server's own samples, never the client's word (QA round 1: the freeze's allowance)
 			local speed = MoveCheck.recentSpeed(c.history[e.id :: number] or {})

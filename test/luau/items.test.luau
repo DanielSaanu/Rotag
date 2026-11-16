@@ -168,18 +168,58 @@ do -- the owner: a crate or trap never catches its owner within OWNER_SAFE, nor 
 		"after 0.5 s and off it: your own crate catches you")
 end
 
-do -- the ice beam: 0.5 s, catches each runner once, never its user, does not turn with you
+do -- the ice beam: out ICE_LIFE, catches each runner once, never its user, does not turn with you
 	local st = Items.new()
 	local beam = Items.use(st, A, "ice", false, 0, Y, 1, 0)
 	assert(beam.x > 0 and beam.dir == 1, "ahead, to the right")
 	assert(#Items.step(st, 0.1, { at(A, beam.x, Y) }, {}) == 0, "never its user")
-	local ev = Items.step(st, 0.1, { at(B, beam.x, Y), at(C, beam.x + 5, Y) }, {})
+	local ev = Items.step(st, 0.1, { at(B, beam.x, Y), at(C, beam.x + 2, Y) }, {})
 	assert(kinds(ev) == "hold:202:freeze hold:303:freeze", "one beam, two runners: " .. kinds(ev))
 	assert(ev[1].time == Config.FREEZE_TIME, "frozen 1 s")
 	st.holds[B].untilT, st.holds[B].over = -10, true -- as if B were long free and past its immunity
 	assert(#Items.step(st, 0.2, { at(B, beam.x, Y) }, {}) == 0, "the same beam never catches B twice")
-	assert(kinds(Items.step(st, 0.5, {}, {})) == "gone", "gone after 0.5 s")
-	assert(#Items.step(st, 0.5, { at(B, 13, Y) }, {}) == 0, "and catches nobody after")
+	assert(#Items.step(st, Config.ICE_LIFE - 0.01, {}, {}) == 0, "still out just before ICE_LIFE")
+	assert(kinds(Items.step(st, Config.ICE_LIFE, {}, {})) == "gone", "gone at ICE_LIFE")
+	assert(#Items.step(st, Config.ICE_LIFE, { at(B, 13, Y) }, {}) == 0, "and catches nobody after")
+end
+
+do -- H33 (Danzo 2026-11-16): the beam is a body tall, SHOOTS OUT over ICE_GROW, and rides with its shooter
+	assert(Config.ICE_HEIGHT == Config.RUNNER_HEIGHT, "as tall as a runner's body")
+	assert(Config.ICE_GROW > 0 and Config.ICE_GROW < Config.ICE_LIFE, "it reaches full length, then stands a moment")
+	local HW = Config.RUNNER_WIDTH / 2
+	local x, y, hw, hh = Items.beam(1, 0, Y, 0)
+	assert(near(x - hw, HW) and hw * 2 <= 1 + 1e-9 and y == Y and near(hh * 2, Config.ICE_HEIGHT), "it starts at the front edge")
+	x, y, hw = Items.beam(1, 0, Y, Config.ICE_GROW / 2)
+	assert(near(hw * 2, Config.ICE_LENGTH / 2) and near(x - hw, HW), "half way out at half the grow time, still from the hand")
+	x, y, hw = Items.beam(-1, 0, Y, Config.ICE_GROW * 3)
+	assert(near(hw * 2, Config.ICE_LENGTH) and near(x + hw, -HW), "full length and no further, to the left when fired left")
+	-- it shoots out: a runner 20 studs ahead is not hit at once, and is once the beam gets there
+	local st = Items.new()
+	Items.use(st, A, "ice", false, 0, Y, 1, 0)
+	assert(#Items.step(st, 0.05, { at(B, 20, Y) }, {}) == 0, "20 studs ahead, 0.05 s in: the beam is not there yet")
+	assert(kinds(Items.step(st, Config.ICE_GROW, { at(B, 20, Y) }, {})) == "hold:202:freeze", "at full length it is")
+	-- a body tall: a runner whose centre is a body's height above the shooter's is clear, half that is hit
+	local s2 = Items.new()
+	Items.use(s2, A, "ice", false, 0, Y, 1, 0)
+	assert(#Items.step(s2, Config.ICE_GROW, { at(B, 10, Y + Config.RUNNER_HEIGHT + 0.1) }, {}) == 0, "a whole body above: clear")
+	assert(kinds(Items.step(s2, Config.ICE_GROW, { at(C, 10, Y + Config.RUNNER_HEIGHT / 2) }, {})) == "hold:303:freeze",
+		"half a body above: caught (the old 2-stud beam missed here)")
+	-- it rides with its shooter: the shooter runs and jumps, the beam goes with it; its direction never changes
+	local s3 = Items.new()
+	local beam = Items.use(s3, A, "ice", false, 0, Y, 1, 0)
+	local at3 = { x = 30, y = Y + 8 }
+	local function where(id) if id == A then return at3.x, at3.y end return nil, nil end
+	assert(#Items.step(s3, Config.ICE_GROW, { at(B, 10, Y) }, {}, where) == 0, "where the shooter WAS: the beam has moved on")
+	assert(near(beam.x - beam.hw, 30 + HW) and near(beam.y, Y + 8) and beam.dir == 1, "from the shooter's front edge now, up with it")
+	assert(kinds(Items.step(s3, Config.ICE_GROW, { at(B, 40, Y + 8) }, {}, where)) == "hold:202:freeze", "where the shooter IS: caught")
+	at3.x = -100 -- the shooter is thrown far left: the beam still points right from it
+	Items.step(s3, Config.ICE_GROW + 0.05, {}, {}, where)
+	assert(near(beam.x - beam.hw, -100 + HW) and beam.dir == 1, "the direction is the shot's, only the place moves")
+	local s4 = Items.new() -- a shooter the server has lost (it left): the beam stays where it last was
+	local b4 = Items.use(s4, A, "ice", false, 5, Y, 1, 0)
+	Items.step(s4, 0.2, {}, {}, function() return nil, nil end)
+	assert(near(b4.x - b4.hw, 5 + HW), "no position: no move")
+	assert(#Items.step(s4, 0.2, { at(A, 10, Y) }, {}, where) == 0, "and never its own shooter, wherever it stands")
 end
 
 do -- rule 41: a ghost's AIMED hit wards its target 6 s from every ghost's aimed abilities; a living beam still lands

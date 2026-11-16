@@ -4,6 +4,7 @@
 -- Like every server -> client event (→ N3): nothing waits for one, only the shape is trusted.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Config = require(Shared:WaitForChild("Config"))
 local Catalog = require(Shared:WaitForChild("Catalog"))
 local SessionRules = require(Shared:WaitForChild("Session"))
 
@@ -59,6 +60,12 @@ function Flow.worn(id: number, slot: string): Catalog.Item?
 	local l = looks[id]
 	local it = l and l[slot]
 	return if it and #it.colors > 0 then it else nil
+end
+
+-- A runner's name for a LIST (the scoreboard, the cards): with Config.BOT_LABEL a bot's is marked "AI".
+function Flow.listName(id: number?): string
+	local name = Flow.nameOf(id)
+	return if Config.BOT_LABEL and id and SessionRules.isBot(id) then name .. "  [AI]" else name
 end
 
 -- A runner's name: a person's display name, a bot's given one.

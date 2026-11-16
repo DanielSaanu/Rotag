@@ -35,9 +35,11 @@ Items.PLACED = { fixture = true, pad = true } :: { [string]: boolean }
 Items.BY_TOUCH = { hex = "the hex is used by touch", grant = "the boost grant is used by touch" } :: { [string]: string }
 
 -- A thing in the world: a crate, a trap or a beam. (x, y) its centre, (hw, hh) its half size; `dir` the user's facing.
+-- A beam (H33) is not put down: (ox, oy) is its shooter's centre as last recorded, and (x, y, hw) are worked out from
+-- it every step (Items.beam): it grows, and it rides with the shooter.
 export type Thing = {
 	n: number, item: string, owner: number, ghost: boolean, x: number, y: number, hw: number, hh: number, dir: number,
-	from: number, untilT: number, armed: boolean, hit: { [number]: boolean },
+	from: number, untilT: number, armed: boolean, hit: { [number]: boolean }, ox: number?, oy: number?,
 }
 export type Hold = { kind: string, from: number, untilT: number, presses: number, over: boolean }
 export type State = { things: { Thing }, nextN: number, holds: { [number]: Hold }, grants: { [number]: number } }
@@ -75,7 +77,8 @@ function Items.swept(cx: number, cy: number, hw: number, hh: number, x: number, 
 end
 
 -- Where Use puts an item for a runner centred at (x, y) facing `facing` (+1 right, -1 left): a crate on the ground
--- line behind it, a trap at its feet, a beam from its front edge ICE_LENGTH ahead at its centre height.
+-- line behind it, a trap at its feet, a beam from its front edge ICE_LENGTH ahead at its centre height (the beam at
+-- its FULL length: it grows to this, Items.beam).
 function Items.footprint(item: string, x: number, y: number, facing: number): (number, number, number, number)
 	local feet = y - Config.RUNNER_HEIGHT / 2
 	if item == "crate" then
@@ -85,6 +88,14 @@ function Items.footprint(item: string, x: number, y: number, facing: number): (n
 		return x, feet + Config.TRAP_H / 2, Config.TRAP_W / 2, Config.TRAP_H / 2
 	end
 	return x + facing * (Config.RUNNER_WIDTH / 2 + Config.ICE_LENGTH / 2), y, Config.ICE_LENGTH / 2, Config.ICE_HEIGHT / 2
+end
+
+-- The ice beam `age` seconds after the shot, fired the way `dir` by a runner now centred at (ox, oy): a box from the
+-- runner's front edge, ICE_HEIGHT tall, growing to ICE_LENGTH over ICE_GROW (never under 1 stud, so the first frame
+-- already has a body). Returns its centre and half size. The client draws the very same box (client/Beam).
+function Items.beam(dir: number, ox: number, oy: number, age: number): (number, number, number, number)
+	local len = math.max(1, Config.ICE_LENGTH * math.clamp(age / Config.ICE_GROW, 0, 1))
+	return ox + dir * (Config.RUNNER_WIDTH / 2 + len / 2), oy, len / 2, Config.ICE_HEIGHT / 2
 end
 
 -- The hold in force on `id` at `now`, if any.
@@ -129,9 +140,11 @@ function Items.use(st: State, id: number, item: string, ghost: boolean, x: numbe
 	now: number): Thing
 	local dir = if facing < 0 then -1 else 1
 	local cx, cy, hw, hh = Items.footprint(item, x, y, dir)
+	if item == "ice" then cx, cy, hw, hh = Items.beam(dir, x, y, 0) end -- it starts at the hand and grows (H33)
 	st.nextN += 1
 	local t: Thing = { n = st.nextN, item = item, owner = id, ghost = ghost, x = cx, y = cy, hw = hw, hh = hh, dir = dir,
-		from = now, untilT = now + (if item == "ice" then Config.ICE_LIFE else Config.ITEM_LIFE), armed = false, hit = {} }
+		from = now, untilT = now + (if item == "ice" then Config.ICE_LIFE else Config.ITEM_LIFE), armed = false, hit = {},
+		ox = if item == "ice" then x else nil, oy = if item == "ice" then y else nil }
 	table.insert(st.things, t)
 	return t
 end
@@ -228,9 +241,12 @@ function Items.grants(st: State, givers: { Giver }, victims: { Victim }, now: nu
 end
 
 -- One server frame: holds that ran out, then each thing (oldest first) against each living victim (`victims` in join
--- order: a tie goes to the first). A crate or trap that catches someone is gone; a beam stays out its 0.5 s and catches
--- each runner once. `wards` is the ghosts' per-target ward table (Ghost.Ghosts.wards), read and written.
-function Items.step(st: State, now: number, victims: { Victim }, wards: { [number]: number }): { Event }
+-- order: a tie goes to the first). A crate or trap that catches someone is gone; a beam stays out ICE_LIFE and catches
+-- each runner once. `wards` is the ghosts' per-target ward table (Ghost.Ghosts.wards), read and written. `where(id)`
+-- (H33): where the SERVER last recorded runner `id` (living or ghost), or nil; a beam rides with its shooter, its
+-- direction as fired. A shooter with no position (it left) leaves the beam where it last was.
+function Items.step(st: State, now: number, victims: { Victim }, wards: { [number]: number },
+	where: ((number) -> (number?, number?))?): { Event }
 	local ev: { Event } = {}
 	for id, h in st.holds do
 		if not h.over and now >= h.untilT then
@@ -241,6 +257,12 @@ function Items.step(st: State, now: number, victims: { Victim }, wards: { [numbe
 	local keep: { Thing } = {}
 	for _, t in st.things do
 		local gone = now >= t.untilT
+		if t.item == "ice" and not gone then
+			local x, y = nil, nil
+			if where then x, y = where(t.owner) end
+			if x and y then t.ox, t.oy = x, y end
+			t.x, t.y, t.hw, t.hh = Items.beam(t.dir, t.ox or t.x, t.oy or t.y, now - t.from)
+		end
 		if not gone then
 			for _, v in victims do
 				if catch(st, t, v, now, wards, ev) and t.item ~= "ice" then

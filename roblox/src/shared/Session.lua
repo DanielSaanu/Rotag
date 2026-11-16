@@ -33,9 +33,10 @@ end
 Session.BOT_ID = -1000
 function Session.botId(k: number): number return Session.BOT_ID - (k - 1) end
 function Session.isBot(id: number): boolean return id <= Session.BOT_ID end
--- A bot's name (H32: a bot is not marked as one anywhere, bots.md §7): made from two word lists and a number in the
--- styles players use, from the seat and the server's `seed`, so every screen agrees and no two seats share one. No
--- real account is looked up: a name can coincide with one only by chance.
+-- A bot's name (H32: a bot is not marked as one on the field, bots.md §7): two words and sometimes a number, from the
+-- seat and the server's `seed`, so every screen agrees and no two seats share one. ALWAYS with a space in it (QA
+-- round 2): a Roblox username cannot hold a space, so a name here can never be a real account that a child could
+-- search for and send a friend request to. It reads as a nickname, and it is nobody.
 local NAME_A = { "Shadow", "Turbo", "Nova", "Blaze", "Frost", "Zippy", "Mango", "Cosmo", "Rocket", "Ninja", "Lucky", "Echo",
 	"Glitch", "Storm", "Comet", "Pixel", "Sonic", "Fizzy", "Mellow", "Hyper", "Sneaky", "Wavy", "Chill", "Rapid" }
 local NAME_B = { "Fox", "Wolf", "Kid", "Cat", "Panda", "Racer", "Runner", "Gamer", "Star", "Bean", "King", "Dino", "Tiger",
@@ -46,12 +47,11 @@ function Session.botName(id: number, seed: number?): string
 	local a = NAME_A[(h + k * 7) % #NAME_A + 1] -- 7 and 3 share no factor with the lists' lengths: seats never collide
 	local b = NAME_B[(h // 31 + k * 3) % #NAME_B + 1]
 	local num = (h // 13 + k * 37) % 90 + 10
-	local style = (h // 977 + k) % 5
-	if style == 0 then return a .. b end
-	if style == 1 then return a .. b .. tostring(num) end
-	if style == 2 then return string.lower(a) .. "_" .. string.lower(b) end
-	if style == 3 then return a .. "_" .. b .. tostring(num % 10) end
-	return string.lower(a .. b) .. tostring(num)
+	local style = (h // 977 + k) % 4
+	if style == 0 then return a .. " " .. b end
+	if style == 1 then return a .. " " .. b .. " " .. tostring(num) end
+	if style == 2 then return string.lower(a) .. " " .. string.lower(b) end
+	return a .. " " .. b .. " " .. tostring(num % 10)
 end
 
 -- What place `place` (1 = the winner) is worth in a round of `n` runners: one point per runner you outlasted, and

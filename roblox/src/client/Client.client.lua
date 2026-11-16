@@ -43,6 +43,17 @@ local LOOP_LOG = 5
 local loop = { steps = 0, frames = 0, worst = 0, since = os.clock() }
 local studio = RunService:IsStudio()
 
+-- QA round 2: the screens are laid out once, for the screen they start on (client/Ui: compact or not). A client can
+-- reach this line before its window has a size (1 x 1): give it a moment, never long, before anything is built.
+do
+	local t0 = os.clock()
+	while os.clock() - t0 < 2 do
+		local camera = workspace.CurrentCamera
+		if camera and camera.ViewportSize.Y >= 100 then break end
+		task.wait()
+	end
+end
+
 -- H21: the pose to draw and send. A hold pose only once the sheet has the hold art and this name; until then the
 -- motion pose, exactly as before (every screen reads the same Sprites.lua, so what we send they can draw).
 local function pose(s: Movement.State): string
@@ -228,7 +239,6 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	end
 	Others.draw(dt, ghostMode, iced, heldOf, function(id) return Place.grantLeft(id) > 0 end, Tagging.ignition)
 	local st = Tagging.state()
-	Present.frame(if c and c.root.Parent then c.look else nil, st, Tagging.fuseLeft(), ghostMode)
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))
 	-- PR 3 (controls.md §2): the ITEM touch button only while Use would fire (a hex and the grant are used by touch);
@@ -248,6 +258,8 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	Arrows.update(Tagging.me(), Tagging.state(), Tagging.ignition) -- H23: the holder's arrow beats as it ignites
 	Walls.update(st, if c and c.root.Parent and Tagging.isAlive(player.UserId) then c.state.x else nil,
 		Tagging.graceLeft(player.UserId)) -- H24: drawn from MatchState; a ghost is never warned
+	-- H31, last: the menu, the cards, sound and cosmetics. Nothing the round needs drawn comes after it.
+	Present.frame(if c and c.root.Parent then c.look else nil, st, Tagging.fuseLeft(), ghostMode)
 end)
 
 -- The sheet ids the server resolved (Remotes.SheetIds, docs/systems/README.md). Nothing waits for them: the runner

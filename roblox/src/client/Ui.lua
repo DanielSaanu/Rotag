@@ -80,6 +80,9 @@ function Ui.screen(parent: Instance, name: string, order: number): (ScreenGui, F
 	gui.Name = name
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = true
+	-- Over the top bar, but never under a phone's notch or rounded corners (QA round 2). pcall: an older client
+	-- without the property keeps IgnoreGuiInset's own behaviour.
+	pcall(function() gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets end)
 	gui.DisplayOrder = order
 	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	local root = Ui.scaled(gui)

@@ -247,6 +247,32 @@ The contract is [the brief](../briefs/items-art.md) "Sprite names and sizes"; th
   rect. Seen in Studio on 2026-10-19: the runner and items were fragments. The guard covers a missing name, not a missing
   upload (→ A6).
 
+## The ice beam, reworked (H33, Danzo 2026-11-16)
+
+His words, playing the build: "the ice beam needs to be bigger, a big rotating beam ... as large as a player's body,
+coming out as a cone from the player till it's player sized, then becoming a straight beam; we should see it shoot
+out and have a shiny rotating pattern on it, not just appear; it should extend for the length of the animation until
+it reaches full length and then stop, freezing any player that contacts it except the shooter; and it should stay
+attached to the front of the player's body, moving the entire beam with the player, but the direction should not
+change, only its location."
+
+- **The rule (`shared/Items.beam`, `Items.step`'s `where`):** the beam is a box from the shooter's front edge,
+  `ICE_HEIGHT` 3.5 tall (a body; was 2), growing to `ICE_LENGTH` 24 over `ICE_GROW` 0.4 s and standing until
+  `ICE_LIFE` 0.7 s (was a fixed box for 0.5 s). Every server frame it is re-placed on the shooter's newest recorded
+  position (living or ghost); its direction is the shot's. It never hits its shooter, catches each runner once,
+  and a dash's i-frames still go through it (rule 45). The freeze is unchanged (1 s, rule 11).
+- **What the server trusts:** nothing new. The beam's place is the server's own sample of the shooter, as the shot's
+  was; `put` gained `owner` and `age` so a client can draw it on the shooter.
+- **On screen (`client/Beam.lua`):** a cone of slices at the hand, a straight body, two bright edges, nine bands
+  that run out along it while riding a turning circle (side-on: a spinning spiral), and a bright head that leads the
+  shot out, throws frost and lights the map round it. Drawn on the shooter as THIS screen draws the shooter.
+- **It is stronger than it was** (taller, longer-lived, and it sweeps with a moving shooter). The checks on it are
+  the grow time (60 studs/s: slower than a dash), the dash's i-frames, once per runner, and the ghost ward (rule
+  41). If it dominates, the knobs are `ICE_GROW`, `ICE_LIFE`, `ICE_LENGTH` and its 25 / 50 / 10 weights in the pools.
+- Also from the same play: a trap or a crate in the world sits on a glowing plate with a light round it (and a trap
+  throws sparks) (`Fx.mark`), and taking an orb rings and sparks on the taker on every screen and shows the taker a
+  banner, "YOU GOT: ICE BEAM" with what it does and the key (`Present`, `Board.toast`).
+
 ## Expansion: deficits at scale
 
 - Things cost one slab test per living runner per thing per frame: 4 runners x a few dozen things is negligible.

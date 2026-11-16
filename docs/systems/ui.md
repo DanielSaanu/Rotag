@@ -3,8 +3,8 @@
 **Created:** 2026-11-16 (H31). Everything a player sees and hears that is not the move rules: what makes it read as
 a finished game. The flow it shows is [session.md](session.md); the HUD's fuse line is still [tag.md](tag.md) §6.
 Rules: `docs/DESIGN.md` §3 2 (the fuse is readable), 21 (juice), 22-23 (mobile), 34 (celebrate the winner), §6.3
-(art direction). **None of this has been LOOKED at yet**: it was built with the PC on its lock screen (Studio drew 0
-frames a second), checked for errors by script only (§8). Danzo's eyes and ears are the first test.
+(art direction). It was BUILT blind (the PC was on its lock screen: Studio drew 0 frames a second) and first looked at later the
+same day, by Danzo and through Studio captures; what that changed is §8.
 
 ## 1. The theme: "glowing graphite" (§6.3, a trial pick, Danzo's to overrule)
 
@@ -88,21 +88,37 @@ only the calls into it, the camera's shake offset and the spectator camera (no b
 
 ## 7. The stage (`server/Stage.lua`)
 
-Built once at boot from the map data: every block near-black graphite with a lit strip along its top edge (a deck
-reads by its edge), a dusk backdrop with ruled lines (the sketchbook) and a far skyline with a few lit windows,
-darkness under the floor, night lighting with bloom (the anchors, pads, walls, embers and trails glow) and a slight
-grade. Nothing a runner collides with or a probe hits; `shared/Maps` and `maps.test` never read it. The runner (grey,
-inked, cyan accents) is lighter than the backdrop and the blocks are darker: the figure should read on both.
+Built once at boot from the map data: every block slate graphite, outlined all the way round with thin lit strips on
+its front face (a brighter one along the top), a darker floor, a dusk backdrop with ruled lines (the sketchbook) and
+a far skyline with a few lit windows, darkness under the floor; flat full ambient light with a stop of exposure, a
+modest bloom and a slight grade. Nothing a runner collides with or a probe hits; `shared/Maps` and `maps.test` never
+read it. `Workspace.Map` is a Persistent Model (`server/Arena`): the whole map is on a client before its first frame.
 
-## 8. What was checked, and what was not
+## 8. What was seen, and what it changed (2026-11-16)
 
-Checked by script in Studio Play with the PC locked (2026-11-16): every module requires and starts; 1200 frames of
-`Present.frame` driven by hand with the live Session and MatchState ran with no error; every `Fx.burst` style, a
-verdict, a burn-out, a wall kill and a hex ran; the menu and the board held the right words (`BACK TO THE GAME`,
-`Match in progress · round 2 of 3`, `ROUND 2 / 3 | Dash 4 | Pixel 2 | Bolt 1`). All 26 built-in effects load.
+Checked by script while the PC was locked: every module starts, 1200 hand-driven frames with no error, the right
+words in every label, all 26 effects and the three music tracks load. **Those checks missed the worst bug**, because
+they never ignited a runner: `Look:ignite` kept its light in `self.glow`, which hid the new method `Look:glow` on
+that object, so from a holder's first ignition (10 s left on a fuse) the cosmetics call threw in every render frame
+and took the rest of the frame with it. Danzo, playing: "once you die you are sent back to the menu", "count down
+failing for me as ghost", "the tagger tracker isn't following", "I can't use abilities", "the ghost orbs won't
+spawn": all one crash. Fixed (`Look:aura`), the presentation now runs LAST in the frame and each part of it under
+its own `pcall` (→ T18).
 
-**Not checked: how any of it LOOKS or SOUNDS.** Layout, sizes, colours against the stage, the bloom's strength,
-the trail's width, the shake's size, the three music picks, the phone layout. First thing with the PC unlocked.
+Then, looking (Studio captures, and Danzo: "a bit difficult to see walls and the items as well"):
+- **The stage was nearly black.** Near-black blocks on a dark backdrop under a 60% ambient: only lit top edges
+  showed, a wall had none. Now slate blocks two steps lighter than the backdrop, an outline all round, exposure up.
+- **The lit edges were slabs.** A strip as deep as its block showed its whole top or underside: now 0.12 deep.
+- **The title hid the game** (a shade at 0.08-0.82): now dark only behind the words.
+- **The map arrived in pieces** on the title screen (streaming, no character): now Persistent.
+- **A ghost was a shadow** (65% see-through on the dark stage): now 35%, and your own ghost keeps its YOU tag.
+- **A falling runner's trail was a 25-stud searchlight**: shorter, narrower, fainter.
+- **The walls' red was a solid sheet** under the new exposure: thinner.
+- Traps and crates glow, a pickup is announced, the ice beam is a beam (items.md).
+
+Seen and fine: the title, the scoreboard strip, the fuse pill, name tags (readable, a fixed size), the IT marker,
+bots' names, the end-phase line, a hex pop, dust, the beam. **Still not judged:** whether the music FITS (it loads
+and switches), volumes, a phone, the locker and the wheel on screen, the podium, confetti.
 
 ## Expansion: deficits at scale
 

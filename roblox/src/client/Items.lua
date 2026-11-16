@@ -11,6 +11,10 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Others = require(script.Parent:WaitForChild("Others")) -- the item floats over the DRAWN runner (H13)
 local ItemArt = require(script.Parent:WaitForChild("ItemArt")) -- H21: the sprites on these parts, once in the sheet
 
+local Ui = require(script.Parent:WaitForChild("Ui")) -- the scaled design space (QA round 2)
+local Beam = require(script.Parent:WaitForChild("Beam")) -- H33: the ice beam, drawn on its shooter
+local Fx = require(script.Parent:WaitForChild("Fx")) -- H33: the glow that makes a trap or a crate stand out
+
 local Items = {}
 
 local RUNNER_TAG = "RotagRunner"
@@ -37,12 +41,13 @@ local held: { [number]: string } = {}
 local icons: { [number]: { part: BasePart, item: string, spentAt: number? } } = {}
 -- By the server's thing number. H21: `art` a sprite is on (client/ItemArt), `born`, `caught` (a hold named it as `by`
 -- just before its "gone"), `endedAt` its "gone" (the break or fade plays out), `charge` the beam's bloom part.
-local things: { [number]: { part: BasePart, untilT: number, item: string, art: boolean, born: number, caught: boolean?,
-	endedAt: number?, charge: BasePart? } } = {}
+local things: { [number]: any } = {} -- { part?, untilT, item, art?, born, caught?, endedAt?, charge?, extra?; a beam
+-- (H33): beam, owner, ox, oy and no part }
 local holds: { [number]: { kind: string, from: number, untilT: number, presses: number } } = {} -- by runner id
 local overlays: { [number]: BasePart } = {}
 local released: { [number]: number } = {} -- H21: when a trap overlay's hold ended (trap_armed, then gone)
 local seen: { [number]: boolean }, seenHold: { [number]: boolean } = {}, {} -- reused every frame
+local drawnAt: { [number]: Vector3 } = {} -- where each runner was drawn this frame (a beam rides its shooter, H33)
 local folder: Folder? = nil
 local slotLabel: TextLabel? = nil
 
@@ -67,8 +72,10 @@ local function setUp(i: number, up: boolean)
 end
 
 local function drop(t: any)
-	t.part:Destroy()
+	if t.part then t.part:Destroy() end
 	if t.charge then t.charge:Destroy() end
+	if t.beam then Beam.destroy(t.beam) end
+	for _, o in t.extra or {} do o:Destroy() end
 end
 
 local listeners: { (any) -> () } = {} -- H22: client/Place hears every ItemEvent too (one connection: no lost queue)
@@ -104,19 +111,30 @@ local function onEvent(e: any)
 		held[e.id] = if type(e.item) == "string" then e.item else nil
 	elseif e.kind == "put" and type(e.n) == "number" and type(e.item) == "string" and type(e.x) == "number"
 		and type(e.y) == "number" and type(e.w) == "number" and type(e.h) == "number" and type(e.life) == "number" then
-		local ice = e.item == "ice"
-		local p = part(Enum.PartType.Block, Vector3.new(e.w, e.h, if ice then 1 else Config.RUNNER_DEPTH),
-			ITEM_COLOR[e.item] or Color3.new(1, 1, 1))
-		p.Material = if ice then Enum.Material.Neon else Enum.Material.SmoothPlastic -- a crate and a trap are objects
-		p.Transparency = if ice then 0.25 else 0
-		p.CFrame = CFrame.new(e.x, e.y, 0)
 		if things[e.n] then drop(things[e.n]) end
-		local art, charge = ItemArt.put(p, e.item, if e.dir == -1 then -1 else 1)
+		local dir = if e.dir == -1 then -1 else 1
+		if e.item == "ice" then
+			-- H33: the beam is not a box put down: it is drawn every frame on its shooter (Items.draw, client/Beam),
+			-- growing from the shot. (x, y, w) are the box at `age`: its hand end is where the shooter stood.
+			local age = if type(e.age) == "number" then e.age else 0
+			things[e.n] = { item = "ice", beam = Beam.new(folder :: Folder, dir), owner = e.owner, born = os.clock() - age,
+				ox = e.x - dir * (e.w / 2 + Config.RUNNER_WIDTH / 2), oy = e.y, untilT = os.clock() + e.life + 1 }
+			return
+		end
+		local p = part(Enum.PartType.Block, Vector3.new(e.w, e.h, Config.RUNNER_DEPTH), ITEM_COLOR[e.item] or Color3.new(1, 1, 1))
+		p.Material = Enum.Material.SmoothPlastic -- a crate and a trap are objects
+		p.CFrame = CFrame.new(e.x, e.y, 0)
+		local art, charge = ItemArt.put(p, e.item, dir)
 		things[e.n] = { part = p, untilT = os.clock() + e.life + 1, -- the server says "gone"; this is a backstop
-			item = e.item, art = art, born = os.clock(), charge = charge }
+			item = e.item, art = art, born = os.clock(), charge = charge,
+			-- Danzo, 2026-11-16: "make the traps stand out more". A glow behind it and a light on the floor round it.
+			extra = Fx.mark(p, if e.item == "trap" then Color3.fromRGB(255, 60, 40) else Color3.fromRGB(255, 170, 70),
+				e.item == "trap") }
 	elseif e.kind == "gone" and type(e.n) == "number" then
 		local t = things[e.n]
-		if t and t.art and not t.endedAt then -- H21: ItemArt.thing plays the break or the fade, Items.draw destroys it
+		if t and t.beam then
+			t.endedAt = t.endedAt or os.clock() -- H33: the beam thins away (client/Beam), then Items.draw drops it
+		elseif t and t.art and not t.endedAt then -- H21: ItemArt.thing plays the break or the fade, Items.draw destroys it
 			t.endedAt, t.untilT = os.clock(), os.clock() + 1
 		elseif t then
 			drop(t)
@@ -156,15 +174,17 @@ function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boo
 		end
 	end
 	for n, t in things do
-		if now > t.untilT or (t.art and ItemArt.thing(t, now)) then drop(t) things[n] = nil end
+		if not t.beam and (now > t.untilT or (t.art and ItemArt.thing(t, now))) then drop(t) things[n] = nil end
 	end
 	table.clear(seen)
 	table.clear(seenHold)
+	table.clear(drawnAt)
 	for _, model in CollectionService:GetTagged(RUNNER_TAG) do
 		local id = model:GetAttribute("RunnerId")
 		local root = model:FindFirstChild("HumanoidRootPart")
 		if type(id) == "number" and root and root:IsA("BasePart") then
 			local at = if id == me then root.Position else Others.positionOf(root)
+			drawnAt[id] = at
 			local item = not roundOver and held[id]
 			if item then
 				seen[id] = true
@@ -223,6 +243,16 @@ function Items.draw(me: number, ghost: boolean, roundOver: boolean, inRound: boo
 			if over then o:Destroy() overlays[id] = nil released[id] = nil end
 		end
 	end
+	for n, t in things do -- H33: each beam on its shooter as this screen draws it (a shooter gone: where it last was)
+		if t.beam then
+			local at = drawnAt[t.owner]
+			if at then t.ox, t.oy = at.X, at.Y end
+			if Beam.draw(t.beam, t.ox, t.oy, now - t.born, if t.endedAt then now - t.endedAt else nil) or now > t.untilT then
+				drop(t)
+				things[n] = nil
+			end
+		end
+	end
 	local label = slotLabel
 	if label then
 		local mine = if roundOver then nil else held[me]
@@ -242,14 +272,17 @@ function Items.start(player: Player)
 	gui.ResetOnSpawn = false
 	local l = Instance.new("TextLabel")
 	l.BackgroundTransparency = 1
-	l.Position = UDim2.new(0, 12, 0, 12) -- top left: the top centre is the fuse's, the lower middle stays clear (rule 23)
+	-- Top left, UNDER the scoreboard strip (client/Board: 6 + up to 130 design pixels; QA round 2: at (12, 12) the
+	-- strip covered it every round), in the same scaled design space. The top centre is the fuse's, the lower
+	-- middle stays clear (rule 23).
+	l.Position = UDim2.new(0, 14, 0, 142)
 	l.Size = UDim2.new(0, 320, 0, 24)
 	l.TextXAlignment = Enum.TextXAlignment.Left
 	l.Font = Enum.Font.GothamBold
 	l.TextSize = 18
 	l.TextStrokeTransparency = 0.4
 	l.Text = ""
-	l.Parent = gui
+	l.Parent = Ui.scaled(gui)
 	slotLabel = l
 	gui.Parent = player:WaitForChild("PlayerGui")
 	task.spawn(function() -- never blocks the client (→ N3); an old rojo serve lacks the remote (→ T6)

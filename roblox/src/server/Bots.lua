@@ -34,7 +34,7 @@ local AIR_COMMIT = 0.7 -- seconds an airborne bot keeps its plan before it may t
 local WORLD_EVERY = 0.5 -- seconds between rebuilds of the box world (the ghosts' fixtures come and go)
 local SEND_GAP = 1 / Config.SNAPSHOT_RATE
 local BOT_SEEN = 0.04 -- seconds on top of SNAPSHOT_DELAY and the target's own ping: how far behind the server a
--- person sees a bot. A bot's tag on that person is judged on where the bot WAS then, so it lands when it looks like
+-- person sees a bot (half the round trip GetNetworkPing reports). A bot's tag is judged on where the bot WAS then, so it lands when it looks like
 -- a touch on THEIR screen (QA round 1: a fixed 0.12 s was 4 studs short for a 200 ms phone). At most BOT_SEEN_MAX.
 local BOT_SEEN_MAX = 0.4
 local FELL_OUT = -60
@@ -116,7 +116,7 @@ function Bots.ensure(ids: { number })
 			local model, root = Dummy.new(tagName, id, SessionRules.botName(id, Bots.SEED), at)
 			local b = { id = id, model = model, root = root, input = { moveX = 0, jumpPressed = false, jumpHeld = false,
 				dashPressed = false }, c = {}, field = {}, queue = {}, pads = {}, seq = 0, sendAt = 0, mind = BotMind.new(),
-				did = { jumps = 0, dashes = 0, swings = 0, since = os.clock() } }
+				did = { jumps = 0, air = 0, dashes = 0, swings = 0, since = os.clock() } }
 			reset(b, at.X, at.Y)
 			list[id], Bots.ids[id] = b, true
 			count += 1
@@ -189,6 +189,11 @@ local function stepBot(b: any, r: Tag.Round?, dt: number, now: number, history: 
 		input.moveX, input.jumpPressed, input.jumpHeld, input.dashPressed = 0, false, false, false
 		s.vx, s.dashTime = 0, 0
 	end
+	-- QA round 2: a bot tagged or burnt out mid-swing kept its rope until its plan ran out. A frozen holder has no
+	-- input and a ghost never grapples (rule 37), exactly as client/Grapple.frame drops a player's.
+	if frozen or (r ~= nil and not r.over and r.alive[id] == false) then
+		input.grappleHeld, input.grapplePressed, input.anchor = false, false, nil
+	end
 	-- A pad launches a bot on ENTERING it, as a player's client launches itself (client/Place.frame).
 	input.launchX, input.launchY = nil, nil
 	for _, p in Placement.placed() do
@@ -208,13 +213,13 @@ local function stepBot(b: any, r: Tag.Round?, dt: number, now: number, history: 
 	local e = b.pending
 	if studio then -- Studio only: what each bot did, so a tester can see it plays like a person (bots.md §7)
 		local n = b.did
-		if ev.jump then n.jumps += 1 end
+		if ev.jump == "ground" then n.jumps += 1 elseif ev.jump then n.air += 1 end
 		if ev.dash then n.dashes += 1 end
 		if ev.grapple == "attach" then n.swings += 1 end
 		if now - n.since >= DID_EVERY then
-			print(("[Rotag] bots: %s (%d, skill %.2f) in %ds: %d jumps, %d dashes, %d swings"):format(b.model.Name, id,
-				b.mind.skill, DID_EVERY, n.jumps, n.dashes, n.swings))
-			n.jumps, n.dashes, n.swings, n.since = 0, 0, 0, now
+			print(("[Rotag] bots: %s (%d, skill %.2f) in %ds: %d ground jumps, %d double or wall jumps, %d dashes, %d swings"):format(
+				b.model.Name, id, b.mind.skill, DID_EVERY, n.jumps, n.air, n.dashes, n.swings))
+			n.jumps, n.air, n.dashes, n.swings, n.since = 0, 0, 0, 0, now
 		end
 	end
 	if ev.landed then e.landed = math.max(e.landed or 0, ev.landed) end
@@ -287,7 +292,8 @@ function Bots.tags(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample
 			local player = Players:GetPlayerByUserId(id)
 			if player then
 				local ok, ping = pcall(function() return player:GetNetworkPing() end)
-				behind = math.min(BOT_SEEN_MAX, Config.SNAPSHOT_DELAY + BOT_SEEN + (if ok and type(ping) == "number" then ping else 0))
+				-- GetNetworkPing is the round trip; what the target SEES is one way behind (plus the draw delay)
+				behind = math.min(BOT_SEEN_MAX, Config.SNAPSHOT_DELAY + BOT_SEEN + (if ok and type(ping) == "number" then ping / 2 else 0))
 			end
 			local seen = sampleAt(ha, now - behind)
 			if sb and seen and Tag.overlaps(seen.x, seen.y, sb.x, sb.y, 0)

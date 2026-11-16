@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-16 (H31 resolved: the match, bots, the menu, coins and cosmetics; H32: bots that pass for people). 2026-11-11 (H29, H30: the Yard relaid, pads and the haul)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-16 (H31 resolved: the match, bots, the menu, coins and cosmetics; H32: bots that pass for people; H33: Danzo's first play, the ice beam). 2026-11-11 (H29, H30: the Yard relaid, pads and the haul)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -30,6 +30,17 @@ Resolution (added by the heavy agent under the same entry):
 *(none)*
 
 ## Resolved
+
+### H33 — Danzo's first play of the finished game: the ice beam as a body-sized beam that shoots out and rides with you; traps, pickups, visibility — 2026-11-16 — RESOLVED
+- **Trigger:** 2 (`shared/Items`, `Config`), 3 (what a beam hits), 1 (rule 43-45's ice beam is stronger).
+- **Observed (Danzo, playing):** "a bit difficult to see walls and the items"; "ghost mode seems to not be working";
+  "make the traps stand out more and make the item acquisition flashier ... the ice beam needs to be bigger, a big
+  rotating beam ... as large as a player's body, coming out as a cone ... we should see it shoot out ... stay
+  attached to the front of the player's body ... the direction should not change".
+- **Resolved 2026-11-16 (same Fable session, seen in Studio):** the ghost bug was one render-loop crash
+  (`Look.glow`, → T18); the stage relit and outlined; the beam grows to 24 studs over 0.4 s at body height and rides
+  its shooter (`Items.beam`, `client/Beam`); traps and crates glow; a pickup rings on every screen and tells the
+  taker what it got → items.md "The ice beam, reworked", ui.md §7-§8.
 
 ### H32 — Bots that pass for people ("players can still play with machines unknowingly") — 2026-11-16 — RESOLVED
 - **Trigger:** 2 (`shared/BotBrain`, `BoxWorld`, `Session.botName`), 3 (a bot's tag, what a player is told), 1 (presentation).

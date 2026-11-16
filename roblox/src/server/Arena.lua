@@ -1,5 +1,5 @@
 -- The map: plain Parts in Workspace.Map, built at boot from the map data Config.MAP names (H27, docs/systems/maps.md).
--- Workspace.Map is a Folder made HERE, not in default.project.json: nothing in the project file declares it and the
+-- Workspace.Map is a Model (Persistent, H31) made HERE, not in default.project.json: nothing in the project file declares it and the
 -- client never waits for it by name (it raycasts against everything but its own character).
 -- Units are studs. Every part spans the plane z = 0 with MAP_DEPTH of thickness.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -40,12 +40,17 @@ local function clearTemplate()
 	end
 end
 
-function Arena.build(): Folder
+function Arena.build(): Model
 	clearTemplate()
 	local old = workspace:FindFirstChild("Map")
 	if old then old:Destroy() end
-	local folder = Instance.new("Folder")
+	-- A Persistent MODEL, not a Folder (H31): the place streams, and a client with no character (the title screen)
+	-- was sent the map a few parts at a time: seen in Studio, the floor and half a skyline with no decks for the
+	-- first seconds. Persistent: the whole map is there before the client's first frame and is never streamed out.
+	-- Nothing finds it by class (client/Grapple looks it up by name).
+	local folder = Instance.new("Model")
 	folder.Name = "Map"
+	folder.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	for _, b in map.blocks do
 		local name, x0, y0, x1, y1 = b[1], b[2], b[3], b[4], b[5]
 		local part = Instance.new("Part")

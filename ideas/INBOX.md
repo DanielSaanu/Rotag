@@ -48,6 +48,13 @@
       own player list is off so the scoreboard is the list. The wall-walkers were the old dummies, already gone.
       Your call when you have played them: fun, too strong, too weak (`Config.BOT_SPEED`, `BOT_THINK`). Detail and
       what still gives one away: `docs/systems/bots.md` §7.
+- [x] **Danzo (2026-11-16, playing): hard to see walls and items; ghost mode broken; traps, pickups, a bigger ice
+      beam.** All done (H33): the ghost bug was one crash; the stage is relit and outlined; the beam is body-sized,
+      shoots out and rides with you; traps glow; a pickup tells you what you got. `docs/systems/items.md`, `ui.md` §8.
+- [ ] **Danzo's call (2026-11-16): how a Discord crowd plays together.** A: Max Players 4 (separate servers, no
+      code). B: bigger matches, 6-8 runners (hours; changes DESIGN §2's "4 per match"). C: a hub server that queues
+      groups of four into their own match servers and back (about half a day; only testable on the published
+      game). D: several matches inside one server (1-2 days, touches everything). Claude's lean: C, or B.
 - [ ] **Danzo, before the Discord link (H31):** (1) Game Settings → Players → **Max Players 4**; (2) Game Settings →
       Security → **Enable Studio Access to API Services** (so coins save in Studio tests; a live server saves
       anyway); (3) File → **Publish to Roblox**; (4) set the experience to Public. No sprite upload is needed:

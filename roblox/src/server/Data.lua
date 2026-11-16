@@ -24,7 +24,8 @@ local STORE = "RotagProfiles_v1"
 local AUTOSAVE = 120
 local TRIES = 3
 local LOCK_TTL = 300 -- seconds another server's lock is honoured (it is refreshed every AUTOSAVE; a crashed server's dies)
-local LOCK_WAIT, LOCK_TRIES = 3, 4 -- a load under a fresh foreign lock waits this long, this many times, then takes it
+local LOCK_WAIT, LOCK_TRIES = 3, 6 -- a load under a fresh foreign lock waits this long, this many times (15 s: a
+-- leave-save lands in a second or two; longer than this the other server is gone), then takes it
 local LOCKED = "locked" -- what a load attempt returns when it backed off
 
 local SESSION = if game.JobId ~= "" then game.JobId else HttpService:GenerateGUID(false) -- Studio has no JobId
@@ -34,6 +35,7 @@ local profiles: { [number]: Profile.Profile } = {}
 local saved: { [number]: boolean } = {} -- false: this session's profile is never written
 local revs: { [number]: number } = {} -- the revision each profile was loaded at or last saved as
 local waiting: { [number]: { (Profile.Profile) -> () } } = {}
+local released: { [Profile.Profile]: boolean } = setmetatable({}, { __mode = "k" }) :: any -- its lock was given up
 local warned = false
 
 local function key(id: number): string return "p_" .. tostring(id) end
@@ -123,7 +125,9 @@ end
 -- Write the profile if this server still holds the newest copy. `release`: the player is leaving, drop the lock.
 local function save(id: number, release: boolean)
 	local p, s = profiles[id], store
-	if not (p and s and saved[id]) then return end
+	if not (p and s and saved[id]) or released[p] then return end
+	if release then released[p] = true end -- once: the close and the leave both ask (QA round 2: the second was
+	-- refused by the first's own write and logged as "another server")
 	local rev = revs[id] or 0
 	local out: any = table.clone(p)
 	local stale = false
@@ -156,8 +160,10 @@ function Data.start()
 	for _, player in Players:GetPlayers() do task.spawn(load, player) end
 	Players.PlayerRemoving:Connect(function(player)
 		local id = player.UserId
+		local p = profiles[id]
 		save(id, true)
-		profiles[id], saved[id], revs[id], waiting[id] = nil, nil, nil, nil
+		-- QA round 2: the save yields; a player who rejoined this server meanwhile has a NEW profile here: keep it
+		if profiles[id] == p then profiles[id], saved[id], revs[id], waiting[id] = nil, nil, nil, nil end
 	end)
 	task.spawn(function()
 		while true do

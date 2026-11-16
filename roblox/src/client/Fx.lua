@@ -118,6 +118,35 @@ function Fx.ring(x: number, y: number, color: Color3, size: number?)
 	Debris:AddItem(ring, 0.4)
 end
 
+-- Make a thing lying in the world stand out on the dark stage (a trap, a crate): a glowing plate behind it, a
+-- little larger, and a light on the floor and the blocks round it. `alarm`: sparks rise off it too (a trap).
+-- Returns what was made, for the caller to destroy with the thing.
+function Fx.mark(p: BasePart, color: Color3, alarm: boolean): { Instance }
+	local plate = Instance.new("Part")
+	plate.Name = "RotagMark"
+	plate.Anchored, plate.CanCollide, plate.CanQuery, plate.CanTouch, plate.CastShadow = true, false, false, false, false
+	plate.Material, plate.Color, plate.Transparency = Enum.Material.Neon, color, 0.35
+	plate.Size = Vector3.new(p.Size.X + 1.1, p.Size.Y + 1.1, 0.2)
+	plate.CFrame = p.CFrame * CFrame.new(0, 0, -(p.Size.Z / 2 + 0.2))
+	plate.Parent = p.Parent
+	local light = Instance.new("PointLight")
+	light.Color, light.Range, light.Brightness, light.Shadows = color, 11, 2.6, false
+	light.Parent = plate
+	if alarm then
+		local at = Instance.new("Attachment")
+		at.Parent = plate
+		local e = Instance.new("ParticleEmitter")
+		e.Color, e.LightEmission, e.Rate, e.ZOffset = ColorSequence.new(color), 1, 7, 2
+		e.Size = NumberSequence.new(0.45, 0)
+		e.Transparency = NumberSequence.new(0, 1)
+		e.Lifetime, e.Speed = NumberRange.new(0.5, 0.9), NumberRange.new(3, 6)
+		e.SpreadAngle, e.Acceleration = Vector2.new(25, 25), Vector3.new(0, 6, 0)
+		e.EmissionDirection = Enum.NormalId.Top
+		e.Parent = at
+	end
+	return { plate }
+end
+
 -- A tag landed at (x, y) (the victim): the hit ring, sparks, and a shake for whoever is in it.
 function Fx.tag(x: number, y: number, involved: boolean)
 	Fx.ring(x, y, Ui.C.ember, 11)
@@ -154,13 +183,14 @@ function Fx.wear(look: any, id: number, visible: boolean)
 		look.fxTrailObj, look.fxLight, look.fxAura = nil, nil, nil
 		if trail then
 			local a0, a1 = Instance.new("Attachment"), Instance.new("Attachment")
-			a0.Position, a1.Position = Vector3.new(0, 1.1, 0), Vector3.new(0, -1.3, 0)
+			a0.Position, a1.Position = Vector3.new(0, 0.5, 0), Vector3.new(0, -0.9, 0)
 			a0.Parent, a1.Parent = holder, holder
 			local t = Instance.new("Trail")
 			t.Attachment0, t.Attachment1 = a0, a1
 			t.Color = sequence(trail.colors)
-			t.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 1) })
-			t.Lifetime, t.MinLength, t.LightEmission, t.FaceCamera = 0.32, 0.05, 0.7, true
+			t.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.45), NumberSequenceKeypoint.new(1, 1) })
+			t.Lifetime, t.MinLength, t.LightEmission, t.FaceCamera = 0.2, 0.05, 0.5, true -- seen in Studio: at 0.32 s and
+			-- 2.4 studs wide a falling runner dragged a 25-stud searchlight
 			t.WidthScale = NumberSequence.new(1, 0.2)
 			t.Parent = holder
 			look.fxTrailObj = t
@@ -204,7 +234,7 @@ function Fx.wear(look: any, id: number, visible: boolean)
 			look.fxLight.Brightness = 1.8 + 1.2 * math.sin(os.clock() * 5)
 		end
 	end
-	look:glow(if glow then look.fxLight.Color else nil)
+	look:aura(if glow then look.fxLight.Color else nil)
 end
 
 function Fx.start(player: Player)

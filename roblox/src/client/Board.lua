@@ -22,6 +22,9 @@ local cardRows: { { place: TextLabel, name: TextLabel, pts: TextLabel } } = {}
 local me = 0
 local introAt, introRound = -math.huge, 0
 local cardKey = ""
+local toastBig: TextLabel, toastSub: TextLabel = nil :: any, nil :: any
+local TOAST = 2.2
+local toastAt = -math.huge
 local earned: number? = nil
 local levelled: number? = nil -- the level a match's coins just reached (the podium says so)
 Board.onCard = nil :: ((string, boolean) -> ())? -- client/Audio and Fx: "round" | "podium" came up, and did I win it
@@ -53,6 +56,14 @@ local function build(top: number)
 	sub = Ui.label(root, "", 22, C.gold, Ui.BODY)
 	sub.Size, sub.Position, sub.AnchorPoint = UDim2.fromOffset(900, 30), UDim2.new(0.5, 0, 0, top + 162), Vector2.new(0.5, 0)
 	Ui.outline(sub, 2.5)
+	-- The pickup banner: under the round's intro line, over the play; gone in two seconds.
+	toastBig = Ui.label(root, "", 38, C.text, Ui.HEAD)
+	toastBig.Size, toastBig.Position, toastBig.AnchorPoint = UDim2.fromOffset(900, 46), UDim2.new(0.5, 0, 0, top + 176), Vector2.new(0.5, 0)
+	Ui.outline(toastBig, 3.5)
+	toastSub = Ui.label(root, "", 18, C.text, Ui.BODY)
+	toastSub.Size, toastSub.Position, toastSub.AnchorPoint = UDim2.fromOffset(900, 26), UDim2.new(0.5, 0, 0, top + 222), Vector2.new(0.5, 0)
+	Ui.outline(toastSub, 2.5)
+	toastBig.Visible, toastSub.Visible = false, false
 	card = Ui.panel(root, UDim2.fromOffset(440, 260), UDim2.new(0.5, 0, 0, top + 78), Vector2.new(0.5, 0), 16)
 	card.Visible = false
 	cardHead = Ui.label(card, "", 30, C.cyan, Ui.HEAD)
@@ -87,7 +98,7 @@ local function fillCard(s: any, podium: boolean)
 			local total = 0
 			for _, row in s.scores do if row.id == id then total = row.pts end end
 			r.place.Text = tostring(i)
-			r.name.Text = Flow.nameOf(id)
+			r.name.Text = Flow.listName(id)
 			r.name.TextColor3 = if id == me then C.cyan else C.text
 			-- what the SERVER scored for the place (a round nobody won pays no win bonus); an older server: the rule
 			local gained = if type(s.lastPts) == "table" and type(s.lastPts[i]) == "number" then s.lastPts[i]
@@ -98,14 +109,25 @@ local function fillCard(s: any, podium: boolean)
 	card.Size = UDim2.fromOffset(440, 58 + math.max(1, n) * 36 + 50)
 end
 
+-- A banner for the local player alone (a pickup): `text` big in `color`, `detail` under it, for TOAST seconds.
+function Board.toast(text: string, detail: string, color: Color3)
+	if not toastBig then return end
+	toastBig.Text, toastBig.TextColor3, toastSub.Text = text, color, detail
+	toastAt = os.clock()
+	Ui.pop(toastBig, 1.5)
+end
+
 -- Every frame. `hidden`: a menu screen is up (the cards step aside; the strip stays).
 function Board.update(match: any, hidden: boolean)
+	local now = os.clock()
+	local fade = math.clamp((now - toastAt - TOAST + 0.35) / 0.35, 0, 1)
+	toastBig.TextTransparency, toastSub.TextTransparency = fade, fade
+	toastBig.Visible, toastSub.Visible = fade < 1 and not hidden, fade < 1 and not hidden
 	local s = Flow.session()
 	if not s then
 		strip.Visible, big.Text, sub.Text, card.Visible = false, "", "", false
 		return
 	end
-	local now = os.clock()
 	local phase, left = s.phase, Flow.left()
 	-- The strip: this match's standings; before any round, the roster.
 	local ids = {}
@@ -123,7 +145,7 @@ function Board.update(match: any, hidden: boolean)
 				local inRound = match and not match.over
 				local alive = inRound and table.find(match.alive, id) ~= nil
 				local isIt = inRound and match.it == id
-				r.name.Text = Flow.nameOf(id)
+				r.name.Text = Flow.listName(id)
 				r.name.TextColor3 = if id == me then C.cyan elseif inRound and not alive then C.dim else C.text
 				r.name.TextTransparency = if inRound and not alive then 0.35 else 0
 				r.dot.BackgroundColor3 = if isIt then C.ember elseif inRound and not alive then C.ghost else C.lime

@@ -100,22 +100,26 @@ gone since H31; nobody had yet seen the new ones.) What makes a bot read as a pe
 - **It rests.** After reaching a wander spot it stands 0.3-1.5 s four times in ten; nobody runs without a breath.
 - **It does not hop for nothing.** A ground jump adds speed, so every open-floor think rated a jump a hair over a
   run and a bot hopped 1.5 times a second in Studio; a jump now has to be worth `EFFORT` 2 (half a tile).
-- **It has a player's name and no label.** `Session.botName(id, seed)` builds one from two word lists and a number
-  in the styles players use (`TurboFox12`, `frost_panda`, `Lucky_Bean7`); the seat keeps it for the server's life
-  (the seed rides `Remotes.Session`), no two seats share one, and no name says "bot". Nothing in the HUD, the
-  scoreboard, the cards or the name tags marks a bot.
+- **It has a nickname and, by default, no label.** `Session.botName(id, seed)` builds one from two word lists and
+  sometimes a number (`Turbo Fox 12`, `frost panda`, `Lucky Bean 7`), ALWAYS with a space (QA round 2): a Roblox
+  username cannot hold one, so a bot's name can never be a real account a child could search for and friend. The
+  seat keeps it for the server's life (the seed rides `Remotes.Session`), no two seats share one. With
+  `Config.BOT_LABEL` false (Danzo's ask: "unknowingly") nothing marks a bot; true adds "[AI]" in the scoreboard and
+  the cards and a line in the how-to cards (the reviewer's advice for a kids' audience: Danzo's call).
+- **It dresses like most players**: one common item per slot, never a rare one (QA round 2: a wheel prize on a
+  runner that is not a person is an advert dressed as a player).
 - **The scoreboard is the player list.** Roblox's own player list (which would show only the people) is turned off
   (`client/Present`); the strip in the corner seats bots and people together.
 
 **What still gives a bot away, and what was deliberately not faked:** a bot never chats; the server's real player
 count on the game's page and in the Roblox menu's player list (Esc) is the truth; a bot has no profile to click.
-Names are generated, never copied from real accounts (one can coincide with a real account only by chance). This
-is a presentation choice Danzo made for a small playtest; if the game grows, say on the game's page that empty
+Names are generated and cannot be usernames. This is a presentation choice Danzo made for a small playtest; if the game grows, say on the game's page that empty
 seats are filled by AI runners: players forgive a labelled bot faster than a discovered one.
 
-In Studio (2026-11-16, server side): three bots named Turbo_Ace0, rocketnoodle37 and PixelFox (skill 0.72, 0.24,
-0.24) played a round; per 20 s each made 24-35 jumps (before the `EFFORT` cost), 1-6 dashes and 0-4 swings; they
-took orbs, set traps, froze each other and tagged each other and the idle player. Nobody has yet WATCHED one.
+In Studio (2026-11-16): three bots (skill 0.72, 0.24, 0.24) played a round; per 20 s each made 24-35 jumps of all
+kinds (the Studio line now counts ground jumps apart from double and wall jumps), 1-6 dashes and 0-4 swings; they
+took orbs, set traps, froze each other and tagged each other and the idle player. Seen on screen later the same
+day (named, tagged, swinging, haunting as ghosts); whether they are fun to play is Danzo's verdict.
 
 ## Expansion: deficits at scale
 

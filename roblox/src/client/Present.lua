@@ -4,6 +4,7 @@
 -- name, trail and glow on its sprite, and updates the menu and the cards. Cosmetic and local only.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Ui = require(script.Parent:WaitForChild("Ui"))
 local Flow = require(script.Parent:WaitForChild("Flow"))
@@ -23,6 +24,16 @@ local HH = Config.RUNNER_HEIGHT / 2
 local me = 0
 local lastTick, wasPhase, wasEnd = -1, "", false
 local ghostOf: (number) -> string? = function() return nil end
+local myAt: Vector3? = nil -- where the local runner was last drawn (a pickup's ring)
+
+local warned: { [string]: boolean } = {}
+local function guard(what: string, fn: (...any) -> (), ...: any)
+	local ok, err = pcall(fn, ...)
+	if not ok and not warned[what] then
+		warned[what] = true
+		warn(("[Rotag] present: %s failed (shown once): %s"):format(what, tostring(err)))
+	end
+end
 
 local function seat(id: number): Color3
 	local s = Flow.session()
@@ -32,6 +43,7 @@ end
 
 -- What the local runner's Movement reported since the last draw, at its feet (x, y the body's centre).
 function Present.moves(events: any, x: number, y: number)
+	myAt = Vector3.new(x, y, 0)
 	Audio.moves(events)
 	if events.landed and events.landed > 30 then
 		Fx.burst(x, y - HH, { { 200, 205, 225 } }, "dust", 10)
@@ -68,9 +80,43 @@ function Present.focus(match: any): (number, number)
 	return 0, 10
 end
 
+-- What each item is called, its colour, and what it does in a few words (the pickup banner).
+local ITEMS: { [string]: { any } } = {
+	crate = { "CRATE", { 255, 170, 70 }, "drops behind you: whoever hits it stumbles" },
+	trap = { "BEAR TRAP", { 255, 70, 50 }, "set at your feet: whoever steps in is stuck" },
+	ice = { "ICE BEAM", { 90, 225, 255 }, "a beam ahead of you: freezes whoever it touches" },
+	hex = { "HEX", { 235, 80, 210 }, "touch the holder: 3 seconds off its fuse" },
+	fixture = { "PIECE", { 150, 130, 255 }, "a block you place in the map" },
+	pad = { "BOOST PAD", { 130, 255, 100 }, "a launch pad you place" },
+	grant = { "BOOST", { 255, 160, 60 }, "touch a runner: a burst of speed for them" },
+}
+local function useHint(item: string): string
+	if item == "hex" or item == "grant" then return "" end
+	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then return "tap ITEM" end
+	if UserInputService.GamepadEnabled and not UserInputService.KeyboardEnabled then return "press RB" end
+	return "press E"
+end
+
 local function onItem(e: any)
-	if e.kind == "orb" and e.by ~= nil then
-		if e.by == me then Audio.play("orb") end
+	if e.kind == "orb" and type(e.by) == "number" and type(e.item) == "string" then
+		-- Danzo, 2026-11-16: "make the item acquisition flashier for both the sprite everyone sees and for the player
+		-- so they clearly know what they got". Every screen: a ring and sparks on whoever took it, in the item's
+		-- colour. The taker's own: a banner naming it and what it does, a flash, a louder sound.
+		local def = ITEMS[e.item]
+		local at = if e.by == me then myAt else Others.drawnAt(e.by)
+		if def and at then
+			Fx.ring(at.X, at.Y, Ui.rgb(def[2]), 9)
+			Fx.burst(at.X, at.Y + 1, { def[2], { 255, 255, 255 } }, "nova", 18)
+		end
+		if e.by == me then
+			Audio.play("orb")
+			if def then
+				local hint = useHint(e.item)
+				Board.toast("YOU GOT: " .. def[1], def[3] .. (if hint ~= "" then "  ·  " .. hint else ""), Ui.rgb(def[2]))
+				Fx.flash(Ui.rgb(def[2]), 0.22)
+				Audio.play("prize", 1.25)
+			end
+		end
 	elseif e.kind == "put" then
 		Audio.play(if e.item == "ice" then "ice" elseif e.item == "trap" then "place" else "crate")
 	elseif e.kind == "hold" then
@@ -114,17 +160,21 @@ function Present.frame(look: any, match: any, fuse: number, ghostMode: (number) 
 		if phase == "round" then Audio.play("go") end
 		wasPhase = phase
 	end
-	if look then
-		look:name(if ghostOf(me) then nil else "YOU", seat(me))
-		Fx.wear(look, me, ghostOf(me) == nil)
-	end
-	Others.each(function(id, other)
-		local ghost = ghostOf(id) ~= nil
-		other:name(Flow.nameOf(id), if ghost then Ui.C.ghost else seat(id))
-		Fx.wear(other, id, not ghost)
+	-- Each part on its own (pcall): a slip in a cosmetic must never stop the menu or the cards, or the rest of the
+	-- frame behind this call (it did: Look.glow, 2026-11-16). The first error of each kind is printed once.
+	guard("names and cosmetics", function()
+		if look then
+			look:name("YOU", if ghostOf(me) then Ui.C.ghost else seat(me))
+			Fx.wear(look, me, ghostOf(me) == nil)
+		end
+		Others.each(function(id, other)
+			local ghost = ghostOf(id) ~= nil
+			other:name(Flow.nameOf(id), if ghost then Ui.C.ghost else seat(id))
+			Fx.wear(other, id, not ghost)
+		end)
 	end)
-	Menu.update()
-	Board.update(match, Menu.open())
+	guard("menu", Menu.update)
+	guard("board", Board.update, match, Menu.open())
 end
 
 function Present.start(player: Player)

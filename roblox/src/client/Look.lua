@@ -199,7 +199,8 @@ end
 -- H15 (DESIGN §3 rules 37, 41): a ghost is the same sprite, pale and see-through; brighter when it holds a hex (H18),
 -- so the holder can see which ghosts are armed. `mode` nil = alive (normal), "ready", or "cooling".
 local GHOST_TINT = Color3.fromRGB(170, 215, 255)
-local GHOST_SEE = { ready = 0.3, cooling = 0.65 } -- ImageTransparency
+local GHOST_SEE = { ready = 0.1, cooling = 0.35 } -- ImageTransparency (0.3 / 0.65 before the dark stage of H31: there
+-- a cooling ghost was a shadow, and its own player could not find it: seen in Studio 2026-11-16)
 function Look:ghost(mode: string?)
 	local image = self.image
 	if not image or mode == self.ghostMode then return end
@@ -283,7 +284,11 @@ function Look:ignite(level: number)
 end
 
 -- H31 (cosmetics, client/Fx.wear): the worn glow's colour, or nil. The same rim, at the lowest priority.
-function Look:glow(color: Color3?)
+-- Named `aura`, never `glow`: Look:ignite keeps its PointLight in self.glow, and a field of that name on the object
+-- hides a method of the same name. Seen in Studio 2026-11-16 (Danzo: "once you die you are sent back to the menu"):
+-- from the first ignition on, the call threw in every render frame and the HUD, the camera's cards and the ghost's
+-- own screen died with it (→ T18).
+function Look:aura(color: Color3?)
 	if color == self.glowTint or not self.image then return end
 	self.glowTint = color
 	self:_rim()
@@ -325,7 +330,8 @@ function Look:name(text: string?, color: Color3?)
 		l.Name = "RotagName"
 		l.BackgroundTransparency = 1
 		l.Size = UDim2.fromScale(1, 1)
-		l.Font, l.TextScaled = Enum.Font.GothamBlack, true
+		l.Font, l.TextScaled = Enum.Font.GothamBlack, false -- one text size for every name (QA round 2: scaled to
+		-- fit, a long name came out smaller than a short one)
 		l.TextStrokeTransparency, l.TextStrokeColor3 = 0.2, Color3.fromRGB(12, 13, 18)
 		l.Parent = gui
 		part.Parent = self.character
@@ -344,7 +350,9 @@ function Look:_placeName()
 	local h = Look.nameHeight()
 	if h ~= self.nameH then
 		self.nameH = h
-		part.Size = Vector3.new(h * 8, h, 0.05) -- room for a 20-letter name at this height
+		part.Size = Vector3.new(h * 13, h, 0.05) -- room for a 20-letter name at this height
+		local l = self.nameLabel
+		if l then l.TextSize = math.clamp(math.floor(SURFACE_PPS * h * 0.8), 8, 100) end
 	end
 	part.CFrame = holder.CFrame * CFrame.new(0, NAME_FEET + h / 2, 0.03)
 end

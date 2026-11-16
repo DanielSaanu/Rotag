@@ -31,14 +31,19 @@ function Shop.push(player: Player, extra: { [string]: any }?)
 	profileRemote:FireClient(player, view)
 end
 
--- A bot wears something too (the shop's best advert): one random item per slot, fixed for the server's life.
+-- A bot wears something too, as most players do: one COMMON item per slot (often the free default), fixed for the
+-- server's life. Never a rare one (QA round 2): a rare wheel prize on a runner that is not a person would be an
+-- advert dressed as a player.
 local function botLook(id: number): { string }
 	local look = botLooks[id]
 	if not look then
 		look = {}
 		for _, slot in Catalog.SLOTS do
-			local items = Catalog.inSlot(slot)
-			table.insert(look, items[math.random(1, #items)].id)
+			local commons = {}
+			for _, it in Catalog.inSlot(slot) do
+				if it.rarity == "common" then table.insert(commons, it) end
+			end
+			table.insert(look, commons[math.random(1, #commons)].id)
 		end
 		botLooks[id] = look
 	end

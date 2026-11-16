@@ -69,8 +69,10 @@ local function buildTitle()
 	local shade = Ui.frame(title, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0))
 	shade.BackgroundTransparency, shade.BackgroundColor3 = 0, C.ink
 	local g = Ui.gradient(shade, C.ink, C.ink, 0)
-	g.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.08), NumberSequenceKeypoint.new(0.42, 0.35),
-		NumberSequenceKeypoint.new(1, 0.82) })
+	-- Seen in Studio (2026-11-16): at 0.08 / 0.35 / 0.82 the live map behind the title was all but gone. Dark only
+	-- where the words are; the right two thirds of the screen show the game.
+	g.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(0.3, 0.55),
+		NumberSequenceKeypoint.new(0.55, 0.95), NumberSequenceKeypoint.new(1, 1) })
 	-- Laid out top to bottom for the design space this screen has: 720 tall on a desktop, ~520 on a phone held
 	-- sideways (Ui.compact; QA round 1: scaled down to fit, the text was 8 points).
 	local cmp = Ui.compact()
@@ -123,7 +125,8 @@ local HOW = {
 	{ "RUN", C.cyan, "Run, jump, double jump, kick off walls, dash, swing from the gold anchors, hit the green pads. Moves chain: keep your speed." },
 	{ "ORBS", C.gold, "Grab a glowing orb for an item: a crate, a bear trap or an ice beam. One at a time. Use it to slow whoever is after you." },
 	{ "GHOSTS", C.ghost, "Burnt out? You are a ghost until the round ends. Grab ghost orbs, drop blocks and pads, and hex the holder to burn its fuse faster." },
-	{ "THE MATCH", C.lime, ("%d rounds. Outlast the others to score. The last two get closing walls. Earn coins, spin the wheel, dress your runner."):format(Config.MATCH_ROUNDS) },
+	{ "THE MATCH", C.lime, ("%d rounds. Outlast the others to score. The last two get closing walls. Earn coins, spin the wheel, dress your runner.%s"):format(
+		Config.MATCH_ROUNDS, if Config.BOT_LABEL then " Empty seats are filled by AI runners." else "") },
 }
 
 local function buildHow()
