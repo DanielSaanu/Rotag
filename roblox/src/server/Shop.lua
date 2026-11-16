@@ -95,6 +95,10 @@ local function onShop(player: Player, op: any, arg: any)
 		else
 			Shop.push(player, { note = tostring(back) })
 		end
+	elseif op == "roll" then -- H35: an ability roll. Refused (nothing charged) while the rolls are off or empty.
+		local won, why
+		Data.update(player, function(q) won, why = Profile.rollAbility(q, math.random) end)
+		Shop.push(player, if won then { roll = { id = won.id } } else { note = tostring(why) })
 	elseif op == "get" then
 		Shop.push(player)
 		Shop.looksTo(player)

@@ -21,8 +21,9 @@ export type State = {
 	piece: { [number]: string },   -- H22: per runner id holding a fixture, its tetromino (shared/Placement.SHAPES)
 }
 -- One runner as the server last recorded it: (x, y) now, (px, py) the sample before, if any (the path counts).
-export type Taker = { id: number, x: number, y: number, px: number?, py: number?, ghost: boolean,
+export type Taker = { id: number, x: number, y: number, px: number?, py: number?, ghost: boolean, extra: { { any } }?,
 	holder: boolean? }
+-- (`extra`, H35: the rows this taker's unlocked abilities add to its living pool; nil for most.)
 -- What changed: an orb came back (up = true), or `by` took it and rolled `item` (up = false); a fixture's `piece`.
 export type Event = { spot: number, up: boolean, by: number?, item: string?, piece: string? }
 
@@ -78,7 +79,7 @@ function Orbs.step(o: State, now: number, ghosts: number, takers: { Taker }, ran
 		if up then
 			for _, who in takers do
 				if Orbs.canTake(o, i, who, now, ghosts) and Orbs.touches(spot, who.x, who.y, who.px, who.py) then
-					local item = Orbs.roll(Items.poolFor(spot.kind, who.holder) :: { { any } }, rand) -- rules 39, 43
+					local item = Orbs.roll(Items.poolFor(spot.kind, who.holder, who.extra) :: { { any } }, rand) -- rules 39, 43
 					o.takenAt[i], o.held[who.id], up = now, item, false
 					-- H22: a fixture's shape is rolled with it, so the ghost previews the piece it will place
 					local piece = if item == "fixture" then Placement.rollShape(rand) else nil

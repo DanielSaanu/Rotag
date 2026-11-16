@@ -16,12 +16,13 @@ export type Profile = {
 	owned: { [string]: boolean },
 	equipped: { [string]: string },   -- slot -> item id
 	wins: number, matches: number, spins: number,
+	abilities: { [string]: boolean }, -- H35: the special item abilities unlocked by ability rolls (Catalog.ABILITIES)
 	day: number,                      -- the day number (os.time() // 86400) of the last daily bonus
 }
 
 function Profile.new(): Profile
 	local p: Profile = { v = Profile.VERSION, coins = Config.COINS_START, xp = 0, owned = {}, equipped = {}, wins = 0,
-		matches = 0, spins = 0, day = 0 }
+		matches = 0, spins = 0, day = 0, abilities = {} }
 	for slot, id in Catalog.DEFAULTS do
 		p.owned[id] = true
 		p.equipped[slot] = id
@@ -45,6 +46,11 @@ function Profile.sanitize(raw: any): Profile
 	if type(raw.owned) == "table" then
 		for id, has in raw.owned do
 			if has == true and Catalog.get(id) then p.owned[id] = true end
+		end
+	end
+	if type(raw.abilities) == "table" then -- H35: an ability the catalogue no longer has is dropped, like an item
+		for id, has in raw.abilities do
+			if has == true and Catalog.ability(id) then p.abilities[id] = true end
 		end
 	end
 	if type(raw.equipped) == "table" then
@@ -122,14 +128,62 @@ function Profile.spin(p: Profile, rand: () -> number): (Catalog.Item?, number | 
 	return it, 0
 end
 
+-- One ability roll for ABILITY_ROLL_COST (H35). It lands only on an ability the player does not own yet (no
+-- duplicates, so no refund): the rarity is rolled on Catalog.ODDS among the rarities that still have one, then one
+-- of that rarity. Nothing is charged when the rolls are switched off or there is nothing left to win.
+-- Returns the ability, or nil and why.
+function Profile.rollAbility(p: Profile, rand: () -> number): (Catalog.Ability?, string?)
+	if not Config.ABILITY_ROLLS then return nil, "ability rolls are not open yet" end
+	local byRarity: { [string]: { Catalog.Ability } } = {}
+	local total = 0
+	for _, a in Catalog.ABILITIES do
+		if not p.abilities[a.id] and Catalog.ODDS[a.rarity] then
+			if not byRarity[a.rarity] then
+				byRarity[a.rarity] = {}
+				total += Catalog.ODDS[a.rarity]
+			end
+			table.insert(byRarity[a.rarity], a)
+		end
+	end
+	if total == 0 then return nil, "nothing left to win" end
+	if p.coins < Config.ABILITY_ROLL_COST then return nil, "not enough coins" end
+	local roll, pool = rand() * total, nil
+	for _, r in Catalog.RARITIES do
+		local list = byRarity[r]
+		if list then
+			pool = list
+			roll -= Catalog.ODDS[r]
+			if roll < 0 then break end
+		end
+	end
+	local list = pool :: { Catalog.Ability }
+	local won = list[math.min(#list, math.floor(rand() * #list) + 1)]
+	p.coins -= Config.ABILITY_ROLL_COST
+	p.abilities[won.id] = true
+	return won, nil
+end
+
+-- The rows a player's unlocked abilities add to its living orb pools: { { item, weight } }, in catalogue order
+-- (shared/Items.poolFor's `extra`). Empty while the rolls are switched off, whatever was saved.
+function Profile.unlocked(p: Profile): { { any } }
+	local rows = {}
+	if not Config.ABILITY_ROLLS then return rows end
+	for _, a in Catalog.ABILITIES do
+		if p.abilities[a.id] then table.insert(rows, { a.item, a.weight }) end
+	end
+	return rows
+end
+
 -- What the owner's client is sent (Remotes.Profile): arrays and plain fields only (→ N13).
 function Profile.view(p: Profile): any
 	local owned = {}
 	for _, it in Catalog.ITEMS do if p.owned[it.id] then table.insert(owned, it.id) end end
 	local worn = {}
 	for _, slot in Catalog.SLOTS do table.insert(worn, p.equipped[slot]) end
+	local abilities = {}
+	for _, a in Catalog.ABILITIES do if p.abilities[a.id] then table.insert(abilities, a.id) end end
 	return { coins = p.coins, xp = p.xp, level = Profile.level(p), owned = owned, worn = worn, wins = p.wins,
-		matches = p.matches }
+		matches = p.matches, abilities = abilities }
 end
 
 -- What EVERY client is sent about a runner (Remotes.Looks): the ids it wears, in Catalog.SLOTS order.

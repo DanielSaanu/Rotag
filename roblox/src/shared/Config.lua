@@ -120,13 +120,20 @@ Config.BOT_LABEL = false          -- true: the scoreboard and the cards mark eac
                                   -- empty seats are filled by AI runners. false (Danzo, 2026-11-16: "unknowingly"):
                                   -- nothing marks one. QA round 2 advises true for a kids' audience: his call
 -- Rewards (H31, DESIGN §6.5; shared/Profile). Coins buy cosmetics and spins, never moves or power (rule 36).
-Config.COINS_MATCH = 10           -- for finishing a match ...
+-- Settled 2026-11-16 (Danzo: "trial numbers you can decide, it's arbitrary so long as it's balanced"): a spin about
+-- every two matches for a middling player (4-6 points: 40-50 coins), a match win ~110, last place every round 20.
+Config.COINS_MATCH = 20           -- for finishing a match (10 at first: a spin took a loser five matches) ...
 Config.COINS_POINT = 5            -- ... plus this per match point ...
-Config.COINS_WIN = 25             -- ... plus this for winning it
+Config.COINS_WIN = 30             -- ... plus this for winning it
 Config.COINS_START = 150          -- a new player's purse: enough for one spin at once
 Config.COINS_DAILY = 50           -- the first join of each day
 Config.SPIN_COST = 100            -- coins for one spin of the wheel (cosmetics only; a duplicate pays some back)
 Config.XP_LEVEL = 100             -- xp per level (xp = coins earned from play)
+-- Ability rolls (H35, Danzo 2026-11-16: "rolls for abilities gets built but not added yet; current abilities stay
+-- free; then we can add some special item abilities later"). The plumbing is whole and OFF: shared/Catalog.ABILITIES
+-- is empty and this switch is false. Turning it on with abilities in the catalogue opens the roll in the wheel.
+Config.ABILITY_ROLLS = false      -- true: Remotes.Shop takes "roll", the wheel shows the ability roll, pools gain unlocks
+Config.ABILITY_ROLL_COST = 250    -- coins for one ability roll (it never lands on one you own: no duplicates)
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
 Config.MAP = "yard"               -- H27: the map every round is played on (shared/Maps.lua: "yard", "test"; maps.md)

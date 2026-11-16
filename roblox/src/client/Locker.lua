@@ -179,6 +179,16 @@ local function buildWheel(root: Frame, back: () -> ())
 			Flow.shop("spin")
 		end, Vector2.new(0.5, 0))
 	Ui.setText(spinButton, nil, 30)
+	if Config.ABILITY_ROLLS and #Catalog.ABILITIES > 0 then -- H35: off and empty for now (shared/Config, Catalog)
+		spinButton.Position = UDim2.new(0.5, -160, 0, 250)
+		local roll = Ui.button(p, ("ABILITY ROLL  ·  %d"):format(Config.ABILITY_ROLL_COST), "primary", UDim2.fromOffset(300, 70),
+			UDim2.new(0.5, 160, 0, 250), function()
+				if spinning and os.clock() - spinAt < 6 then return end
+				Flow.shop("roll")
+			end, Vector2.new(0.5, 0))
+		Ui.setText(roll, nil, 22)
+		p.Size = UDim2.fromOffset(700, 420)
+	end
 	local odds = Ui.label(p, oddsText(), 15, C.dim, Ui.LIGHT)
 	odds.Size, odds.Position = UDim2.new(1, -48, 0, 22), UDim2.new(0, 24, 1, -70)
 	local fine = Ui.label(p, "Cosmetics only. Coins come from playing. A duplicate pays coins back.", 15, C.dim, Ui.LIGHT)
@@ -199,6 +209,15 @@ function Locker.start(root: Frame, back: () -> ())
 		if locker.Visible then fill() end
 		spinButton.BackgroundTransparency = if p.coins >= Config.SPIN_COST then 0 else 0.55
 		if type(p.spin) == "table" and type(p.spin.id) == "string" then land(p.spin.id, tonumber(p.spin.back) or 0) end
+		if type(p.roll) == "table" then -- H35: an ability roll landed: say what it unlocked
+			local a = Catalog.ability(p.roll.id)
+			if a then
+				reel.Text, reel.TextColor3 = a.name, Ui.rgb(Catalog.RARITY_COLORS[a.rarity])
+				reelSub.Text, reelSub.TextColor3 = "NEW ABILITY  ·  " .. a.about, Ui.rgb(Catalog.RARITY_COLORS[a.rarity])
+				Ui.pop(reel, 1.6)
+				if Locker.onSpin then Locker.onSpin(a.rarity, true) end
+			end
+		end
 		if type(p.note) == "string" and wheel.Visible and type(p.spin) ~= "table" then -- the spin was refused
 			spinning = false
 			reelSub.Text, reelSub.TextColor3 = "Could not spin: " .. p.note, C.ember

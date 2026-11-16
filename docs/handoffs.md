@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-16 (H31 resolved: the match, bots, the menu, coins and cosmetics; H32: bots that pass for people; H33: Danzo's first play, the ice beam; H34: the hub, untested live). 2026-11-11 (H29, H30: the Yard relaid, pads and the haul)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-16 (H31 resolved: the match, bots, the menu, coins and cosmetics; H32: bots that pass for people; H33: Danzo's first play, the ice beam; H34: the hub, untested live; H35: ability rolls built and off). 2026-11-11 (H29, H30: the Yard relaid, pads and the haul)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -31,6 +31,14 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Resolved
 
+### H35 — Ability rolls: built, switched off; today's items stay free — 2026-11-16 — RESOLVED
+- **Trigger:** 1 (rule 36), 2 (`shared/Profile`, `Catalog`, `Items`, `Orbs`), 9 (the save gains `abilities`).
+- **Resolved 2026-11-16 (Fable session, Danzo's words):** "rolls for abilities gets built but not added yet current
+  abilities stay free then we can add some special item abilities later". An ability is a special ITEM added to its
+  owner's living orb pool; the roll costs coins, never lands on one already owned; `Config.ABILITY_ROLLS = false`
+  and an empty `Catalog.ABILITIES`. Same message: the bot label stays off; the trial numbers are the builder's
+  (coins settled 20 / 5 / 30). → `docs/systems/session.md` §9, DESIGN rule 36's note, `profile.test.luau`.
+
 ### H34 — A hub server that queues groups of four into their own match servers — 2026-11-16 — RESOLVED (built, NOT tested live)
 - **Trigger:** 1 (how a crowd plays; §2's "4 per match" kept), 3 (who is seated where), 5-adjacent (TeleportService).
 - **Observed (Danzo):** "is it possible to queue up multiple lobbies in the one server ... to have them play
@@ -41,41 +49,16 @@ Resolution (added by the heavy agent under the same entry):
   teleport; the live test and the off switch (`Config.HUB`) are in INBOX → session.md §8.
 
 ### H33 — Danzo's first play of the finished game: the ice beam as a body-sized beam that shoots out and rides with you; traps, pickups, visibility — 2026-11-16 — RESOLVED
-- **Trigger:** 2 (`shared/Items`, `Config`), 3 (what a beam hits), 1 (rule 43-45's ice beam is stronger).
-- **Observed (Danzo, playing):** "a bit difficult to see walls and the items"; "ghost mode seems to not be working";
-  "make the traps stand out more and make the item acquisition flashier ... the ice beam needs to be bigger, a big
-  rotating beam ... as large as a player's body, coming out as a cone ... we should see it shoot out ... stay
-  attached to the front of the player's body ... the direction should not change".
-- **Resolved 2026-11-16 (same Fable session, seen in Studio):** the ghost bug was one render-loop crash
-  (`Look.glow`, → T18); the stage relit and outlined; the beam grows to 24 studs over 0.4 s at body height and rides
-  its shooter (`Items.beam`, `client/Beam`); traps and crates glow; a pickup rings on every screen and tells the
-  taker what it got → items.md "The ice beam, reworked", ui.md §7-§8.
+- **Resolved 2026-11-16:** the ghost bug was one render-loop crash (`Look.glow`, → T18); the ice beam grows to 24 studs at body height
+  and rides its shooter; traps, crates and pickups marked → items.md "The ice beam, reworked", ui.md §7-§8.
 
 ### H32 — Bots that pass for people ("players can still play with machines unknowingly") — 2026-11-16 — RESOLVED
-- **Trigger:** 2 (`shared/BotBrain`, `BoxWorld`, `Session.botName`), 3 (a bot's tag, what a player is told), 1 (presentation).
-- **Observed (Danzo, 2026-11-16, during H31's QA round 1):** "add more advanced AI so that in the event of too few
-  players, players can still play with machines unknowingly, giving the impression that there are more players than
-  there are, or just remove them from the game if they continue to run through walls and refuse to jump".
-- **Resolved 2026-11-16 (same Fable session):** kept and improved (the wall-walkers were the retired dummies): the
-  grapple (line of sight, on screen), a skill roll per bot (speed, think time, dash and swing share, sloppiness,
-  reaction time), hazards, rests, fewer hops, player-style names from a server seed, no bot label anywhere, Roblox's
-  player list off. What still gives one away, and the advice to label them if the game grows → bots.md §7.
+- **Resolved 2026-11-16:** bots kept and improved (grapple, a skill roll per bot, hazards, rests, player-style names, no label; Danzo
+  confirmed the label off the same day) → bots.md §7.
 
 ### H31 — "Finish the game": a match with a menu, a score and an end; bots; coins, a shop and a wheel; sound and punch — 2026-11-16 — RESOLVED
-- **Trigger:** 1 (DESIGN §6.3, §6.4, §6.5, §6.7 answered), 2 (`shared/`: five new modules, `Config`), 3 (five remotes,
-  bot tags), 9 (saved player data), 8 (an INBOX idea against rule 36).
-- **Doc:** `docs/systems/session.md`, `docs/systems/bots.md`, `docs/systems/ui.md`; goals `docs/qa/showable.md`.
-- **Observed (Danzo, 2026-11-16):** "complete the game to a finished showable state so I can post it in a discord
-  server and have the kids play it ... a menu screen and all and between-game setup so it's not just endless rounds
-  I want music ... space for upgrades and skins ... rolls to unlock certain abilities at some point".
-- **Session's read:** Danzo is on Fable by his own choice, so the work was done here directly (→ `danzo-fable-sessions`).
-  Every design answer is a recorded TRIAL for him to confirm, never a lock.
-- **Resolved 2026-11-16 (same session; server side seen in Studio, NOTHING looked at: the PC was locked):** a match is
-  three rounds scored by placement with a lobby, results cards and a podium; only who pressed PLAY is seated; bots
-  (the real `Movement` in a box world, plans tried in the head) fill the empty seats; coins from playing, a saved
-  profile, a shop and a wheel for cosmetics only; a title screen, how-to cards, a scoreboard, sound effects, three
-  music tracks, shake, bursts, trails, glows, name tags, a dark stage with lit edges and bloom. "Rolls to unlock
-  abilities" NOT built: it breaks rule 36 and §2; Danzo's decision → session.md §1, bots.md, ui.md, DESIGN §6; S21, S22, N17, T17, A8.
+- **Resolved 2026-11-16:** a match of three rounds with a lobby and a podium, bots, coins, a shop and a wheel for cosmetics, a menu, sound,
+  effects (trials for Danzo). "Rolls to unlock abilities" became H35 → session.md, bots.md, ui.md, DESIGN §6; S21, S22, N17, T17, A8.
 
 ### H30 — Danzo's first play of the relaid Yard: pads need oomph and a ramp, the rope release should haul, the map is too spread — 2026-11-11 — RESOLVED
 - **Trigger:** 2 and 6 (`shared/Movement` pad launch and air bleed, `shared/Grapple` release and catch, every frame),

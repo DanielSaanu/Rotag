@@ -68,6 +68,22 @@ Catalog.ITEMS = {
 	item("title_fuseproof", "title", "Fuseproof", "legendary", nil, { { 255, 200, 70 } }),
 } :: { Item }
 
+-- Special item abilities (H35; DESIGN §3 rule 36 as amended by Danzo 2026-11-16): an item that joins the LIVING
+-- orb pools of a player who has unlocked it with an ability roll (shared/Profile.rollAbility). The kit (run, jumps,
+-- dash, grapple) and today's items (crate, trap, ice) stay free for everyone, always: an ability only ever ADDS a
+-- row to its owner's pool. `item` must be an item shared/Items knows how to use; `weight` is its row's weight
+-- beside the free rows (the runner pool sums to 100). NONE YET: the list is empty until Danzo designs the first.
+export type Ability = { id: string, name: string, rarity: string, item: string, weight: number, about: string }
+Catalog.ABILITIES = {} :: { Ability }
+
+function Catalog.ability(id: any): Ability?
+	if type(id) ~= "string" then return nil end
+	for _, a in Catalog.ABILITIES do
+		if a.id == id then return a end
+	end
+	return nil
+end
+
 Catalog.BY_ID = {} :: { [string]: Item }
 for _, it in Catalog.ITEMS do Catalog.BY_ID[it.id] = it end
 

@@ -18,9 +18,18 @@ Items.POOLS = {
 } :: { [string]: { { any } } }
 
 -- The pool an orb of `kind` rolls for this taker; nil for a kind with no pool (Orbs never puts such an orb up).
-function Items.poolFor(kind: string, holder: boolean?): { { any } }?
+-- `extra` (H35): rows { item, weight } this taker's unlocked abilities add to a LIVING pool (shared/Profile.unlocked).
+-- The free rows are always all there: an ability adds a chance at something more, it never takes one away. The
+-- ghost pool is the spec's and takes no extras.
+function Items.poolFor(kind: string, holder: boolean?, extra: { { any } }?): { { any } }?
 	if kind == "ghost" then return Items.POOLS.ghost end
-	if kind == "living" then return if holder then Items.POOLS.holder else Items.POOLS.runner end
+	if kind == "living" then
+		local base = if holder then Items.POOLS.holder else Items.POOLS.runner
+		if not extra or #extra == 0 then return base end
+		local pool = table.clone(base)
+		for _, row in extra do table.insert(pool, row) end
+		return pool
+	end
 	return nil
 end
 

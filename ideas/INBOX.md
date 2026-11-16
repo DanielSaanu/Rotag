@@ -66,13 +66,11 @@
       Security → **Enable Studio Access to API Services** (so coins save in Studio tests; a live server saves
       anyway); (3) File → **Publish to Roblox**; (4) set the experience to Public. No sprite upload is needed:
       H31 added no art.
-- [ ] **Danzo's call (H31): "rolls to unlock certain abilities".** NOT built: DESIGN rule 36 ("never lock moves
-      behind a grind or shop") and §2 ("everyone gets every move from the start") say no. The wheel exists and rolls
-      cosmetics. If you want it anyway, the fair shape is item side-grades from the orb pools, not moves: say so
-      and it becomes a design change (trigger 1).
-- [ ] **Danzo's calls (H31), all trials:** the theme (glowing graphite), 3 rounds scored 4 / 2 / 1 / 0, the coin
-      numbers (10 a match + 5 a point + 25 a win; a spin 100; 150 to start, 50 a day), bot strength (`BOT_SPEED`
-      0.93, `BOT_THINK` 0.3), the name ROTAG on the title, and whether coins or spins are ever sold for Robux.
+- [x] **Rolls for abilities (H35, 2026-11-16): built and switched off**, as you said. Today's items stay free. To
+      add the first special item ability: `docs/systems/session.md` §9.
+- [x] **The trial numbers (2026-11-16): yours to me.** Coins settled at 20 a match + 5 a point + 30 a win (a spin
+      about every two matches); the rest stand. The bot label stays off.
+- [ ] **Danzo: design the first special item ability** when you want the rolls opened (what it does, how rare).
 - [ ] **Danzo: play the Yard again after H30 (2026-11-11).** Your first play said: pads need oomph and should scale
       up and down; too spread out; the release should feel like hauling on the rope. Built: pads 115/120 with a ramp
       in and a glide out (`PAD_RAMP`, `PAD_GLIDE`), the release haul (`GRAPPLE_RELEASE_KICK` 25, x1.25, never past

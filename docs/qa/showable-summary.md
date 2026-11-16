@@ -52,9 +52,9 @@ crate marks, the pickup banner (H33), the hub with match servers (H34).
 ## Deferred, and why
 
 - **The bot label is off.** Danzo asked for players to play "with machines unknowingly"; two reviewers advise
-  labelling for a kids' audience. One word turns it on (`Config.BOT_LABEL`). His call.
+  labelling for a kids' audience. He confirmed off after the loop (2026-11-16). `Config.BOT_LABEL` turns it on.
 - **Five or more people on the scoreboard:** a match seats four; the hub gives each four their own server.
-- **The economy's pace** (a spin every 2-3 matches): judge after the kids play.
+- **The economy's pace:** settled after the loop (20 / 5 / 30: a spin about every two matches); watch it with the kids.
 - **A UI rebuild on window resize:** the layout is chosen once, at start.
 - **A ghost's camera drifting to the holder; the four-line text stack in a ghost's end phase:** camera and HUD rules
   for Danzo's eyes first.

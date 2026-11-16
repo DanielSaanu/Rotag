@@ -132,4 +132,63 @@ do -- whatever was saved becomes a valid profile
 	end
 end
 
+do -- H35: ability rolls, built and OFF. Off: nothing rolls, nothing is charged, nothing joins a pool
+	assert(Config.ABILITY_ROLLS == false and #Catalog.ABILITIES == 0, "shipped off and empty (Danzo: built, not added yet)")
+	local p = Profile.new()
+	p.coins = 10000
+	local won, why = Profile.rollAbility(p, function() return 0 end)
+	assert(won == nil and why == "ability rolls are not open yet" and p.coins == 10000, "off: refused, free")
+	assert(#Profile.unlocked(p) == 0, "off: no pool rows")
+	-- ... and ON, with two abilities in the catalogue (added here, taken out again below): the whole path
+	local Items = __require("Items")
+	table.insert(Catalog.ABILITIES, { id = "ab_test_a", name = "Test A", rarity = "common", item = "ice", weight = 10, about = "a" })
+	table.insert(Catalog.ABILITIES, { id = "ab_test_b", name = "Test B", rarity = "legendary", item = "crate", weight = 5, about = "b" })
+	Config.ABILITY_ROLLS = true
+	p.coins = Config.ABILITY_ROLL_COST - 1
+	won, why = Profile.rollAbility(p, function() return 0 end)
+	assert(won == nil and why == "not enough coins" and p.coins == Config.ABILITY_ROLL_COST - 1, "no credit")
+	p.coins = Config.ABILITY_ROLL_COST * 3
+	won = Profile.rollAbility(p, function() return 0 end)
+	assert(won and won.id == "ab_test_a" and p.abilities.ab_test_a and p.coins == Config.ABILITY_ROLL_COST * 2, "the common one, paid for")
+	local rows = Profile.unlocked(p)
+	assert(#rows == 1 and rows[1][1] == "ice" and rows[1][2] == 10, "its row: the item and its weight")
+	won = Profile.rollAbility(p, function() return 0 end)
+	assert(won and won.id == "ab_test_b", "never one you own: the roll lands on the other")
+	won, why = Profile.rollAbility(p, function() return 0 end)
+	assert(won == nil and why == "nothing left to win" and p.coins == Config.ABILITY_ROLL_COST, "all owned: refused, free")
+	-- the pools: the free rows are all still there for the owner, plus its rows; a non-owner's pool is untouched
+	local base = Items.poolFor("living", false)
+	local mine = Items.poolFor("living", false, Profile.unlocked(p))
+	assert(#mine == #base + 2, "the owner's runner pool gains its two rows")
+	for i, row in base do assert(mine[i][1] == row[1] and mine[i][2] == row[2], "and loses none of the free ones") end
+	assert(Items.poolFor("living", false, {}) == base and Items.poolFor("living", false, nil) == base, "nobody else's changes")
+	assert(#Items.POOLS.runner == #base, "the shared pool table itself was never written")
+	assert(Items.poolFor("ghost", false, Profile.unlocked(p)) == Items.POOLS.ghost, "the ghost pool takes no extras")
+	-- an orb: the owner can roll its ability's item, a non-owner at the same roll gets the free pool's last row
+	local Orbs = __require("Orbs")
+	local function take(extra)
+		local o = Orbs.new({ { x = 0, y = 2, kind = "living" } }, 0)
+		local ev = Orbs.step(o, Config.ORB_FIRST, 0, { { id = 1, x = 0, y = 2, ghost = false, extra = extra } }, function() return 0.999 end)
+		return ev[1].item
+	end
+	assert(take(Profile.unlocked(p)) == "crate", "the last row of the owner's pool is its second ability's item")
+	assert(take(nil) == base[#base][1], "and of anyone else's, the free pool's own last row")
+	-- a save keeps what is still in the catalogue and drops what is not; the view lists them
+	local again = Profile.sanitize({ abilities = { ab_test_a = true, ab_gone = true, ab_test_b = "yes" } })
+	assert(again.abilities.ab_test_a and not again.abilities.ab_gone and not again.abilities.ab_test_b, "sanitized like items")
+	assert(#Profile.view(p).abilities == 2, "the view lists the unlocked ones")
+	Config.ABILITY_ROLLS = false
+	assert(#Profile.unlocked(p) == 0, "switched off again: an unlocked ability adds nothing")
+	table.remove(Catalog.ABILITIES)
+	table.remove(Catalog.ABILITIES)
+end
+
+do -- the settled coin numbers (2026-11-16): a middling match is about half a spin, a sweep a spin, a loser still earns
+	local mid = Config.COINS_MATCH + Config.COINS_POINT * 5
+	local sweep = Config.COINS_MATCH + Config.COINS_POINT * 12 + Config.COINS_WIN
+	assert(mid * 2 >= Config.SPIN_COST * 0.85 and mid * 2 <= Config.SPIN_COST * 1.5, "two middling matches are about one spin: " .. mid)
+	assert(sweep >= Config.SPIN_COST and sweep <= Config.SPIN_COST * 1.5, "a clean sweep is a spin and a bit: " .. sweep)
+	assert(Config.COINS_MATCH * 5 >= Config.SPIN_COST, "last place every round still spins inside five matches")
+end
+
 print("    profile ok")

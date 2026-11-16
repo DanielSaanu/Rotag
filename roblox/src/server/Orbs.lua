@@ -10,6 +10,10 @@ local Tag = require(Shared:WaitForChild("Tag"))
 local Ghost = require(Shared:WaitForChild("Ghost"))
 local Rules = require(Shared:WaitForChild("Orbs"))
 
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"))
+local Profile = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Profile")) -- H35
+local Data = require(script.Parent:WaitForChild("Data")) -- H35: whose abilities are unlocked
+
 local Orbs = {}
 
 local spots: { Rules.Spot } = {}
@@ -53,6 +57,16 @@ function Orbs.emptied(id: number)
 	if remote then remote:FireAllClients({ kind = "slot", id = id }) end
 end
 
+-- H35: the pool rows a player's unlocked abilities add, from the SERVER's profile of it (never a client's word).
+-- nil for a bot, a profile still loading, and for everybody while Config.ABILITY_ROLLS is off.
+local function unlockedOf(id: number): { { any } }?
+	if not Config.ABILITY_ROLLS then return nil end
+	local player = Players:GetPlayerByUserId(id)
+	local profile = player and Data.get(player)
+	local rows = profile and Profile.unlocked(profile)
+	return if rows and #rows > 0 then rows else nil
+end
+
 -- Every server frame while the round runs, after the tags and hexes. `present(id)`: that runner is still in the game.
 function Orbs.step(r: Tag.Round, now: number, history: { [number]: { Tag.Sample } }, present: (number) -> boolean)
 	local o = state
@@ -64,7 +78,8 @@ function Orbs.step(r: Tag.Round, now: number, history: { [number]: { Tag.Sample 
 		if s and not s.untrusted and present(id) then
 			local path = p ~= nil and not p.untrusted
 			table.insert(takers, { id = id, x = s.x, y = s.y, px = if path then p.x else nil, py = if path then p.y else nil,
-				ghost = Ghost.isGhost(r, id), holder = r.it == id }) -- the holder rolls its own pool (rule 43)
+				ghost = Ghost.isGhost(r, id), holder = r.it == id, -- the holder rolls its own pool (rule 43)
+				extra = unlockedOf(id) }) -- H35: the rows its unlocked abilities add (nil while the rolls are off)
 		end
 	end
 	for _, e in Rules.step(o, now, Ghost.count(r, present), takers, rand) do

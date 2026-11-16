@@ -16,7 +16,7 @@ each is a recorded trial, say if one is wrong)
 | **More than four people** | In a hub (§8) each group of four gets its own match server. In a solo server four play and the rest wait one round, longest-waiting first (`Session.pick`) | §2 locks 4 per match. With the hub off, set the place's Max Players to 4 |
 | **Between matches** | Podium `PODIUM_TIME` 12 s (winner, standings, coins earned), then a `LOBBY_TIME` 12 s warm-up (free running with the bots), then the next match by itself for whoever is still in | Rule 34 (celebrate the winner). No "ready up" vote: with kids one AFK player would stall the room; sitting out is the opt-out |
 | **Monetisation (§6.5)** | **Cosmetics only, bought with coins earned by playing**: trails, glows, burn-outs, titles; a shop price for most, a wheel (`SPIN_COST` 100) for the rest. **No Robux anywhere yet** | Rule 36: nothing here touches a move, a speed or a hitbox (`Catalog` holds colours and names only). Selling coins or spins for Robux is one MarketplaceService call away and deliberately NOT built: paid random items need Roblox's odds disclosure (the odds are already printed on the wheel) and Danzo's decision |
-| **"Rolls to unlock abilities"** (Danzo, 2026-11-16) | **Not built: it conflicts with rule 36** ("never lock moves behind a grind or shop") and §2 ("everyone gets every move from the start"). Flagged in `ideas/INBOX.md` | The wheel exists and rolls cosmetics. If Danzo wants ability rolls, the fair shape is side-grades to ITEMS (orb pool variants), not moves: his call, trigger 1 |
+| **"Rolls to unlock abilities"** (Danzo, 2026-11-16) | **Built and switched off (H35, §9).** Danzo: "rolls for abilities gets built but not added yet; current abilities stay free; then we can add some special item abilities later" | Rule 36 as he read it: the kit (run, jumps, dash, grapple) and today's items are free for everyone, always. A roll only ever ADDS a special item to its owner's orb pool |
 | **Saved data (trigger 9)** | One DataStore entry per player, `RotagProfiles_v1`, shaped by `shared/Profile` (§5) | See §5: what is saved, when, and what cannot be lost |
 
 ## 2. The flow (`shared/Session`, pure, `test/luau/session.test.luau`)
@@ -35,8 +35,9 @@ lobby ──(somebody is in for LOBBY_TIME)──> round 1 ──over──> gap
   round's `alive` set every frame and records who dropped out, in order: a burn-out, a wall kill and a leave all land
   there, so the placing has one source (`Tag`'s round). **`Session.finish`** scores it and opens the gap.
 - A round with no winner (everybody else left) pays no win bonus. A match everybody leaves is aborted, unpaid.
-- **`Session.reward`**: `COINS_MATCH` 10 + `COINS_POINT` 5 x points + `COINS_WIN` 25 for the winner. A clean sweep is
-  95 coins, last place every round 10: a spin every one to three matches.
+- **`Session.reward`**: `COINS_MATCH` 20 + `COINS_POINT` 5 x points + `COINS_WIN` 30 for the winner. Settled
+  2026-11-16 (Danzo: "you decide, so long as it's balanced"; pinned in `profile.test.luau`): a clean sweep is 110, a
+  middling match (5 points) 45, last place every round 20: a spin (100) about every two matches, five at the worst.
 
 `server/Session` owns the one state, the set of people who are in, the bots' seats, the pay-out and
 `Remotes.Session`. `server/Match` asks it each frame: `Session.step(now)`, then `Session.due()` (the roster of a round
@@ -85,8 +86,8 @@ computed from the server's own round results; a client never reports a score. A 
 
 ## 6. Numbers (`Config`, all trial, Danzo's to tune)
 
-`MATCH_ROUNDS` 3 · `LOBBY_TIME` 12 · `ROUND_GAP` 6 (was 4) · `PODIUM_TIME` 12 · `BOTS` true · `COINS_MATCH` 10 ·
-`COINS_POINT` 5 · `COINS_WIN` 25 · `COINS_START` 150 · `COINS_DAILY` 50 · `SPIN_COST` 100 · `XP_LEVEL` 100.
+`MATCH_ROUNDS` 3 · `LOBBY_TIME` 12 · `ROUND_GAP` 6 (was 4) · `PODIUM_TIME` 12 · `BOTS` true · `COINS_MATCH` 20 ·
+`COINS_POINT` 5 · `COINS_WIN` 30 · `COINS_START` 150 · `COINS_DAILY` 50 · `SPIN_COST` 100 · `XP_LEVEL` 100.
 
 ## 7. What was seen (Studio, 2026-11-16, the PC locked: server and scripts only, nothing looked at)
 
@@ -146,3 +147,25 @@ test, and the way back if it misbehaves (`Config.HUB = false`, Max Players 4, re
 - **One map.** The flow has no map vote; `Config.MAP` is fixed (maps.md §1). A rotation is a list the day a second
   map lands.
 - **No round modifiers yet** (rule 30) and no private-server settings (rule 13's vanilla toggle).
+
+## 9. Ability rolls: built, switched off (H35, 2026-11-16)
+
+Danzo's decision: the roll system exists now, nothing is in it yet, and what players have today stays free.
+
+- **What an ability is:** a row in `Catalog.ABILITIES` (`id, name, rarity, item, weight, about`): a SPECIAL item
+  that joins the living orb pools (runner and holder) of a player who has unlocked it. Never a move, a speed or a
+  hitbox; never the ghost pool. The free rows are always all there for everyone (`Items.poolFor`'s `extra` only
+  appends; tested).
+- **The roll:** `Profile.rollAbility` for `ABILITY_ROLL_COST` 250 coins. It lands only on an ability the player
+  does not own (no duplicates, no refund): the rarity on the wheel's printed odds among rarities with one left,
+  then one of that rarity. Refused and free when off, when nothing is left, or when short of coins.
+- **The path:** `Remotes.Shop "roll"` → `server/Shop` → the profile's `abilities` (saved, sanitized against the
+  catalogue) → `server/Orbs` passes `Profile.unlocked` as the taker's `extra` from the SERVER's profile. The wheel
+  shows an ABILITY ROLL button and the reveal only while it is on.
+- **Off means off:** `Config.ABILITY_ROLLS = false` and an empty catalogue. The remote refuses, the button is not
+  built, `Profile.unlocked` returns nothing whatever a save holds.
+- **To add the first one:** (1) give the item its rule in `shared/Items` (use, step, a test) and its drawing in
+  `client/Items`; (2) one row in `Catalog.ABILITIES`; (3) `Config.ABILITY_ROLLS = true`; (4) print the ability
+  odds on the wheel beside the cosmetic ones before any Robux touches it. A bot never has one.
+- **Open for the first ability's design (trigger 1 then):** whether an owner's extra row makes them stronger than
+  a new player (rule 36's spirit: keep them side-grades), and whether a match shows who has what.

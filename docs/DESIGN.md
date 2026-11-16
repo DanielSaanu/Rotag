@@ -151,8 +151,8 @@ Moves should hand speed off to each other:
 36. **Never lock moves or modes behind a grind or shop.** This was Vector's main complaint. Progression stays cosmetic.
 
 *Built (H31, 2026-11-16, trials; [session.md](systems/session.md), [bots.md](systems/bots.md)): 31 bots fill a round; 32 a free-run lobby; 33 three
-rounds scored 4 / 2 / 1 / 0; 34 a podium; 36 coins buy cosmetics only. Not built: 35, and Danzo's "rolls to unlock
-abilities" (against 36 and §2: his call, `ideas/INBOX.md`).*
+rounds scored 4 / 2 / 1 / 0; 34 a podium; 36 coins buy cosmetics only. Not built: 35. **Rule 36 as Danzo read it
+2026-11-16 (H35):** the kit and today's items stay free for all; ability rolls may add SPECIAL items, built and off ([session.md §9](systems/session.md)).*
 
 ### Ghosts, pickups and abilities, adopted 2026-10-19 (H16, replacing H15's rules 37-41)
 
