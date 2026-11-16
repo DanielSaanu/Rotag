@@ -6,10 +6,11 @@ local Maps = __require("Maps")
 local Grapple = __require("Grapple")
 local Tag = __require("Tag")
 local Walls = __require("Walls")
+local Movement = __require("Movement")
 --!include map_check.luau
+--!include movement_world.luau
 
 local T = Config.STUDS_PER_TILE
-local HH = Config.RUNNER_HEIGHT / 2
 
 -- The start line as Match lays it: Tag.startPlaces for a full match round the spawn.
 local function startXs(map)
@@ -122,6 +123,154 @@ for _, name in Maps.NAMES do
 			assert(ok, ("%s: anchor %d has a reachable stand that picks it"):format(name, k))
 		end
 		print(("MAPFILE map_%s\n%s\nENDMAP"):format(name, MC.picture(g, reached, xs)))
+	end
+
+	do -- rule 28 (QA round 1): every deck is on screen from a stand under it, below the HUD banner. From feet at y the
+		-- view reaches y + CAMERA_Y_OFFSET + half the view; the banner takes GRAPPLE_INSET_TOP of that (grapple.md §5).
+		-- A deck is a block wider than tall above the floor; a stand is any block top (the floor included) within the
+		-- 4:3 screen's half width of it.
+		local clear = Config.CAMERA_Y_OFFSET + Config.CAMERA_VIEW_HEIGHT / 2 - Config.GRAPPLE_INSET_TOP - 1
+		local halfW = Config.CAMERA_VIEW_HEIGHT / 2 * 4 / 3
+		for _, b in map.blocks do
+			if b[4] - b[2] > b[5] - b[3] and b[5] > 0 then
+				local seen = false
+				for _, c in map.blocks do
+					local up = b[5] - c[5]
+					if up > 0 and up <= clear and b[2] < c[4] + halfW and c[2] - halfW < b[4] then seen = true break end
+				end
+				assert(seen, ("%s: %s (top %g) is on screen under the banner from a stand below it"):format(name, b[1], b[5]))
+			end
+		end
+	end
+
+	do -- corridors are entered on foot (QA round 1: the shafts were pits, one exit, rule 48's "2+ exits"): from the
+		-- spawn with run and jumps only, some floor tile of every keep-clear zone is reached; and a shaft is a climb:
+		-- inside the zone alone, its top row is reached from its floor with wall jumps and not without
+		local si, sj = MC.tileOf(map.spawn.x, map.spawn.y)
+		local onFoot = MC.reach(g, si, sj, true)
+		for _, z in map.keepClear do
+			local i0, j0 = MC.tileOf(z[1], z[2])
+			local i1, j1 = MC.tileOf(z[3] - 1e-6, z[4] - 1e-6)
+			local floor = nil
+			for i = i0, i1 do
+				if not MC.isSolid(g, i, j0) and MC.isSolid(g, i, j0 - 1) and MC.has(g, onFoot, i, j0) then floor = i break end
+			end
+			assert(floor, ("%s: the corridor at x %g..%g is walked into from the spawn (no wall jump)"):format(name, z[1], z[3]))
+			if j1 - j0 >= 2 * MC.UP then -- tall enough to be a shaft: inside the zone alone, a wall-jump climb, not a jump
+				local only = { i0 = g.i0, i1 = g.i1, w = g.w, rows = g.rows, solid = table.clone(g.solid), map = g.map }
+				for j = 0, g.rows - 1 do
+					for i = g.i0, g.i1 do
+						if i < i0 or i > i1 or j < j0 or j > j1 then only.solid[j * g.w + (i - g.i0)] = true end
+					end
+				end
+				local kicks, none = MC.reach(only, floor, j0), MC.reach(only, floor, j0, true)
+				local top, topNoKick = false, false
+				for i = i0, i1 do
+					if MC.has(g, kicks, i, j1) then top = true end
+					if MC.has(g, none, i, j1) then topNoKick = true end
+				end
+				assert(top and not topNoKick, ("%s: the shaft at x %g..%g is climbed from its floor by wall jumps only"):format(name, z[1], z[3]))
+			end
+		end
+	end
+
+	do -- the map pads (§2 kit) earn their place (QA round 1: none reached its deck): driven through the real Movement
+		-- in this map's blocks. Entering a pad launches the way you run (PAD_SPEED_X / _Y, placement.md); with the
+		-- refreshed double jump pressed at the apex, at least one way lands you a tier up, with the arc uncut (no
+		-- ceiling); and the other way, with no jump, the pad's own arc is uncut too (no head bonk on a deck above).
+		local world = {}
+		for _, b in map.blocks do table.insert(world, { b[2], b[3], b[4], b[5] }) end
+		local function fly(p, dir, doubleJump)
+			local s = Movement.new(p.x, p.y + HH)
+			frames(world, s, 2)
+			assert(s.grounded, ("%s: a runner stands on the pad at (%g, %g)"):format(name, p.x, p.y))
+			local peak, apexed = p.y, false
+			for f = 1, 240 do
+				local inp = input({ moveX = dir, held = apexed })
+				if f == 1 then inp.launchX, inp.launchY = dir * Config.PAD_SPEED_X, Config.PAD_SPEED_Y end
+				if doubleJump and f > 1 and not apexed and s.vy <= 0 then apexed = true inp.jumpPressed, inp.jumpHeld = true, true end
+				tick(world, s, inp)
+				peak = math.max(peak, s.y - HH)
+				if s.grounded and f > 2 then return s.y - HH, peak, s.x end
+			end
+			error(("%s: the pad at (%g, %g) never lands (dir %d)"):format(name, p.x, p.y, dir))
+		end
+		for _, p in map.pads do
+			local up = false
+			for _, dir in { -1, 1 } do
+				local _, peak0 = fly(p, dir, false)
+				assert(peak0 >= p.y + 11, ("%s: pad (%g, %g) dir %d: its own arc is uncut (peak +%.1f)"):format(name, p.x, p.y, dir, peak0 - p.y))
+				local land, peak, x = fly(p, dir, true)
+				if land >= p.y + 5 * T - 0.5 then
+					assert(peak >= p.y + 25, ("%s: pad (%g, %g) dir %d: the arc to the deck is uncut (peak +%.1f)"):format(name, p.x, p.y, dir, peak - p.y))
+					up = true
+					print(("    %s: pad (%g, %g) running %s lands %.1f up at x %.1f"):format(name, p.x, p.y, if dir < 0 then "left" else "right", land - p.y, x))
+				end
+			end
+			assert(up, ("%s: the pad at (%g, %g) lands you a tier up one way or the other"):format(name, p.x, p.y))
+		end
+	end
+
+	do -- the anchors earn their place (H29; QA round 1 could not verify a swing): from some deck edge in reach, running
+		-- off it, hooking the anchor and letting go somewhere along the swing (at once, 2 / 4 / 6 tiles past the
+		-- anchor, or at the swing's turn; then a double jump or not), the runner lands on ANOTHER deck, never the floor
+		-- (a swing-drop onto a lower deck counts: it is aimed at something). Driven through the real Movement and
+		-- Grapple in this map's blocks (the pick is grapple.test's). The print names the highest landing found.
+		-- Measured on the way: a release's air speed decays to the run within ~0.5 s, so a swing carries ~10 tiles;
+		-- an anchor centred over a gap of 6 to 10 tiles carries both ways, one over 12 does not.
+		local world = {}
+		for _, b in map.blocks do table.insert(world, { b[2], b[3], b[4], b[5] }) end
+		local function landing(s)
+			for _, b in map.blocks do
+				if s.x + 1 > b[2] and s.x - 1 < b[4] and math.abs((s.y - HH) - b[5]) < 0.6 then return b end
+			end
+			return nil
+		end
+		local function swing(x0, top, dir, a, past, jump)
+			local s = Movement.new(x0, top + HH)
+			frames(world, s, 2)
+			local hooked, released, jumped = false, false, false
+			for f = 1, 600 do
+				local inp = input({ moveX = dir })
+				if not released and (not s.grounded or hooked) then
+					inp.grappleHeld, inp.grapplePressed, inp.anchor = true, not hooked, { x = a.x, y = a.y, id = 1 }
+				end
+				if hooked and s.rope and ((past and (s.x - a.x) * dir >= past * T) or (not past and s.vx * dir < 0)) then
+					inp.grappleHeld, released = false, true
+				end
+				if released and jump and not jumped and s.vy <= 0 and not s.grounded then
+					inp.jumpPressed, inp.jumpHeld, jumped = true, true, true
+				end
+				local ev = tick(world, s, inp)
+				if ev.grapple == "attach" then hooked = true end
+				if hooked and not s.rope then released = true end -- a wall or roof broke the rope: that was the release
+				if hooked and released and s.grounded and f > 3 then return landing(s) end
+			end
+			return nil
+		end
+		-- The test map keeps its H25 anchors as the arena the grapple was tuned on (maps.md §5), stands only: not held.
+		for k, a in if name == "test" then {} else map.anchors do
+			local carries, top = nil, -1
+			for _, b in map.blocks do
+				if b[4] - b[2] > b[5] - b[3] and b[5] > 0 then
+					for _, e in { { b[2] + 1, -1 }, { b[4] - 1, 1 } } do -- off the left edge running left, and the right one right
+						local dx, dy = a.x - e[1], a.y - (b[5] + HH)
+						if dx * e[2] > 0 and dy >= Config.GRAPPLE_MIN_ABOVE and dx * dx + dy * dy <= Config.GRAPPLE_RANGE ^ 2 then
+							for _, past in { 0, 2, 4, 6, false } do
+								for _, jump in { false, true } do
+									local on = swing(e[1], b[5], e[2], a, past or nil, jump)
+									if on and on ~= b and on[5] > 0 and on[5] > top then
+										top, carries = on[5], ("%s -> %s"):format(b[1], on[1])
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+			assert(carries, ("%s: anchor %d (%g, %g) carries a swing from a deck edge onto another deck"):format(name, k, a.x, a.y))
+			print(("    %s: anchor %d: %s"):format(name, k, carries))
+		end
 	end
 
 	do -- rule 48, however many parts: fill every passage a part may cover; every orb and anchor stand stays joined.

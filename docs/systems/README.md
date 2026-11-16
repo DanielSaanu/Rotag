@@ -37,6 +37,16 @@ code. Add a row here in the same commit as the declaration. Never rename one: bo
 | `UseItem` (H19) | client → server, on a Use press, and on every press while the sender is trapped | `number`: an integer 0-3 (a fixture's rotation since PR 4, H22; otherwise a press, the number unread). Nothing else is read; rate gap `Config.USE_GAP` (0.05 s) per player, the client sends at most every 0.06 s | `client/Use.lua` fires; `server/Items.lua` judges it on the server's own state: in the round, the item in the SERVER's slot, no hold or tag freeze, the user's newest TRUSTED sample as the spot and its stream's facing; while the server has the sender trapped it is a pry press ([items.md](items.md) §3) |
 | `Snapshot` (`UnreliableRemoteEvent`, H14) | client → server 30/s (`Config.SNAPSHOT_RATE`); server → all once per Heartbeat | up: one 14-byte `buffer` (`shared/Snapshot.pack`: seq, x, y, vx, vy, sprite, facing/dash flags, juice events, the rope's anchor since H25); down: `{ [runner id] = { t: server stamp, b: that buffer } }` | `client/Client.client.lua` fires; `server/Snapshots.lua` limits, stamps, relays, feeds `Match.sample`; `client/Others.lua` draws from it ([netcode.md](netcode.md) §8) |
 
+| `Session` (H31) | server → all on every change and at least once a second; → one client on join | `Session.view`: `{ phase: "lobby" \| "round" \| "gap" \| "podium", left (seconds, -1: not counting), match, round, rounds, scores: { { id, pts, wins } }, roster: { id }, last: { id } (the last round's placing), winner: number?, playing: { id } }`. Arrays only (→ N13) | `server/Session.lua` fires (never listens); `client/Flow.lua` holds it, `client/Menu.lua` and `client/Board.lua` draw it ([session.md](session.md)) |
+| `Menu` (H31) | client → server, on a press | `string`: `"play"` or `"sit"`. Nothing else is read; rate gap 0.4 s per player | `client/Flow.lua` fires; `server/Session.lua` seats or unseats the SENDER only (a body, a seat in the next round) |
+| `Profile` (H31) | server → the owner only, on load and after each change | `Profile.view` (`{ coins, xp, level, owned: { id }, worn: { id per slot }, wins, matches }`) plus `saved: boolean` and what just happened: `spin = { id, back }`, `note`, `bought`, `earned`, `levels` | `server/Shop.lua` fires (never listens); `client/Flow.lua` holds it; the wallet, the locker and the wheel draw it |
+| `Shop` (H31) | client → server, on a press | `(op: string, itemId: string?)`: `"buy"`, `"equip"`, `"spin"`, `"get"`. Anything else dropped unread; rate gap 0.25 s per player | `client/Flow.lua` fires; `server/Shop.lua` judges it with `shared/Profile` on the server's own profile and `Catalog` ([session.md](session.md) §5) |
+| `Looks` (H31) | server → all on a join and on each equip; → one on `Shop "get"` | `{ { id, worn: { item id per slot } } }` for every person and bot. Cosmetic | `server/Shop.lua` fires (never listens); `client/Flow.lua` holds it, `client/Fx.lua` draws trails, glows and burn-outs |
+
+**`Session`, `Menu`, `Profile`, `Shop`, `Looks` (H31, 2026-11-16).** The three server → client events follow every
+`SheetIds` rule below; the two client → server ones every `TagClaim` rule (one small payload, the sender is the
+`Player`, rate-gapped, judged on the server's own state). Full statement: [session.md](session.md) §3-§4.
+
 **`SheetIds` (H4, 2026-10-10).** Uploads are Decals; the server resolves the Image id at boot and this carries it to
 each client, so `setid` by hand is no longer needed for the runner to show. The rules it sets for every
 server → client event:
@@ -85,7 +95,7 @@ skip their own id. Movement is still client-owned physics on the player's own ch
 (`shared/MoveCheck`, `server/MoveGuard`) and snaps a runner back on a violation. Why the stream replaced reading the
 replicated body, what it costs: [netcode.md](netcode.md) §8; the rule and its limit: [trust.md](trust.md).
 
-Planned by the design, to be named when built: a notice event. (An input remote for server replay is the step after the
+Planned by the design, to be named when built: a notice event. (H31's five are in the table above.) (An input remote for server replay is the step after the
 speed check, if a live game needs it: [trust.md](trust.md) §8.)
 
 ## Systems
@@ -107,6 +117,9 @@ One file each. Read only the one your task touches.
 | Items as built (v2 PR 2, H19): living orbs and pools, Use, the holds (crate, bear trap, ice beam), i-frames, the per-target ward | [items.md](items.md) | `shared/Items`, `shared/Movement` (hold), `shared/MoveCheck` (hold), `server/Items`, `server/Snapshots`, `server/Bots`, `client/Use`, `client/Items`, `client/Controls`, `client/Hud` |
 | Placement as built (v2 PR 4, H22): fixtures (tetrominoes), boost pads, the boost grant, keep-clear zones | [placement.md](placement.md) | `shared/Placement`, `server/Placement`, `client/Place`, `Items.grants`, `Tag.speedMult`, `Movement` (launch) |
 | Maps (H27): map data, the Yard, the map rule as a test, per-map window bounds | [maps.md](maps.md) | `shared/Maps`, `shared/MapYard`, `shared/MapTest`, `server/Arena`, `server/Placement` (map pads) |
+| The match: lobby, rounds, podium; who plays; profiles, coins, the shop and the wheel (H31) | [session.md](session.md) | `shared/Session`, `shared/Profile`, `shared/Catalog`, `server/Session`, `server/Data`, `server/Shop`, `server/Match`, `client/Flow` |
+| Bots: runners the server plays with the real move rules (H31) | [bots.md](bots.md) | `shared/BoxWorld`, `shared/BotBrain`, `server/Bots`, `server/BotMind`, `server/Dummy`, `server/Snapshots` (`inject`) |
+| The menu, the scoreboard and cards, sound, punch, cosmetics, the stage's look (H31) | [ui.md](ui.md) | `client/Ui`, `client/Menu`, `client/Locker`, `client/Board`, `client/Audio`, `client/Fx`, `client/Present`, `server/Stage` |
 | HUD and mobile controls | the two touch buttons: [movement.md](movement.md) §5; the fuse HUD: [tag.md](tag.md) §6 | `client/Controls`, `client/Hud` |
 
 The per-module "who owns what" tables are the folder READMEs under [`roblox/src/`](../../roblox/src/README.md).

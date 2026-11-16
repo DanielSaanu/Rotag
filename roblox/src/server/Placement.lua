@@ -129,6 +129,9 @@ function Placement.place(r: Tag.Round, id: number, item: string, shape: string?,
 	return true, nil
 end
 
+-- H31: every live part (server/Bots: fixtures are walls to a bot, a pad launches it). Read only.
+function Placement.placed(): { Rules.Placed } return state.placed end
+
 -- Every server frame while the round runs (from server/Items.step): faded pieces and run-out pads go.
 function Placement.step(now: number)
 	for _, n in Rules.step(state, now) do

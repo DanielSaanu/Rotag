@@ -21,6 +21,14 @@ windows, momentum, the side-on camera, juice and the HUD. It predicts with the s
 | `Ignition.lua` | `Ignition` (ModuleScript) | H23 ([endgame.md](../../../docs/systems/endgame.md)): the burn-out, a one-shot burst where the burnt-out holder stood, on every screen, from the `MatchState` change; `burst(x, y, color?)`; H24: a runner the walls took bursts red | 75 |
 | `Walls.lua` | `Walls` (ModuleScript) | H24 ([endgame.md](../../../docs/systems/endgame.md) §7): the closing walls drawn from `MatchState` (neon edges beating faster as they close, a red band past each, `CanQuery` off), a red glow on the screen edge an off-screen wall is coming from, `GET BACK IN  2.1` with an arrow home for our runner (shown at once from our position, the server's count once it lands) | 128 |
 | `Arrows.lua` | `Arrows` (ModuleScript) | off-screen arrows to the other runners, the holder's red, a ghost's a hollow pale-blue ring (`SideCam.edgeArrow`, players.md §4) | 129 |
+| `Flow.lua` | `Flow` (ModuleScript) | H31 ([session.md](../../../docs/systems/session.md)): the client's view of the match flow (`Remotes.Session`), its own profile (`Remotes.Profile`) and everyone's cosmetics (`Remotes.Looks`); sends `Menu` ("play" / "sit") and `Shop` requests; `nameOf` (a person's name, a bot's) | 124 |
+| `Ui.lua` | `Ui` (ModuleScript) | H31 ([ui.md](../../../docs/systems/ui.md) §1): the UI kit and the theme: colours, fonts, a 720-tall design space scaled to the screen, panels, buttons (words in a child label), coins, `pop` | 210 |
+| `Menu.lua` | `Menu` (ModuleScript) | H31: the title screen (PLAY, LOCKER, SPIN, HOW TO PLAY, SIT OUT), the how-to cards (first PLAY of a new player), the wallet, the MENU pill | 202 |
+| `Locker.lua` | `Locker` (ModuleScript) | H31: the locker (item cards per slot: wear, buy) and the wheel (the reel lands on what the server rolled; the odds printed) | 198 |
+| `Board.lua` | `Board` (ModuleScript) | H31: the scoreboard strip, the lobby countdown, ROUND n, the round's results card, the podium | 186 |
+| `Audio.lua` | `Audio` (ModuleScript) | H31: effects from Roblox's built-in sounds, the fuse's beep, three music tracks that follow the match (ids at the top: swap freely) | 132 |
+| `Fx.lua` | `Fx` (ModuleScript) | H31: screen shake, the edge flash, bursts (the burn-out styles), rings, and the worn cosmetics on every runner (`wear`: trail, glow) | 218 |
+| `Present.lua` | `Present` (ModuleScript) | H31: the glue between the game's events and the menu, cards, sound and punch; the seat colours and name tags; the spectator camera's focus | 157 |
 
 Why it is split this way, and the character choice: [`docs/systems/movement.md`](../../../docs/systems/movement.md).
 Planned: corner correction in `shared/Movement`. How sprites and frames are drawn:

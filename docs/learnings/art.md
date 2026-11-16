@@ -42,3 +42,9 @@ top to bottom, so a 0.6-stud particle is one dot and an `ImageColor3` tint MULTI
 first ignition (an ember rim plus small embers) read as nothing in a Studio capture. A `PointLight` that lights the map
 around the runner, and particles over a stud, read at once. Capture the effect in Play before calling it readable.
 *(2026-10-31, handoff H23, `client/Look:ignite`.)*
+
+**A8 — A `UIGradient` tints everything its parent draws, text included.** A gradient on a `TextButton` to shade its
+background also multiplies its own text by the same colours: light words on a dark gradient come out near black. Keep
+the words in a child `TextLabel` (`Ui.button`, `Ui.setText`); put a gradient on a text object only when the gradient
+is meant for the letters (the logo). Found by reading, not by looking: the PC was locked and nothing was drawn
+(→ T17), which is exactly when a rule like this has to be known. *(2026-11-16, handoff H31, `client/Ui.lua`.)*

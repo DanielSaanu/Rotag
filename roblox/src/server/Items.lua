@@ -73,6 +73,12 @@ function Items.held(id: number, now: number): boolean
 	return Rules.holdOf(state, id, now) ~= nil
 end
 
+-- H32: every crate, trap and beam in the world (server/Bots: a bot sees a crate in its way as a player does). Read only.
+function Items.things(): { Rules.Thing } return state.things end
+
+-- H31: the hold itself (server/Bots feeds a held bot's Movement the same hold a player's client would).
+function Items.holdOf(id: number, now: number): Rules.Hold? return Rules.holdOf(state, id, now) end
+
 -- Rule 44 (H20): may `id` pass the fuse now? Not while the ice beam has it frozen (Rules.canTag, the server's record).
 function Items.canTag(id: number, now: number): (boolean, string?)
 	return Rules.canTag(state, id, now)

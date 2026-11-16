@@ -33,6 +33,8 @@ export type State = {
 	hold: string?, holdTime: number, holdSprite: string,
 	rope: Grapple.Rope?, grappleCooldown: number, grappleBuffer: number, -- H25: on a rope (nil: not), the two clocks
 	grappleArmed: boolean, -- H25 QA r1: pressed in the air and still held: hooks the moment an anchor comes in reach
+	-- H30: a pad's launch across: its way, the speed it climbs from and to, the ramp and the glide clocks (seconds left)
+	padDir: number, padFrom: number, padPeak: number, padRamp: number, padGlide: number,
 }
 
 local function approach(v: number, target: number, maxDelta: number): number
@@ -63,6 +65,7 @@ function Movement.new(x: number, y: number): State
 		wallForce = 0, wallForceDir = 0, runDistance = 0, runFrom = 0, stillTime = 0, sliding = false,
 		events = {}, hold = nil, holdTime = 0, holdSprite = "runner_idle",
 		rope = nil, grappleCooldown = 0, grappleBuffer = 0, grappleArmed = false,
+		padDir = 1, padFrom = 0, padPeak = 0, padRamp = 0, padGlide = 0,
 	}
 end
 
@@ -233,7 +236,15 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	local lx, ly = input.launchX, input.launchY
 	if lx and ly and not hold then
 		Grapple.release(s, false)
-		if lx ~= 0 then s.vx = sign(lx) * math.max(math.abs(lx), s.vx * sign(lx)) end
+		if lx ~= 0 then
+			-- H30: across, the launch climbs over PAD_RAMP from what you carried its way (nothing, given the other way)
+			-- to the launch speed (or more, carried), then glides back to the run over PAD_GLIDE (phase 5)
+			local dir = sign(lx)
+			local carried = s.vx * dir
+			s.padDir, s.padFrom, s.padPeak = dir, math.max(0, carried), math.max(math.abs(lx), carried)
+			s.padRamp, s.padGlide = Config.PAD_RAMP, Config.PAD_GLIDE
+			s.vx = dir * (if Config.PAD_RAMP > 0 then s.padFrom else s.padPeak)
+		end
 		s.vy = math.max(s.vy, ly)
 		s.grounded, s.coyote, s.jumpBuffer, s.jumpHold, s.dashTime, s.wallForce = false, 0, 0, 0, 0, 0
 		refresh(s)
@@ -263,8 +274,34 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 	-- 5. Velocity. A wall jump this frame forces the stick away from the wall from this frame on.
 	if s.wallForce > 0 then moveX = s.wallForceDir end
 	s.sliding = false -- for the sprite pick only: the wall-slide fall cap is in force this frame
+	-- H30: a pad's glide lasts while you are in the air and not holding against the launch (the stick neutral still
+	-- flies: a pad throws you the way you face; and the ramp always completes: the launch wins, rule 16); a landing,
+	-- the stick against it after the ramp, a dash, a rope or a wall jump's forced stick end it (the normal rules take
+	-- over from the speed you have)
+	if s.padGlide > 0 and (s.grounded or s.rope or s.dashTime > 0 or (moveX == -s.padDir and s.padRamp <= 0)) then
+		s.padGlide, s.padRamp = 0, 0
+	end
 	if s.rope then
 		Grapple.swing(s, moveX, dt) -- H25: the rope's own step replaces the run and the fall
+	elseif s.padGlide > 0 then
+		-- H30: the launch's across speed on a smooth curve (smoothstep: held, easing, settling) from its peak to the
+		-- run, with the first PAD_RAMP seconds climbing into it from what was carried; gravity as below
+		local top = Config.RUN_SPEED * (input.speedMult or 1)
+		if s.padRamp <= 0 then s.padGlide = math.max(0, s.padGlide - dt) end -- the glide's clock runs after the ramp
+		local u = s.padGlide / Config.PAD_GLIDE
+		local v = top + math.max(0, s.padPeak - top) * u * u * (3 - 2 * u)
+		if s.padRamp > 0 then
+			s.padRamp = math.max(0, s.padRamp - dt)
+			v = s.padFrom + (v - s.padFrom) * (1 - s.padRamp / Config.PAD_RAMP)
+		end
+		s.vx = s.padDir * v
+		local g = Config.GRAVITY
+		if jumpHeld and math.abs(s.vy) < Config.HALF_GRAVITY_BELOW then g *= 0.5 end
+		s.vy = approach(s.vy, -Config.MAX_FALL, g * dt)
+		if s.jumpHold > 0 then
+			if jumpHeld then s.vy = math.max(s.vy, s.holdSpeed) else s.jumpHold = 0 end
+			s.jumpHold = math.max(0, s.jumpHold - dt)
+		end
 	elseif s.dashTime > 0 then
 		s.dashTime -= dt
 		s.vx = s.dashDir * Config.DASH_SPEED

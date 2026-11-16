@@ -1,8 +1,7 @@
--- A server-driven stand-in runner so the tag can be played before a second client exists (docs/systems/tag.md §4).
--- Studio only: Match reads RunService:IsStudio() and Config.STUDIO_DUMMY once at boot and never builds one in a live
--- server (→ learnings N1). It is a visible anchored box the server moves along the floor; it takes part in the round
--- like a player (it can be "it", be tagged, be eliminated, play as a ghost) under the id Dummy.ID, or Dummy.ID - k
--- for the k-th extra one (server/Bots.lua decides where each goes; H15).
+-- A bot's body (H31, docs/systems/bots.md; before H31 this was the Studio-only floor dummy of tag.md §4): an anchored,
+-- invisible box the SERVER moves, tagged and numbered like a player's runner so every system that finds runners by
+-- the tag (Match, the clients' Others, the IT marker) treats it as one. It takes part in a round like a player: it
+-- can be "it", be tagged, burn out, play as a ghost. server/Bots.lua decides where it goes; ids are Dummy.ID - k.
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
@@ -10,55 +9,25 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Dummy = {}
 Dummy.ID = -1000 -- Studio's local-server test players are -1, -2, ...; this never collides with them
 
-local PATROL_MIN, PATROL_MAX = 12, 52 -- studs; the patrol stays clear of the spawn at x = 0 (QA round 1: an idle
--- runner at spawn was tagged and passed to three times before touching a key)
-local PATROL_SPEED = 18 -- slower than a run (45), so a player can catch it
-local CHASE_SPEED = 30 -- as "it": slower than a run, so a player can escape it
-local Y = Config.RUNNER_HEIGHT / 2 -- standing on the test map's floor (top at y = 0)
-
-function Dummy.new(tagName: string, id: number?)
-	local runnerId = id or Dummy.ID
+function Dummy.new(tagName: string, id: number, name: string, at: Vector3)
 	local model = Instance.new("Model")
-	model.Name = if runnerId == Dummy.ID then "Dummy" else ("Dummy" .. tostring(Dummy.ID - runnerId + 1))
+	model.Name = name
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
 	root.Size = Vector3.new(Config.RUNNER_WIDTH, Config.RUNNER_HEIGHT, Config.RUNNER_DEPTH)
 	root.Anchored = true
-	root.CanCollide = false -- players pass through it, as they pass through each other's sprites
-	root.CanQuery = false -- and their wall probes ignore it (H6: it was a moving wall that stopped a chaser dead
-	-- behind it, refreshed their dash on contact, and made a run-through impossible)
-	root.Color = Color3.fromRGB(255, 170, 60)
-	root.Material = Enum.Material.Neon
-	root.Transparency = 0.35
-	root.CFrame = CFrame.new((PATROL_MIN + PATROL_MAX) / 2 + (Dummy.ID - runnerId) * 8, Y, 0)
+	root.CanCollide = false -- players pass through it, as they pass through each other
+	root.CanQuery = false -- and their wall probes ignore it (H6: a queried dummy was a moving wall to a chaser)
+	root.CanTouch = false
+	root.Transparency = 1 -- every client draws the sprite (client/Others); the box is never seen
+	root.CFrame = CFrame.new(at)
 	root.Parent = model
 	model.PrimaryPart = root
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- like every runner (Runners.build, H11)
-	model:SetAttribute("RunnerId", runnerId)
+	model:SetAttribute("RunnerId", id)
 	CollectionService:AddTag(model, tagName)
 	model.Parent = workspace
-	return { model = model, root = root, dir = 1, facing = 1 } -- facing: where its crate or beam goes (H19)
-end
-
--- Round start (H8): stand at `x` on the floor. Outside the patrol, Dummy.step walks it back in.
-function Dummy.place(d, x: number)
-	d.root.CFrame = CFrame.new(x, Y, 0)
-end
-
--- One server frame. `chaseX`: where to head (the nearest living player as it, the holder as a ghost), else patrol.
-function Dummy.step(d, dt: number, chaseX: number?, frozen: boolean)
-	if frozen then return end
-	local x = d.root.Position.X
-	if chaseX then
-		local dx = chaseX - x
-		x += math.sign(dx) * math.min(math.abs(dx), CHASE_SPEED * dt)
-		if dx ~= 0 then d.facing = math.sign(dx) end
-	else
-		x += d.dir * PATROL_SPEED * dt
-		if x > PATROL_MAX then d.dir = -1 elseif x < PATROL_MIN then d.dir = 1 end
-		d.facing = d.dir
-	end
-	d.root.CFrame = CFrame.new(x, Y, 0)
+	return model, root
 end
 
 return Dummy

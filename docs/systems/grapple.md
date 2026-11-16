@@ -138,7 +138,9 @@ anchor distance would be the server re-judging the swing. Instead the swing's ow
 | `GRAPPLE_YOINK` | 20 studs/s | H28: the rope's bite along the swing toward under the anchor, x sin(angle) (0 = off) |
 | `GRAPPLE_PUMP` | 60 studs/s^2 | the stick along the swing |
 | `GRAPPLE_MAX_SPEED` | 120 (= `DASH_SPEED`) | the swing's cap; above 120 raises the server's x rate (§4) |
-| `GRAPPLE_RELEASE_BOOST` | 1.1 | on letting go or jumping off (1 = off) |
+| `GRAPPLE_RELEASE_BOOST` | 1.25 (H30; was 1.1) | on letting go or jumping off (1 = off) |
+| `GRAPPLE_RELEASE_KICK` / `_MAX` | 25 studs/s / 140 | H30, the haul: added along the swing on letting go (level or rising, none straight down), the release never past 140 |
+| `GRAPPLE_GIVE` | 0.05 s | H30: the catch's give, a critically damped stretch of the rope (0 = the one-frame catch) |
 | `GRAPPLE_COOLDOWN` | 0.2 s | from a release to the next hook |
 | `GRAPPLE_BUFFER` | 0.1 s | a press this early still hooks (x1.25 on touch) |
 | `GRAPPLE_REFRESH` | true | a hook gives back dash and double jump |
@@ -260,3 +262,27 @@ their velocity a bit". Two shapes were on the table (handoff H28); both were bui
 - **Found, not caused:** a floor hook at a dash's speed from 15 out loses its rope at once with or without the yoink
   (the reel is too slow to lift a runner sweeping that fast along the floor). Left for a later QA round.
 - **Not seen in Studio** (another agent held the Studio link). What to feel for: [../qa/grapple-yoink.md](../qa/grapple-yoink.md).
+
+## The haul and the give (H30, 2026-11-11)
+
+Danzo, after the first play of the relaid Yard: the grapple "should yoink you, the arc you swing on feels forced and
+sudden", then: "yoink as in when you release, going towards one: on the release it should almost feel like the
+character is pulling on the string to launch himself off". Two changes, both in `shared/Grapple`, both knobs.
+
+- **The haul (the release).** `Grapple.release` with the boost now sets the speed to `v x GRAPPLE_RELEASE_BOOST +
+  GRAPPLE_RELEASE_KICK x rising`, along the swing's velocity, where `rising` is 1 level or going up and fades to 0
+  straight down (you let go to fly, never to be thrown at the floor); then `min(…, GRAPPLE_RELEASE_MAX)`. 1.25, 25
+  and 140: a slow swing (60) leaves at 100, a capped one (120) at 140. **Why the cap:** at 150 the hardest honest
+  chain (`move_check_grapple.test`) spent 6.66 of the server's 24-stud x burst and 5.30 of the 10.5 up; at 140 it
+  spends 1.81 and 2.21 (was 1.38 and 2.47), re-pinned. The server's rates are unchanged (§4 still holds).
+- **The give (the catch).** The catch used to drop the outward part of the velocity in one frame. Now that part
+  becomes a stretch: the rope's length grows at that speed and a critically damped spring (time constant
+  `GRAPPLE_GIVE` 0.05 s, settled in ~0.15 s) brings it back to the length it caught at; the stretch's speed is
+  clamped so the body never passes the swing's cap, and the taut step's chord is clamped at the cap too (the catch's
+  step came from inside the circle). The reel and the yoink wait for the give to settle. 0 restores H25's catch.
+  The energy test is unchanged (it hooks at rest: no give); the rope-length test holds because the length itself
+  carries the stretch.
+- **Not changed:** the bite's yoink (H28, 20) and the pump. If the arc still feels forced, `GRAPPLE_YOINK` 0 is the
+  next thing to try by hand, then `GRAPPLE_GIVE` up to 0.08.
+- **Seen:** tests and the box world only (the Yard's seven anchors still carry both ways in `maps.test`). The feel is
+  Danzo's: `docs/qa/yard-routes.md`, the H30 items.

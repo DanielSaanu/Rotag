@@ -164,6 +164,21 @@ function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((numb
 	end
 end
 
+-- H31: fn(id, look) for every other runner drawn on this screen (client/Fx.wear, the name tags).
+function Others.each(fn: (number, any) -> ())
+	for _, d in drawn do fn(d.id, d.look) end
+end
+
+-- H31: the middle of the runners drawn on this screen (the spectator camera's focus), or nil when there is none.
+function Others.middle(): Vector3?
+	local sum, n = Vector3.zero, 0
+	for _, d in drawn do
+		sum += d.at
+		n += 1
+	end
+	return if n > 0 then sum / n else nil
+end
+
 -- H25: fn(id, x, y, facing, anchor) for every other runner drawn this frame on a rope (client/Grapple draws it).
 function Others.ropes(fn: (number, number, number, number, number?) -> ())
 	for _, d in drawn do

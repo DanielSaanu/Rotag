@@ -25,7 +25,10 @@ assert((Config :: any).SPOOK_COOLDOWN == nil and (Config :: any).GHOST_COMEBACKS
 assert(Config.GRANT_BOOST == 0.15 and Config.GRANT_TIME == 5, "boost grant: +15% for 5 s")
 assert(Config.FIXTURE_CAP == 3 and Config.FIXTURE_FADE == 1, "3 live fixtures per ghost; a 4th fades the oldest in 1 s")
 assert(Config.PLACE_CLEAR == Config.STUDS_PER_TILE, "a placed part keeps 1 tile from every living runner")
-assert(Config.PAD_SPEED_X <= Config.DASH_SPEED and Config.PAD_SPEED_Y <= 2 * Config.JUMP_SPEED, "pad inside the check")
+-- H30: up may pass 2 x JUMP_SPEED (a rise averaging the up rate) by what the up burst absorbs; move_check.test drives
+-- the pad chain and pins its use. Past 2.4 x the chain's launches would eat most of the burst (10.5 studs).
+assert(Config.PAD_SPEED_X <= Config.DASH_SPEED and Config.PAD_SPEED_Y <= 2.4 * Config.JUMP_SPEED, "pad inside the check")
+assert(Config.PAD_RAMP >= 0 and Config.PAD_GLIDE >= 0 and Config.GRAPPLE_GIVE >= 0 and Config.GRAPPLE_RELEASE_KICK >= 0, "H30 knobs: 0 means off, never negative")
 -- DESIGN §3 rules 50-51 (H16 spec, built H23; trial numbers, endgame.md §5). Change the rule text and these together.
 assert(Config.IGNITE_AT == 10 and Config.IGNITE_AT < Config.FUSE_MIN, "ignite at 10 s left, inside every fuse")
 assert(Config.END_PHASE_SPEED == 1.1, "end phase: x1.1 top speed")

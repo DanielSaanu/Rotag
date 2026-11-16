@@ -55,7 +55,7 @@ end
 -- H24: a runner gone from `alive` that the last state listed OUTSIDE the walls was taken by them: a red burst there
 -- (the holder too). Anyone else gone is the holder's burn-out (orange) or a leave (no body: nothing).
 local WALL_RED = Color3.fromRGB(255, 40, 60)
-function Ignition.state(s: any, where: (number) -> Vector3?)
+function Ignition.state(s: any, where: (number) -> Vector3?, onBurst: ((number, Vector3, boolean) -> ())?)
 	local p = prev
 	prev = s
 	if not (p and p.round == s.round and not p.over) then return end
@@ -67,6 +67,7 @@ function Ignition.state(s: any, where: (number) -> Vector3?)
 		if walled and id == p.it and type(p.fuse) == "number" and p.fuse <= 0.2 then walled = false end
 		if at then
 			Ignition.burst(at.X, at.Y, if walled then WALL_RED else nil)
+			if onBurst then onBurst(id, at, walled) end -- H31: the runner's own burn-out style, the shake, the sound
 			if studio then
 				print(("[Rotag] %s: %s at (%.1f, %.1f)"):format(if walled then "walled out" else "burn-out", tostring(id), at.X, at.Y))
 			end

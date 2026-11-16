@@ -1,6 +1,13 @@
 # Ideas inbox
 
-## Where we are (2026-10-10, after the runner pass)
+## Where we are (2026-11-16, after H31: "finish the game")
+
+- **It is a game now, not a loop of rounds (H31, 2026-11-16):** a title screen, PLAY, a 12 s warm-up lobby, a match of 3
+  scored rounds, results cards, a podium, coins, a locker, a wheel, bots in the empty seats, sound, music, a dark lit
+  stage. Server side seen working in Studio; **nothing on screen has been looked at** (the PC was locked). Detail:
+  `docs/systems/session.md`, `bots.md`, `ui.md`.
+
+## Where we were (2026-10-10, after the runner pass)
 
 - **Playable:** one runner on a test map with run, jump, double jump, wall jump, dash; side-on camera; SurfaceGui sprite.
   Movement feel is Danzo's and tuned by hand on the controls.
@@ -31,6 +38,35 @@
 
 ## To do
 
+- [ ] **Danzo: unlock the PC and Play the finished game (H31, 2026-11-16).** Nothing visual was checked (Studio draws
+      nothing behind the lock screen). The checklist is `docs/qa/showable.md` ("What Danzo should look for"): the
+      title, PLAY, a match against the bots, the cards, the locker, the wheel, the music (three picks made by
+      description only: the ids are at the top of `roblox/src/client/Audio.lua`), the stage's look, a phone.
+      The intended look, as a canvas: https://claude.ai/artifact/EaHsRizvdSQ6MFLRejSUiw
+- [x] **Danzo (2026-11-16): bots people cannot tell from players, or remove them.** Kept and improved (H32): they
+      swing, differ in skill, react late, rest, avoid crates, and are named like players with no bot label; Roblox's
+      own player list is off so the scoreboard is the list. The wall-walkers were the old dummies, already gone.
+      Your call when you have played them: fun, too strong, too weak (`Config.BOT_SPEED`, `BOT_THINK`). Detail and
+      what still gives one away: `docs/systems/bots.md` §7.
+- [ ] **Danzo, before the Discord link (H31):** (1) Game Settings → Players → **Max Players 4**; (2) Game Settings →
+      Security → **Enable Studio Access to API Services** (so coins save in Studio tests; a live server saves
+      anyway); (3) File → **Publish to Roblox**; (4) set the experience to Public. No sprite upload is needed:
+      H31 added no art.
+- [ ] **Danzo's call (H31): "rolls to unlock certain abilities".** NOT built: DESIGN rule 36 ("never lock moves
+      behind a grind or shop") and §2 ("everyone gets every move from the start") say no. The wheel exists and rolls
+      cosmetics. If you want it anyway, the fair shape is item side-grades from the orb pools, not moves: say so
+      and it becomes a design change (trigger 1).
+- [ ] **Danzo's calls (H31), all trials:** the theme (glowing graphite), 3 rounds scored 4 / 2 / 1 / 0, the coin
+      numbers (10 a match + 5 a point + 25 a win; a spin 100; 150 to start, 50 a day), bot strength (`BOT_SPEED`
+      0.93, `BOT_THINK` 0.3), the name ROTAG on the title, and whether coins or spins are ever sold for Robux.
+- [ ] **Danzo: play the Yard again after H30 (2026-11-11).** Your first play said: pads need oomph and should scale
+      up and down; too spread out; the release should feel like hauling on the rope. Built: pads 115/120 with a ramp
+      in and a glide out (`PAD_RAMP`, `PAD_GLIDE`), the release haul (`GRAPPLE_RELEASE_KICK` 25, x1.25, never past
+      140) and a soft catch (`GRAPPLE_GIVE`), decks 2-3 tiles closer with 9-tile quays for the end pads. All knobs in
+      `Config.lua` are yours. The checklist: `docs/qa/yard-routes.md` (the H30 items at the end). Then the QA loop
+      (`/qa-loop docs/qa/yard-routes.md`), then the art block. Canvas: https://claude.ai/artifact/5y52CKT5B2hhTmv5mJuymk
+      (the theme pick is still yours).
+- [x] **Danzo: play the relaid Yard (H29, 2026-11-11).** Played the same day: see H30 above.
 - [ ] **Danzo: feel the grapple yoink (H28, 2026-11-07).** A hook now whips you along the swing toward under the
       anchor, `Config.GRAPPLE_YOINK = 20` studs/s x sin(angle) (0 = off). Built and tested outside Studio only; the
       checklist is in `docs/qa/grapple-yoink.md` ("What Danzo should feel"): a hook at a walk, at a sprint, a floor

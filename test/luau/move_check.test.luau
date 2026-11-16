@@ -356,6 +356,9 @@ do -- H22, rules 15 and 46: a boost pad and a boost grant never make an honest r
 	assert(launches >= 8, "the chain really launched off pads: " .. launches)
 	print(("    pad chain + grant, 10 s: %d launches, up budget used at most %.2f of %.2f studs"):format(launches, deepUp,
 		MoveCheck.RATE_UP * Config.MOVE_BURST_TIME))
+	-- H30: PAD_SPEED_Y 105 -> 120 spends the up burst on every launch (2.63 -> 4.50 of 10.50 measured); it must stay
+	-- under 60% so a launch on top of the check's own slack never flags an honest runner
+	assert(deepUp < 0.6 * MoveCheck.RATE_UP * Config.MOVE_BURST_TIME, ("the pad chain leaves most of the up burst: %.2f"):format(deepUp))
 	-- the fastest flat chain with the grant on: the grant lifts only the run, never the dash, so the chain is unchanged
 	local g = standing(ARENA, 0)
 	local chain = fastestChain()

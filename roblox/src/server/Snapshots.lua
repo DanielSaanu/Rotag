@@ -85,6 +85,17 @@ end
 function Snapshots.facingOf(id: number): number return facing[id] or 1 end
 function Snapshots.iframed(id: number, now: number): boolean return ItemRules.iframed(dashAt[id], now) end
 
+-- H31: a bot is the server's own runner (server/Bots): its state rides the same relay as a player's, so every screen
+-- draws it exactly as it draws a person (sprite, facing, juice). Not a position source: Match reads the bot's body.
+function Snapshots.inject(id: number, s: Snapshot.Snap, now: number)
+	facing[id] = s.facing
+	local started = s.dash or (s.dashing and not wasDashing[id])
+	wasDashing[id] = s.dashing
+	if started and ItemRules.dashSeen(dashAt[id], now) then dashAt[id] = now end -- rule 45: a bot's dash dodges too
+	batch[id] = { t = now, b = Snapshot.pack(s) }
+	dirty = true
+end
+
 -- One batch to everyone per Heartbeat: { [runner id] = { t = server stamp, b = the client's buffer } }. Each client
 -- skips its own id. Four runners are ~150 bytes, well inside the unreliable limit (900).
 local function relay()

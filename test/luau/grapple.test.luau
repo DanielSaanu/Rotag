@@ -222,11 +222,17 @@ do -- release (rule 16, rule 17): the swing's velocity is kept, times the boost;
 		tick(OPEN, s, gin({ hook = true }))
 	end
 	local r = s.rope
-	local vx = r.w * r.len * math.cos(math.atan2(s.x - r.x, r.y - s.y)) -- the swing's own speed across, here
+	local ang = math.atan2(s.x - r.x, r.y - s.y)
+	local v = r.w * r.len -- the swing's own speed, here (near the bottom: across)
+	local vx, vy = v * math.cos(ang), v * math.sin(ang)
 	tick(OPEN, s, gin({ moveX = 1 })) -- let go, holding the way we swing
 	assert(s.rope == nil, "let go: off the rope")
-	assert(near(s.vx, kept(vx * Config.GRAPPLE_RELEASE_BOOST), 1e-6),
-		("the release keeps the swing x the boost: %.2f from %.2f"):format(s.vx, vx))
+	-- H30, the haul: x the boost, plus the kick along the swing (all of it here: level or rising)
+	local rising = math.clamp(1 + vy / math.abs(v), 0, 1)
+	local want = (math.abs(v) * Config.GRAPPLE_RELEASE_BOOST + Config.GRAPPLE_RELEASE_KICK * rising) / math.abs(v)
+	assert(near(s.vx, kept(vx * want), 1e-6),
+		("the release keeps the swing x the boost plus the kick: %.2f from %.2f"):format(s.vx, vx))
+	assert(s.vx > vx + Config.GRAPPLE_RELEASE_KICK * 0.9, "the haul is felt: well over the swing's own speed")
 	tick(OPEN, s, gin({ hook = true, press = true, anchor = a }))
 	assert(s.rope == nil, "no new hook inside GRAPPLE_COOLDOWN")
 	frames(OPEN, s, math.ceil(Config.GRAPPLE_COOLDOWN * 60), gin({ hook = true }))

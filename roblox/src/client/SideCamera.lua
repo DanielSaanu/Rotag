@@ -16,7 +16,9 @@ function SideCamera.reset(x: number, y: number)
 	cam = SideCam.new(x, y)
 end
 
-function SideCamera.update(x: number, y: number, vx: number, dt: number)
+-- `ox`, `oy` (H31): a shake offset in studs added to where the camera sits this frame only (client/Fx), never to the
+-- follow's own state, so a shake cannot drift the view.
+function SideCamera.update(x: number, y: number, vx: number, dt: number, ox: number?, oy: number?)
 	local camera = workspace.CurrentCamera
 	if not camera then return end
 	if not cam then cam = SideCam.new(x, y) end
@@ -24,7 +26,8 @@ function SideCamera.update(x: number, y: number, vx: number, dt: number)
 	-- Re-asserted every frame: Roblox's camera scripts may set Custom again when a character spawns.
 	if camera.CameraType ~= Enum.CameraType.Scriptable then camera.CameraType = Enum.CameraType.Scriptable end
 	if camera.FieldOfView ~= Config.CAMERA_FOV then camera.FieldOfView = Config.CAMERA_FOV end
-	camera.CFrame = CFrame.lookAt(Vector3.new(cam.x, cam.y, DISTANCE), Vector3.new(cam.x, cam.y, 0))
+	local sx, sy = cam.x + (ox or 0), cam.y + (oy or 0)
+	camera.CFrame = CFrame.lookAt(Vector3.new(sx, sy, DISTANCE), Vector3.new(sx, sy, 0))
 end
 
 -- H25: the world this screen shows, for the grapple's aim assist (rule 17: never an off-screen anchor). Centre and

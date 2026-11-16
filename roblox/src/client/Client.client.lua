@@ -26,6 +26,8 @@ local Place = require(script.Parent:WaitForChild("Place")) -- H22: ghost parts, 
 local Ignition = require(script.Parent:WaitForChild("Ignition")) -- H23: the burn-out (endgame.md)
 local Walls = require(script.Parent:WaitForChild("Walls")) -- H24: the closing walls (endgame.md §7)
 local Grapple = require(script.Parent:WaitForChild("Grapple")) -- H25: anchors, the aim assist, ropes (grapple.md)
+local Present = require(script.Parent:WaitForChild("Present")) -- H31: the menu, the cards, sound and punch (ui.md)
+local Fx = require(script.Parent:WaitForChild("Fx")) -- H31: the camera's shake
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -207,9 +209,11 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		end
 	end
 	local c = current
+	local ox, oy = Fx.offset(dt)
 	if c and c.root.Parent then
 		local pos = c.root.Position
-		SideCamera.update(pos.X, pos.Y, c.state.vx, dt)
+		SideCamera.update(pos.X, pos.Y, c.state.vx, dt, ox, oy)
+		Present.moves(c.pending, pos.X, pos.Y) -- H31: the move's sound and dust
 		c.look:react(c.pending)
 		c.pending = {}
 		c.look:ghost(ghostMode(player.UserId))
@@ -218,9 +222,13 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 		c.look:ignite(Tagging.ignition(player.UserId)) -- H23, rule 50: the holder's ember rim and embers
 		c.look:draw(pose(c.state), c.state.facing, c.state.dashTime > 0, c.state.vx, dt)
 		if not readySent then sendReady() end
+	else -- H31: no body (the menu before Play, or sat out): watch the round from the holder or the pack
+		local fx, fy = Present.focus(Tagging.state())
+		SideCamera.update(fx, fy, 0, dt, ox, oy)
 	end
 	Others.draw(dt, ghostMode, iced, heldOf, function(id) return Place.grantLeft(id) > 0 end, Tagging.ignition)
 	local st = Tagging.state()
+	Present.frame(if c and c.root.Parent then c.look else nil, st, Tagging.fuseLeft(), ghostMode)
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))
 	-- PR 3 (controls.md §2): the ITEM touch button only while Use would fire (a hex and the grant are used by touch);
@@ -293,18 +301,23 @@ Use.start(player)
 Place.start()
 Walls.start(player)
 Grapple.start()
+-- Where this screen draws runner `id` (ours: the body), or nil.
+local function drawnAt(id: number): Vector3?
+	if id ~= player.UserId then return Others.drawnAt(id) end
+	return if current and current.root.Parent then current.root.Position else nil
+end
+Present.start(player)
 -- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
 -- where Others draws each runner (the snapshot stream), as the server judges it.
 Tagging.start(player, function(s) -- H23: a burn-out bursts where this screen draws that runner
-	Ignition.state(s, function(id)
-		if id ~= player.UserId then return Others.drawnAt(id) end
-		return if current and current.root.Parent then current.root.Position else nil
-	end)
+	Ignition.state(s, drawnAt, Present.burst)
 end, function(v)
 	Hud.pass(v, player.UserId)
 	Others.lunge(v.from, v.to)
+	Present.verdict(v, drawnAt(v.to)) -- H31: the hit ring, the shake, the sound
 end, Others.positionOf, function(v)
 	Hud.spook(v, player.UserId) -- H18: "-3s HEX  <ghost>" where the "+2s" pops
+	Present.spook(v)
 end)
 player.CharacterAdded:Connect(setup)
 player.CharacterRemoving:Connect(function(character)

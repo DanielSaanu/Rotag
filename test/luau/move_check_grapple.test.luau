@@ -83,17 +83,20 @@ for _, case in cases do
 	for k in worst do worst[k] = math.max(worst[k], use[k]) end
 	assert(hooks >= 5, case[1] .. ": the driver really swings (" .. hooks .. " hooks)")
 	assert(#bad == 0, case[1] .. ": an honest swing chain is never flagged: " .. (bad[1] or ""))
-	assert(fastest <= Config.GRAPPLE_MAX_SPEED * Config.GRAPPLE_RELEASE_BOOST + Config.JUMP_SPEED + 1e-6,
-		case[1] .. ": nothing passes the boosted cap (with a jump's lift), got " .. fastest)
+	assert(fastest <= Config.GRAPPLE_MAX_SPEED * Config.GRAPPLE_RELEASE_BOOST + Config.GRAPPLE_RELEASE_KICK + Config.JUMP_SPEED + 1e-6,
+		case[1] .. ": nothing passes the boosted cap plus the haul (with a jump's lift), got " .. fastest)
 end
 
 -- Pinned as MEASUREMENTS (→ S11, 2026-11-01): the worst of the five chains. A tuning change shows here as a diff.
 assert(math.abs(worst.swing - Config.GRAPPLE_MAX_SPEED) < 1e-6, ("the fastest swing reaches the cap: %.2f"):format(worst.swing))
-assert(worst.x > 1.2 and worst.x < 1.6, ("x budget used at most (measurement): %.2f of %.0f"):format(worst.x, CAP_X))
+-- H30, the haul (x1.25 + 25, capped at GRAPPLE_RELEASE_MAX 140) and the catch's give: x 1.38 -> 1.81, up 2.47 -> 2.21,
+-- down 2.77 -> 3.05. At a release cap of 150 x was 6.66 and up 5.30: that is why the cap is 140. Under a fifth of
+-- every burst still.
+assert(worst.x > 1.6 and worst.x < 2.1, ("x budget used at most (measurement): %.2f of %.0f"):format(worst.x, CAP_X))
 -- (QA round 1: 2.41 -> 2.96 once a held W hooks the moment an anchor is in reach; the chains hook earlier and higher.
 -- H28, the yoink at 20: up 2.96 -> 2.47, down 2.21 -> 2.77; x unchanged at 1.38. Still a quarter of the burst at most.)
-assert(worst.up > 2.2 and worst.up < 2.7, ("up budget used at most (measurement): %.2f of %.1f"):format(worst.up, CAP_U))
-assert(worst.down > 2.5 and worst.down < 3.0, ("down budget used at most (measurement): %.2f of %.0f"):format(worst.down, CAP_D)) -- 2.67 -> 2.21 (QA r1) -> 2.77 (H28)
+assert(worst.up > 1.9 and worst.up < 2.5, ("up budget used at most (measurement): %.2f of %.1f"):format(worst.up, CAP_U))
+assert(worst.down > 2.7 and worst.down < 3.3, ("down budget used at most (measurement): %.2f of %.0f"):format(worst.down, CAP_D)) -- 2.67 -> 2.21 (QA r1) -> 2.77 (H28) -> 3.05 (H30)
 
 do -- a cheat that claims a swing it is not on gains nothing: no rate is granted by the rope (the server never sees it)
 	local c = MoveCheck.new(0, 0, 0)

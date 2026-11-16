@@ -211,8 +211,8 @@ do -- rule 15: a pad launches the way the RUNNER is going (Danzo 2026-10-31: no 
 	assert(Placement.onPad(pad, 4, Y + Config.PAD_H - 0.1), "feet just inside its top")
 	assert(not Placement.onPad(pad, 4, Y + Config.PAD_H + 0.1), "jumping over it: no")
 	assert(not Placement.onPad(pad, -Config.RUNNER_WIDTH / 2 - 0.1, Y), "beside it: no")
-	assert(Config.PAD_SPEED_Y <= 2 * Config.JUMP_SPEED and Config.PAD_SPEED_X <= Config.DASH_SPEED,
-		"the launch stays inside the speed check's rates (move_check.test pins the honest pad chain)")
+	assert(Config.PAD_SPEED_Y <= 2.4 * Config.JUMP_SPEED and Config.PAD_SPEED_X <= Config.DASH_SPEED,
+		"the launch stays inside the speed check's rates and burst (H30; move_check.test pins the honest pad chain)")
 end
 
 print("placement ok")

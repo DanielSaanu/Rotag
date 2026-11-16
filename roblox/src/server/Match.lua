@@ -19,6 +19,8 @@ local Arena = require(script.Parent:WaitForChild("Arena"))
 local MoveGuard = require(script.Parent:WaitForChild("MoveGuard"))
 local Snapshots = require(script.Parent:WaitForChild("Snapshots"))
 local Walls = require(script.Parent:WaitForChild("Walls")) -- H24: the closing walls (endgame.md §7)
+local Session = require(script.Parent:WaitForChild("Session")) -- H31: the match round the rounds (session.md)
+local TagLog = require(script.Parent:WaitForChild("TagLog")) -- the Studio-only "why was this claim dropped" maths
 
 local Match = {}
 
@@ -39,7 +41,7 @@ local function unreliable(name: string): UnreliableRemoteEvent?
 	return if r and r:IsA("UnreliableRemoteEvent") then r else nil -- server/Snapshots warns
 end
 
-local order: { number } = {} -- every runner id in join order: the rotation (rule 5)
+local order: { number } = {} -- every PERSON's id in join order (the spectating list); a round's order is its roster
 local roots: { [number]: BasePart } = {}
 local history: { [number]: { Tag.Sample } } = {}
 local lastClaim: { [number]: number } = {}
@@ -47,7 +49,7 @@ local lastClaim: { [number]: number } = {}
 local pending: { [number]: { target: number, from: number, deadline: number, lag: number } } = {}
 local round: Tag.Round? = nil
 local ghostState: Ghost.Ghosts? = nil -- beside the round, made with it (H15)
-local roundNo, nextRoundAt = 0, 0
+local roundNo = 0
 local lastStarter: number? = nil
 -- Round-ready (H11, players.md §5): players whose client has drawn its runner (Remotes.Ready), and since when the
 -- next round has been due but held for them.
@@ -130,15 +132,18 @@ local function place(id: number, x: number)
 	if player then Runners.spawn(player, Vector3.new(x, Arena.SPAWN.Y, 0)) end
 end
 
-local function startRound(now: number)
-	local present = {}
-	for _, id in order do if rootOf(id) then present[id] = true end end
-	local ids = {}
-	for _, id in order do if present[id] then table.insert(ids, id) end end
+local function startRound(now: number, roster: { number })
+	local present, ids = {}, {}
+	for _, id in roster do
+		if rootOf(id) then
+			present[id] = true
+			table.insert(ids, id)
+		end
+	end
 	local anyPlayer = false
 	for _, id in ids do if not Bots.isBot(id) then anyPlayer = true end end
 	local starter = Tag.nextStarter(ids, present, lastStarter)
-	if not (starter and anyPlayer) then return end -- the dummy never plays alone
+	if not (starter and anyPlayer) then return end -- bots never play alone
 	local since = dueSince or now
 	if not dueSince then
 		dueSince = now
@@ -160,6 +165,7 @@ local function startRound(now: number)
 	Items.reset() -- nothing in the world, nobody held (H19)
 	table.clear(pending)
 	Ghosts.reset()
+	Session.began(ids) -- H31: the match counts this round (session.md)
 	log(("round %d: %d runner(s), %s is it with %ds"):format(roundNo, #ids, tostring(starter), Config.FUSE_START))
 	dirty = true
 end
@@ -191,42 +197,6 @@ local function judge(claimant: number, target: number, from: number, to: number,
 	return true
 end
 
--- For the Studio log only: the closest the boxes came (x gap, y gap) over the pairs Tag.touchedBetween looks at.
-local function closest(a: { Tag.Sample }, b: { Tag.Sample }, from: number, to: number, lag: number): (number, number)
-	local bx, by = math.huge, math.huge
-	for _, sa in a do
-		for _, sb in b do
-			if sb.t >= from and sa.t <= to and sb.t <= sa.t and sa.t - sb.t <= lag and math.abs(sa.x - sb.x) < bx then
-				bx, by = math.abs(sa.x - sb.x), math.abs(sa.y - sb.y)
-			end
-		end
-	end
-	return bx, by
-end
-
--- For the Studio log only (H13, tag.md §2): the YOUNGEST target age at which the boxes did overlap for this claim,
--- over every target sample in the history, whatever the allowance. The age of a pair is how far the target sample is
--- behind the claimant's sample or the claim's arrival `at`, whichever is more (touchedBetween needs both inside lag).
--- nil: no overlap at any age the history holds (~1 s). Also how many claimant samples in the window were untrusted.
-local function neededAge(a: { Tag.Sample }, b: { Tag.Sample }, from: number, to: number, at: number): (number?, number)
-	local best, untrusted = nil, 0
-	for _, sa in a do
-		if sa.t >= from and sa.t <= to then
-			if sa.untrusted then
-				untrusted += 1
-			else
-				for _, sb in b do
-					if sb.t <= sa.t and Tag.overlaps(sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE) then
-						local age = math.max(sa.t - sb.t, at - sb.t)
-						if best == nil or age < best then best = age end
-					end
-				end
-			end
-		end
-	end
-	return best, untrusted
-end
-
 -- Every frame: pending claims are judged again as the claimant's late-arriving positions land (H6: in Studio the
 -- server sees a client-owned body ~0.15 s after the claim about it arrives, ~7 studs behind at run speed).
 local function judgePending(now: number)
@@ -236,8 +206,8 @@ local function judgePending(now: number)
 		elseif now >= p.deadline then
 			pending[claimant] = nil
 			local ha, hb = history[claimant] or {}, history[p.target] or {}
-			local gx, gy = closest(ha, hb, p.from, p.deadline, p.lag)
-			local need, bad = neededAge(ha, hb, p.from, p.deadline, p.from + p.lag)
+			local gx, gy = TagLog.closest(ha, hb, p.from, p.deadline, p.lag)
+			local need, bad = TagLog.neededAge(ha, hb, p.from, p.deadline, p.from + p.lag)
 			log(("claim %s -> %s dropped: no overlap, target up to %.2fs older, until %.2fs after it (closest: %.1f, %.1f"
 				.. " studs apart); %s; %d claimant sample(s) untrusted"):format(tostring(claimant), tostring(p.target), p.lag,
 				Config.TAG_CONFIRM_WAIT, gx, gy, if need then ("overlap WAS there with the target %.2fs old"):format(need)
@@ -292,6 +262,7 @@ end
 
 local function step(dt: number)
 	local now = os.clock()
+	Session.step(now) -- H31: the lobby, the gaps and the podium; may end the round (everybody left) or make one due
 	local r = round
 	Bots.move(r, dt, now, history, Orbs.current())
 	sample(now)
@@ -312,15 +283,33 @@ local function step(dt: number)
 			dirty = true
 		end
 		if Walls.step(r, now, history, Items.held) then dirty = true end -- after the fuse: a burn-out comes first
-		if r.over then nextRoundAt = now + Config.ROUND_GAP end
+		Session.note(r) -- H31: who went out, in order (the round's placing)
+		if r.over then Session.finish(r, now) end
 		if Tag.endPhase(r, now) ~= endOn then
 			endOn, dirty = not endOn, true
 			if endOn then log(("END PHASE: %d alive, %.0fs into the round"):format(Tag.aliveCount(r), now - r.started)) end
 		end
-	elseif now >= nextRoundAt then
-		startRound(now)
+	else
+		local roster = Session.due()
+		if roster then startRound(now, roster) end
 	end
 	if dirty or now - lastSent >= RESYNC then sendState(now) end
+end
+
+-- Runner `id` is gone from the round in progress: a player left the server, or sat out to the menu (H31). The same
+-- path for both; a leave can end the round (H7), and then the match's results gap follows as for any round end.
+local function drop(id: number)
+	roots[id], history[id], lastClaim[id], pending[id] = nil, nil, nil, nil
+	local r = round
+	if r and not r.over then
+		local now = os.clock()
+		Tag.leave(r, id, now)
+		if r.over then
+			Session.finish(r, now)
+			log(("%s left, round over, winner %s"):format(tostring(id), tostring(r.winner)))
+		end
+		dirty = true
+	end
 end
 
 -- Call once at boot, after the map exists and before Runners.start.
@@ -335,12 +324,14 @@ function Match.start(tagName: string)
 		ghosts = function() return ghostState end, orbs = Orbs.current, history = history,
 		changed = function() dirty = true end })
 	if readyRemote then readyRemote.OnServerEvent:Connect(onReady) end
+	Bots.start(tagName)
+	Session.start(remote("Session"), remote("Menu"), { present = present, drop = drop, spawn = Arena.SPAWN,
+		abort = function() round, dueSince, dirty = nil, nil, true end })
 	Snapshots.start(unreliable("Snapshot"))
 	-- Server -> client events: the server never listens (→ N3).
 	if stateRemote then stateRemote.OnServerEvent:Connect(function() end) end
 	if verdictRemote then verdictRemote.OnServerEvent:Connect(function() end) end
 	if claimRemote then claimRemote.OnServerEvent:Connect(onClaim) end
-	local useDummy = studio and Config.STUDIO_DUMMY -- read once (→ N1); never in a live server
 	CollectionService:GetInstanceAddedSignal(tagName):Connect(function(model)
 		local id = model:GetAttribute("RunnerId")
 		local root = model:FindFirstChild("HumanoidRootPart")
@@ -353,9 +344,6 @@ function Match.start(tagName: string)
 	end)
 	local function onPlayer(player: Player)
 		join(player.UserId)
-		if useDummy and not Bots.any() then -- after the first player, so round 1 starts with a person as it
-			for _ = 1, math.max(1, Config.STUDIO_DUMMIES) do join(Bots.add(tagName)) end
-		end
 		sendState(os.clock(), player)
 		Orbs.syncTo(player)
 		Items.syncTo(player)
@@ -366,26 +354,11 @@ function Match.start(tagName: string)
 		local id = player.UserId
 		local i = table.find(order, id)
 		if i then table.remove(order, i) end
-		roots[id], history[id], lastClaim[id], pending[id], ready[id] = nil, nil, nil, nil, nil
+		ready[id] = nil
 		MoveGuard.forget(id)
-		local r = round
-		if r and not r.over then
-			local now = os.clock()
-			Tag.leave(r, id, now)
-			-- A leave can end the round too (H7): give it the same gap and "wins the round" screen as the tick path,
-			-- or the next frame starts a new round at once.
-			if r.over then
-				nextRoundAt = now + Config.ROUND_GAP
-				log(("%s left, round over, winner %s"):format(tostring(id), tostring(r.winner)))
-			end
-			dirty = true
-		end
+		drop(id)
 	end)
 	RunService.Heartbeat:Connect(step)
-	if useDummy then
-		print(("[Rotag] Studio: %d dummy runner(s) (drawn with the runner sprite, no stream) join the round;"
-			.. " Config.STUDIO_DUMMY, STUDIO_DUMMIES"):format(math.max(1, Config.STUDIO_DUMMIES)))
-	end
 end
 
 return Match

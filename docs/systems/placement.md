@@ -11,7 +11,7 @@ Use, the holds and the hold budget in [items.md](items.md). QA goals: [../qa/gho
 | Thing | Who | What | Numbers (`shared/Config.lua`) |
 |---|---|---|---|
 | **Fixture** | ghosts | one of the seven tetrominoes, 1-tile (4-stud) cells, rotated in 90° steps on the grapple input, placed one tile ahead of the ghost on the tile grid; permanent for the round; solid to EVERYONE, ghosts included; at most 3 live per ghost: a 4th starts the ghost's oldest fading, solid for 1 s more, then gone | `FIXTURE_CAP` 3, `FIXTURE_FADE` 1, `PLACE_GAP` 4, `PLACE_CLEAR` 4 |
-| **Boost pad** | ghosts | a 2-tile slab at the ghost's feet; lasts 20 s; anyone who ENTERS it, ghosts included, is thrown the way they are already going (100 studs/s, speed already carried is kept; standing still: the way they face) and up (105 studs/s, 2 x `JUMP_SPEED`), with dash and double jump refreshed (rule 15); no arrow, never turns you round (Danzo 2026-10-31); not solid, not an obstacle | `PAD_W` 8, `PAD_H` 1, `PAD_LIFE` 20, `PAD_SPEED_X` 100, `PAD_SPEED_Y` 105 |
+| **Boost pad** | ghosts | a 2-tile slab at the ghost's feet; lasts 20 s; anyone who ENTERS it, ghosts included, is thrown the way they are already going (H30: 115 studs/s, climbed to over `PAD_RAMP` 0.1 s from what they carried, held and then eased back to the run over `PAD_GLIDE` 0.7 s on a smooth curve while they hold that way; standing still: the way they face) and up (H30: 120 studs/s at once, a rise of ~15 studs, a held jump's), with dash and double jump refreshed (rule 15); no arrow, never turns you round (Danzo 2026-10-31); not solid, not an obstacle. Danzo 2026-11-11: "more oomph, scale up and down, it boosts you but feels sudden" | `PAD_W` 8, `PAD_H` 1, `PAD_LIFE` 20, `PAD_SPEED_X` 115, `PAD_SPEED_Y` 120, `PAD_RAMP` 0.1, `PAD_GLIDE` 0.7 |
 | **Boost grant** | ghosts | used by touch, like the hex: the ghost's path reaches a living runner's box (a tag's reach) and that runner runs +15% for 5 s; a second grant restarts the 5 s, never stacks. On the holder boost = max(ramp, grant) (rule 46): the grant IS the ramp's top, so a granted holder reaches the top sooner, never above | `GRANT_BOOST` 0.15 (= `RAMP_MAX`), `GRANT_TIME` 5 |
 | **The ghost pool** | | fixture 30, pad 15, grant 15, crate 12, trap 10, ice 10, hex 8 (the spec's whole pool; the hex is now 8 in 100) | `Items.POOLS.ghost` |
 
@@ -115,8 +115,11 @@ progress and a `grant` per live grant. `UseItem` (client → server): `number` 0
 ## 6. The knobs (`shared/Config.lua`)
 
 `GRANT_BOOST` 0.15, `GRANT_TIME` 5, `FIXTURE_CAP` 3, `FIXTURE_FADE` 1, `PLACE_GAP` 4, `PLACE_CLEAR` 4, `PAD_W` 8,
-`PAD_H` 1, `PAD_LIFE` 20, `PAD_SPEED_X` 100 (keep ≤ `DASH_SPEED`), `PAD_SPEED_Y` 105 (keep ≤ 2 x `JUMP_SPEED`:
-`config.test.luau` and `move_check.test.luau` pin both bounds). `Arena.KEEP_CLEAR` for the test map's zone.
+`PAD_H` 1, `PAD_LIFE` 20, `PAD_SPEED_X` 115 (keep ≤ `DASH_SPEED`), `PAD_SPEED_Y` 120 (H30: keep ≤ 2.4 x `JUMP_SPEED`; above
+2 x the rise spends the speed check's up burst, 4.50 of 10.50 studs in the driven pad chain, pinned under 60% by
+`move_check.test.luau`; `config.test.luau` and `placement.test.luau` cap the knob), `PAD_RAMP` 0.1 s (0 = the launch
+at once), `PAD_GLIDE` 0.7 s (0 = the plain bleed; `movement.test.luau` pins the ramp, the glide's gentle ends and the
+run speed at its end). `Arena.KEEP_CLEAR` for the test map's zone.
 
 ## 7. What each screen shows
 

@@ -44,40 +44,67 @@ Every map in `Maps.NAMES` is held to all of this; a new map that fails cannot sh
 
 ## 3. The Yard (`shared/MapYard.lua`)
 
-88 x 24 tiles inside its end walls (352 x 96 studs; x -176..176). The proposal's ~340 wide is kept; its ~150 tall is
-not (§4). Three tiers, each a double jump above the last and on screen from it (rule 28: from the floor the view
-reaches ~7 tiles up, from the mid tier the high one):
+**Relaid 2026-11-11 (H29)** for Danzo's brief, "plenty of routes, feels fun, a plethora of options on where to go",
+after QA round 1 (6/10: sealed shafts, pads that reached nothing, the next tier under the banner) and the canvas
+(`docs/briefs/yard.md`). 88 x 24 tiles inside its end walls (352 x 96 studs; x -176..176), wide not tall (§4). Four
+tiers 5 tiles apart, each a double jump above the last and on screen from it under the HUD banner (rule 28; the test
+pins it): floor 0, mid 5, high 10, the Mast 15. The two ends are not mirrors.
+
+**Tightened the same day (H30)** after Danzo's first play ("slightly too spaced out", pads with more oomph): the decks
+moved 2-3 tiles inward and the end pads to the ends, feeding 9-tile quays.
 
 ```
- 15 #.............................A......A................A.....A............................#
- 12 #kkkkk.......................................g.......................o..............kkkkk#
- 11 #kkkk#######......######..................######..................#######.....#######kkkk#
-  9 #kkk#k...............................................A................A.............k#kkk#
-  8 #kkk#k..............A...............................................................k#kkk#
-  6 #kkk#k.....o.............................=..........................................k#kkk#
-  5 #kkk#k.########..........#########..A...##########......#########..........########.k#kkk#
-  2 #kkk#k.............####.............................................................k#kkk#
-  1 #kkk#k.....##.......................................................##..............k#kkk#
-  0 #kkk#k...g.##....=............S.........S.........S....o....S.......##..=........g..k#kkk#
+ 21 #                         ......................................                         #
+ 19 #.........                ...................A..................                .........#   A the lantern
+ 17 #.........                .......A.......................A......                .........#   A the swing-drops
+ 15 #......................................g.................................................#   the Mast, ghost orb
+ 14 #....................................####........####....................................#
+ 13 #..................A...................................................A.................#
+ 10 #kkkkk........................................................o.....................kkkkk#
+  9 #kkk########.............#######..........######............#####..............#######kkk#   high tier
+  8 #kkk#k......................A.................................A.....................k#kkk#
+  7 #kkk#k......................................................................##......k#kkk#   StepRight
+  5 #kkk#k..............o.....................=.........................................k#kkk#
+  4 #kkk#k..........#########.......#####...##########.....#####.....#########..........k#kkk#   mid tier
+  3 #kkkkk...............................kkkkkkkkkkkkk..................................kkkkk#
+  1 #kkkkk.....##........................kkkkkkkkkkkkk..........................##......kkkkk#
+  0 #kkkkk.=...##................gS......kkkSkkkkkkkkkS.o.......S.g.............##.....=kkkkk#
 ```
 
-- **Floor** at y 0, end to end (the start line, the Studio dummies' lane). **Mid tier** at 6 tiles: `MidLeft`,
-  `MidLeft2`, the `Hub` over the start line, `MidRight2`, `MidRight`. **High tier** at 12: `HighLeft`, `HighLeft2`,
-  the `Crown` over the hub, `HighRight2`, `HighRight`. One `StepLeft` at 3 and two crate-sized `Cover` blocks.
-- **No open centre (rule 26):** the hub and the crown stack over the start line; the middle is a climb, not a field.
-- **Wall-jump shafts at both ends:** the end wall and a 10-tile pillar 3 tiles apart, up to the corner ledges, which
-  you leave by dropping (one-way drops, rule 26). Keep-clear: the shaft and a tile past the pillar, floor to 13 tiles.
-  They are the Yard's only corridors; the filled test proves nothing else needs a zone.
-- **Orbs (rule 42, 3 + 3):** ghost: the floor under `MidLeft` (x -144), the crown (the high route's prize), the floor
-  at x 144; the two floor ones are the Studio dummy ghosts' (they only reach the floor). Living: the floor at x 40 (the
-  dummies' patrol lane, for solo tests), `MidLeft`, `HighRight2`.
-- **Anchors (rule 17), 8:** four over the mid gaps and beside the hub (one off the floor: swing up onto the hub), four
-  at 15.5 tiles carrying the high route from `HighLeft2` to the crown and on to `HighRight2` in two swings each. The
-  one over `StepLeft` sits at 8.75 tiles: at 9.5 it was under the HUD banner from the step (grapple.test caught it).
-- **Map boost pads (§2 kit), 3, permanent:** the floor at x -112 and x 108 (up to the mid tier), and the hub's left
-  end (up beside the crown). Built by `server/Placement` as placed pads owned by 0 (no runner) in the same state as
-  ghost pads, at boot and after every round start's reset: every client mirrors and launches from them exactly like a
-  ghost's pad (no new client code, no remote), a ghost part can never cover one, a late joiner gets them in `syncTo`.
+- **The Dock (left):** the shaft (end wall and `PillarLeft`, hanging from 4 tiles so you walk in) up to the ledge
+  `HighLeft`; a floor pad at the end (x -38) that flings you INTO the shaft one way and 17 tiles onto the `MidLeft`
+  quay the other; `HighLeft2` the high route's left stand, a double jump up from the quay's end; `MidLeft2` with a
+  3-tile hole to the hub. Three ways up from the floor: the shaft, the pad, a double jump.
+- **The centre:** the `Hub` over the start line, the `Crown` over the hub (no open centre, rule 26), and the **Mast**:
+  two 4-tile perches at 15 over the hub's ends (8 tiles apart), joined by one swing under the lantern anchor (0, 19)
+  released at the top of the swing, each with a swing-drop anchor at 17.5 out onto the high deck beyond. The prize
+  ghost orb sits on `MastLeft`. A fall from the Mast lands on the crown, the hub or the mid decks: the slower route
+  (rule 28). The hub pad (x -3) lands on `HighLeft2`; running right it is a hop under the crown onto the floor.
+- **The Stairs (right):** a 5-tile room to `MidRight2`, a 5-tile jump to the `MidRight` quay, then a stair of single
+  jumps: `MidRight` 5 → `StepRight` 8 → `HighRight` 10, beside the shaft. The end pad (x 38) lands on `MidRight` one
+  way and flings you into the shaft the other. Three ways up: the shaft, the stair (no double jump spent), a double jump.
+- **Stacking:** no high deck sits over a mid deck except the crown and the Mast over the hub, because a strip under 5
+  tiles between two decks is a corridor parts may fill (rule 48); the worst case (§2) fills 149 tiles and everything
+  stays joined. Keep-clear: the two shafts (floor to 13), the start line under the hub with its hole (x -8..5).
+- **Orbs (rule 42, 3 + 3):** ghost: the floor at x -64 and x 70 (the Studio dummy ghosts reach only the floor), the
+  Mast. Living: the floor at x 30 (the dummies' patrol lane, for solo tests), `MidLeft`, `HighRight2`.
+- **Anchors (rule 17), 7, each PROVEN to carry a swing deck to deck by `maps.test` (the real Movement and Grapple, every
+  release point, with and without the double jump):** (-26, 13) `HighLeft2` → `HighLeft` (short: `MidLeft`); (-16.5, 8)
+  `MidLeft` ↔ `MidLeft2` (and a speed swing along the floor under it); (-12, 17.5) `MastLeft` → `HighLeft2`; (0, 19)
+  the lantern, `MastLeft` ↔ `MastRight`; (12, 17.5) `MastRight` → `HighRight2`; (17.5, 8) `MidRight2` ↔ `MidRight`;
+  (26, 13) `HighRight2` ↔ `HighRight` (short: `StepRight`).
+- **What the simulation taught (the numbers behind the layout):** with H30's launch (115 across ramped and glided,
+  120 up) a pad arc with the double jump at its apex is above 5 tiles from 9 to 16 tiles out, peaks 7.3 at 12 and
+  lands 17 out, so a fed deck starts 9 tiles from the pad (nearer is a head-bonk at the apex) and reaches past 17.
+  (H29's launch, 100 / 105 and the plain bleed, landed 12 out.) A release's air speed decays to the run within ~0.5 s,
+  so a swing carries ~10 tiles: an anchor centred over a 5 to 10 tile gap carries both ways; over 12 it drops you
+  under the far deck's lip. A low anchor in a 3 or 5 tile hole never lifts a floor runner onto the deck (the pendulum
+  returns to its start height and the deck edges break the rope), so the two "swing up onto the hub" anchors of H27
+  are gone.
+- **Map boost pads (§2 kit), 3, permanent:** built by `server/Placement` as placed pads owned by 0 (no runner) in the
+  same state as ghost pads, at boot and after every round start's reset: every client mirrors and launches from them
+  exactly like a ghost's pad (no new client code, no remote), a ghost part can never cover one, a late joiner gets
+  them in `syncTo`.
 - Plain grey parts as before; the Yard's look is the art block's (after this PR in the §12 order).
 
 ## 4. The shrink per map (DESIGN §6.8)

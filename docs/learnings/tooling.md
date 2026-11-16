@@ -98,3 +98,11 @@ filter: let the function that reads the round return plain numbers, and make the
 module-level `map` was the map data; the next line's `map.blocks` linted clean and errored at boot (`blocks is not a
 valid member of Folder "Map"`). Never reuse a data name for an Instance local (`folder`, `part`, `model`), and treat a
 first Play after any server-file edit as part of the test, not a formality. *(2026-11-07, handoff H27, `server/Arena.lua`.)*
+
+**T17 — A locked PC draws nothing: Studio's Play runs at 0 rendered frames a second.** With Windows on its lock screen
+(`LogonUI` running; Danzo was on remote control) the viewport is 1 x 1, `RenderStepped` never fires, and the MCP's
+`screen_capture` and `user_mouse_input` hang until stopped; `Heartbeat` and `PreSimulation` still run at full rate, so
+the server and the move rules can be tested, and anything in a render step (the camera, the HUD, `Ready`) cannot.
+Check first (`Get-Process LogonUI`, or count `RenderStepped` for a second), say so plainly, and drive what a click
+would do through a Studio-only Player attribute (`RotagMenu`, `RotagShop`: the command bar cannot fire a remote) and
+a hand-driven loop over the UI modules. Never report a look as checked from this. *(2026-11-16, handoff H31.)*

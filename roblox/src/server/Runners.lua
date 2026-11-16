@@ -89,8 +89,16 @@ function Runners.spawn(player: Player, spawnAt: Vector3)
 	end)
 end
 
--- Call once at boot, before anyone has a character.
-function Runners.start(spawnAt: Vector3)
+-- H31: back to the menu. The body goes; the player keeps watching the round through the spectator camera.
+function Runners.despawn(player: Player)
+	local old = player.Character
+	player.Character = nil
+	if old then old:Destroy() end
+end
+
+-- Call once at boot, before anyone has a character. H31: nobody gets a body on joining; server/Session spawns one
+-- when the player presses Play in the menu (Remotes.Menu).
+function Runners.start()
 	Players.CharacterAutoLoads = false
 	if not PhysicsService:IsCollisionGroupRegistered(Runners.GROUP) then
 		PhysicsService:RegisterCollisionGroup(Runners.GROUP)
@@ -100,7 +108,6 @@ function Runners.start(spawnAt: Vector3)
 	pcall(function() StarterPlayer.EnableMouseLockOption = false end)
 	local function onPlayer(player: Player)
 		pcall(function() player.DevEnableMouseLock = false end)
-		Runners.spawn(player, spawnAt)
 	end
 	Players.PlayerAdded:Connect(onPlayer)
 	for _, player in Players:GetPlayers() do onPlayer(player) end

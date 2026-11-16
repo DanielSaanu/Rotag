@@ -1,149 +1,305 @@
--- The Studio stand-in runners (docs/systems/tag.md §4; H15: more than one, and they play as ghosts too: H18, a dummy
--- ghost runs to the nearest ghost orb on the floor, then, holding a hex, chases the holder). Studio only:
--- Match reads RunService:IsStudio() and Config.STUDIO_DUMMY once at boot (→ N1). Config.STUDIO_DUMMIES of them join
--- after the first player, ids -1000, -1001, ... (→ T8). server/Dummy.lua builds and moves one; this file decides where
--- each goes and makes its claims, which the server judges on this frame only (rewind 0: its position is the truth).
+-- The bots (H31; DESIGN §3 rules 31-32, §6.7; docs/systems/bots.md). A bot is a runner the SERVER simulates with the
+-- very rules a player has: shared/Movement stepped every server frame in shared/BoxWorld (the map's blocks plus the
+-- ghosts' fixtures), its buttons picked by shared/BotBrain. It fills an empty seat in a round (server/Session picks
+-- the roster) and plays every role: runs, chases as "it", takes orbs, uses items, haunts as a ghost. Its position is
+-- the server's own truth: its tags get no lag allowance and are judged where a PERSON sees it (BOT_SEEN behind), its
+-- state rides the snapshot relay (Snapshots.inject) so every screen draws it like a person. server/BotMind picks the
+-- goal; this file owns the bodies and the frame.
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Config = require(Shared:WaitForChild("Config"))
 local Tag = require(Shared:WaitForChild("Tag"))
 local Ghost = require(Shared:WaitForChild("Ghost"))
 local OrbRules = require(Shared:WaitForChild("Orbs"))
-local Config = require(Shared:WaitForChild("Config"))
 local ItemRules = require(Shared:WaitForChild("Items"))
+local PlaceRules = require(Shared:WaitForChild("Placement"))
+local Movement = require(Shared:WaitForChild("Movement"))
+local BoxWorld = require(Shared:WaitForChild("BoxWorld"))
+local BotBrain = require(Shared:WaitForChild("BotBrain"))
+local SessionRules = require(Shared:WaitForChild("Session"))
 local Dummy = require(script.Parent:WaitForChild("Dummy"))
-local Items = require(script.Parent:WaitForChild("Items")) -- H19: dummies use what they roll, and stop while held
-local Walls = require(script.Parent:WaitForChild("Walls")) -- H24: a dummy outside the walls heads back in
+local Arena = require(script.Parent:WaitForChild("Arena"))
+local Items = require(script.Parent:WaitForChild("Items"))
+local Placement = require(script.Parent:WaitForChild("Placement"))
+local Snapshots = require(script.Parent:WaitForChild("Snapshots"))
+local Walls = require(script.Parent:WaitForChild("Walls"))
+local BotMind = require(script.Parent:WaitForChild("BotMind"))
 
 local Bots = {}
 Bots.ids = {} :: { [number]: boolean } -- for Tag.readyToStart: never waited for
 
+local MAX_DT = 1 / 20 -- a server hitch must not become one giant step through a deck
+local AIR_COMMIT = 0.7 -- seconds an airborne bot keeps its plan before it may think again (a jump is a commitment)
+local WORLD_EVERY = 0.5 -- seconds between rebuilds of the box world (the ghosts' fixtures come and go)
+local SEND_GAP = 1 / Config.SNAPSHOT_RATE
+local BOT_SEEN = 0.04 -- seconds on top of SNAPSHOT_DELAY and the target's own ping: how far behind the server a
+-- person sees a bot. A bot's tag on that person is judged on where the bot WAS then, so it lands when it looks like
+-- a touch on THEIR screen (QA round 1: a fixed 0.12 s was 4 studs short for a 200 ms phone). At most BOT_SEEN_MAX.
+local BOT_SEEN_MAX = 0.4
+local FELL_OUT = -60
+local DID_EVERY = 20 -- Studio only: seconds between one line per bot about what it did
+local studio = game:GetService("RunService"):IsStudio()
+
 local list: { [number]: any } = {}
 local count = 0
-local tried: { [number]: number } = {} -- H22: when each dummy last tried to place a part
-local refused: { [number]: string? } = {} -- ... and why the last try was refused (logged once per reason, not per try)
-local PLACE_TRY = 0.5 -- seconds between a dummy's placement tries (a refused one logs why; not every frame)
-
-function Bots.add(tagName: string): number
-	local id = Dummy.ID - count
-	count += 1
-	list[id] = Dummy.new(tagName, id)
-	Bots.ids[id] = true
-	return id
-end
+local tagName = ""
+local mapBoxes: { BoxWorld.Box } = {}
+local world: { BoxWorld.Box } = {}
+local grid: BoxWorld.Grid = nil :: any
+local worldAt = -math.huge
+local thoughtAt = -math.huge -- at most one bot plans per frame (a plan is ~33 rollouts)
+-- H32: what a bot needs to grapple as a player does (the anchors, the boxes a rope cannot pass), and the crates and
+-- traps lying in the world (a plan that runs into one is rated down: BotBrain's hazards).
+local hooks: BotBrain.Hooks = { anchors = {}, world = {} }
+local hazards: { BoxWorld.Box } = {}
+-- The seed of this server's bot names (shared/Session.botName): every client gets it in Remotes.Session.
+Bots.SEED = math.random(1, 1000000)
 
 function Bots.any(): boolean return count > 0 end
-function Bots.isBot(id: number): boolean return Bots.ids[id] == true end
+function Bots.isBot(id: number): boolean return list[id] ~= nil end
+
+local function rebuildWorld(now: number)
+	worldAt = now
+	world = table.clone(mapBoxes)
+	for _, p in Placement.placed() do
+		if p.item == "fixture" then
+			local b = p.boxes
+			for i = 0, p.count - 1 do table.insert(world, { b[i * 4 + 1], b[i * 4 + 2], b[i * 4 + 3], b[i * 4 + 4] }) end
+		end
+	end
+	hooks.world = world
+	hazards = {}
+	for _, t in Items.things() do
+		if t.item ~= "ice" then table.insert(hazards, { t.x - t.hw, t.y - t.hh, t.x + t.hw, t.y + t.hh }) end
+	end
+end
+
+local function reset(b: any, x: number, y: number)
+	b.s = Movement.new(x, y)
+	b.plan, b.mem, b.planT, b.nextThink = BotBrain.IDLE, BotBrain.memory(), 0, 0
+	b.pending = {}
+	table.clear(b.pads)
+	b.root.CFrame = CFrame.new(x, y, 0)
+end
+
+-- Call once at boot, after the map exists.
+function Bots.start(tag: string)
+	tagName = tag
+	mapBoxes = BoxWorld.fromBlocks(Arena.MAP.blocks)
+	grid = BoxWorld.grid(Arena.MAP.blocks, Arena.MAP.top)
+	BotMind.start(Arena.MAP)
+	hooks.anchors = {}
+	for i, a in Arena.ANCHORS do -- numbered as the clients number them (the snapshot's anchor byte)
+		table.insert(hooks.anchors, { x = a.x, y = a.y, id = i, floor = BoxWorld.floorUnder(mapBoxes, a.x, a.y) })
+	end
+	rebuildWorld(os.clock())
+end
+
+-- Make the bots in `ids` exist and every other bot go (server/Session: the roster's bots, or none in an empty server).
+function Bots.ensure(ids: { number })
+	local want: { [number]: boolean } = {}
+	for _, id in ids do
+		if SessionRules.isBot(id) then want[id] = true end
+	end
+	for id, b in list do
+		if not want[id] then
+			b.model:Destroy()
+			list[id], Bots.ids[id] = nil, nil
+			Snapshots.forget(id)
+			count -= 1
+		end
+	end
+	for id in want do
+		if not list[id] then
+			local at = Vector3.new(Arena.SPAWN.X + (SessionRules.BOT_ID - id + 1) * 8, Arena.SPAWN.Y, 0)
+			local model, root = Dummy.new(tagName, id, SessionRules.botName(id, Bots.SEED), at)
+			local b = { id = id, model = model, root = root, input = { moveX = 0, jumpPressed = false, jumpHeld = false,
+				dashPressed = false }, c = {}, field = {}, queue = {}, pads = {}, seq = 0, sendAt = 0, mind = BotMind.new(),
+				did = { jumps = 0, dashes = 0, swings = 0, since = os.clock() } }
+			reset(b, at.X, at.Y)
+			list[id], Bots.ids[id] = b, true
+			count += 1
+		end
+	end
+end
+
+-- Round start: stand at `x` on the start line, a fresh Movement state.
 function Bots.place(id: number, x: number)
-	local d = list[id]
-	if d then Dummy.place(d, x) end
+	local b = list[id]
+	if b then reset(b, x, Arena.SPAWN.Y) end
 end
 
-local function lastX(history: { [number]: { Tag.Sample } }, id: number): number?
-	local h = history[id]
-	local s = h and h[#h]
-	return s and s.x
-end
-
--- A ghost dummy's goal: the nearest ghost orb a floor-bound box can reach, preferring one that is up (H18).
-local REACH_Y = Config.RUNNER_HEIGHT + Config.ORB_SIZE
-local function orbX(o: OrbRules.State?, x: number): number?
-	if not o then return nil end
-	local best, bestD = nil, math.huge
-	for i, s in o.spots do
-		local d = math.abs(s.x - x) + (if o.up[i] then 0 else 1e4)
-		if s.kind == "ghost" and s.y <= REACH_Y and d < bestD then best, bestD = s.x, d end
-	end
-	return best
-end
-
--- Before the server samples: as it (not frozen) chase the nearest living player; as a ghost holding a hex chase the
--- holder, with an empty slot head for a ghost orb; otherwise patrol.
-function Bots.move(r: Tag.Round?, dt: number, now: number, history: { [number]: { Tag.Sample } }, o: OrbRules.State?)
-	for id, d in list do
-		local chase: number? = nil
-		local x = d.root.Position.X
-		if r and not r.over and r.it then
-			if r.it == id and not Tag.frozen(r, now) then
-				local best = math.huge
-				for _, other in r.order do
-					local ox = if r.alive[other] and not Bots.isBot(other) then lastX(history, other) else nil
-					if ox and math.abs(ox - x) < best then chase, best = ox, math.abs(ox - x) end
-				end
-			elseif r.alive[id] == false then
-				chase = if o and o.held[id] ~= nil then lastX(history, r.it) else orbX(o, x) -- any item: to the holder
-			end
-		end
-		-- The walls (H24): never head out (H26 follow-up), and outside, back in first. A dummy holder's chase is clamped
-		-- into the box too, so it will not follow a runner who steps out: Studio only, and the walls do that runner's job.
-		if r and r.alive[id] then
-			local lo, hi = Walls.room(now)
-			if lo and hi then
-				if x >= hi - 0.5 then d.dir = -1 elseif x <= lo + 0.5 then d.dir = 1 end -- the patrol turns inside
-				chase = math.clamp(chase or (if d.dir > 0 then hi else lo), lo, hi)
-			end
-			chase = Walls.backIn(id) or chase
-		end
-		-- A held dummy stands still for any hold (it is a stand-in, not a body that stumbles or slides).
-		Dummy.step(d, dt, chase, (r ~= nil and r.it == id and Tag.frozen(r, now)) or Items.held(id, now))
-	end
-end
-
--- A dummy's facing (server/Items puts its crate behind it and its beam ahead); nil for anyone else.
+-- Where a bot's crate or beam goes (server/Items): the way BotMind aimed it this frame, else the way it faces.
 function Bots.facing(id: number): number?
-	local d = list[id]
-	return d and d.facing
+	local b = list[id]
+	return b and (b.aim or b.s.facing)
 end
 
--- H19, after the orbs: a dummy holding a crate, trap or ice uses it once a living PLAYER is within ICE_LENGTH, turning
--- to face that player first, so a solo test shows holds. Through server/Items.press: the same rules as a player's Use.
+local goal: BotBrain.Goal = { mode = "seek", field = {}, x = 0, y = 0 }
+
+local function think(b: any, r: Tag.Round?, now: number, history: { [number]: { Tag.Sample } }, o: OrbRules.State?)
+	local mode, gx, gy, safe = BotMind.goal(b.mind, b.id, b.s, r, now, history, o)
+	if mode and gx and gy then
+		goal.mode, goal.x, goal.y, goal.safe = mode, gx, gy, safe
+		goal.field = BoxWorld.field(grid, gx, gy, b.field, b.queue)
+		goal.speedMult = b.input.speedMult
+		-- H32: each bot is its own player (BotMind.new): how often it dashes and swings, how sloppy its picks are.
+		local mind = b.mind
+		goal.noDash = math.random() > mind.dash
+		local ghost = r ~= nil and not r.over and r.alive[b.id] == false
+		goal.hooks = if not ghost and math.random() < mind.hook then hooks else nil -- a ghost never grapples (rule 37)
+		goal.hazards = if #hazards > 0 then hazards else nil
+		goal.noise = mind.noise
+		goal.lo, goal.hi = nil, nil
+		if r and r.alive[b.id] then goal.lo, goal.hi = Walls.room(now) end
+		if Walls.backIn(b.id) then goal.lo, goal.hi = nil, nil end -- outside already: any way back in is a good plan
+		b.plan = BotBrain.choose(world, grid, b.s, goal, math.random, b.plan)
+	else
+		b.plan = BotBrain.IDLE
+	end
+	b.mem, b.planT = BotBrain.memory(), 0
+	b.mem.hooked = b.s.rope ~= nil -- on a rope already: a hook plan keeps holding, any other lets go
+	b.nextThink = now + b.mind.think * (0.8 + 0.4 * math.random())
+end
+
+local function stepBot(b: any, r: Tag.Round?, dt: number, now: number, history: { [number]: { Tag.Sample } },
+	o: OrbRules.State?)
+	local s, id, input = b.s, b.id, b.input
+	local inRound = r ~= nil and not r.over and r.alive[id] ~= nil
+	local isIt = inRound and (r :: Tag.Round).it == id
+	local frozen = isIt and Tag.frozen(r :: Tag.Round, now)
+	input.speedMult = b.mind.speed * (if inRound and r then Tag.speedMult(isIt, now - r.chaseFrom, false,
+		r.alive[id] == true and Tag.endPhase(r, now)) else 1)
+	if now >= b.nextThink and (s.grounded or b.planT >= AIR_COMMIT) and thoughtAt ~= now then
+		thoughtAt = now
+		think(b, r, now, history, o)
+	end
+	BoxWorld.probe(world, s.x, s.y, b.c)
+	BotBrain.input(b.plan, b.mem, s, b.c, b.planT, input, hooks)
+	-- A hold (rule 44), exactly as a player's client applies it (client/Use): the stumble carries on the way it went.
+	local h = Items.holdOf(id, now)
+	if h then
+		if h ~= b.hold then b.hold, b.holdDir = h, if s.vx > 0.5 then 1 elseif s.vx < -0.5 then -1 else s.facing end
+		input.hold, input.holdDir, input.holdLeft = h.kind, b.holdDir, h.untilT - now
+	else
+		b.hold, input.hold, input.holdDir, input.holdLeft = nil, nil, nil, nil
+	end
+	if frozen then -- the tag freeze (rule 1): no input, no run speed, still falls (as client/Client does)
+		input.moveX, input.jumpPressed, input.jumpHeld, input.dashPressed = 0, false, false, false
+		s.vx, s.dashTime = 0, 0
+	end
+	-- A pad launches a bot on ENTERING it, as a player's client launches itself (client/Place.frame).
+	input.launchX, input.launchY = nil, nil
+	for _, p in Placement.placed() do
+		if p.item == "pad" then
+			local touching = PlaceRules.onPad(p, s.x, s.y)
+			local was = b.pads[p.n]
+			b.pads[p.n] = touching
+			if touching and (was == false or (was == nil and p.owner ~= id)) and not h then
+				input.launchX, input.launchY = PlaceRules.launch(if s.vx > 0.5 then 1 elseif s.vx < -0.5 then -1 else s.facing)
+			end
+		end
+	end
+	local ev = Movement.step(s, input, b.c, dt)
+	BoxWorld.move(world, s, dt)
+	if s.y < FELL_OUT then reset(b, Arena.SPAWN.X, Arena.SPAWN.Y) end
+	b.planT += dt
+	local e = b.pending
+	if studio then -- Studio only: what each bot did, so a tester can see it plays like a person (bots.md §7)
+		local n = b.did
+		if ev.jump then n.jumps += 1 end
+		if ev.dash then n.dashes += 1 end
+		if ev.grapple == "attach" then n.swings += 1 end
+		if now - n.since >= DID_EVERY then
+			print(("[Rotag] bots: %s (%d, skill %.2f) in %ds: %d jumps, %d dashes, %d swings"):format(b.model.Name, id,
+				b.mind.skill, DID_EVERY, n.jumps, n.dashes, n.swings))
+			n.jumps, n.dashes, n.swings, n.since = 0, 0, 0, now
+		end
+	end
+	if ev.landed then e.landed = math.max(e.landed or 0, ev.landed) end
+	e.jump = ev.jump or e.jump
+	e.dash = ev.dash or e.dash
+	b.root.CFrame = CFrame.new(s.x, s.y, 0)
+	if now - b.sendAt >= SEND_GAP then
+		b.sendAt = now
+		b.seq = (b.seq + 1) % 65536
+		b.pending = {}
+		Snapshots.inject(id, { seq = b.seq, x = s.x, y = s.y, vx = s.vx, vy = s.vy, sprite = Movement.spriteFor(s),
+			facing = s.facing, dashing = s.dashTime > 0, jump = e.jump, dash = e.dash == true, landed = e.landed,
+			anchor = if s.rope then s.rope.id else nil }, now) -- the rope every screen draws (H25's anchor byte)
+	end
+end
+
+-- Before the server samples positions: every bot thinks (one a frame) and moves one frame.
+function Bots.move(r: Tag.Round?, dt: number, now: number, history: { [number]: { Tag.Sample } }, o: OrbRules.State?)
+	if count == 0 then return end
+	if now - worldAt >= WORLD_EVERY then rebuildWorld(now) end
+	dt = math.min(dt, MAX_DT)
+	for _, b in list do
+		b.aim = nil
+		if dt > 1 / 45 then -- a slow frame: two half steps, so a fall never skips a deck
+			stepBot(b, r, dt / 2, now - dt / 2, history, o)
+			stepBot(b, r, dt / 2, now, history, o)
+		else
+			stepBot(b, r, dt, now, history, o)
+		end
+	end
+end
+
+-- After the orbs: a bot uses what it holds when BotMind says the moment is right, through server/Items.press: the
+-- same rules as a player's Use.
 function Bots.uses(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample } }, o: OrbRules.State?)
 	if not (r and o) or r.over then return end
-	for id, d in list do
+	for id, b in list do
 		local item = o.held[id]
-		local x = lastX(history, id)
-		local frozen = r.it == id and Tag.frozen(r, now) -- would only log "frozen" every frame
-		if item and ItemRules.PLACED[item] and not frozen then
-			-- H22: a dummy ghost places a fixture or pad where it is (a random rotation), so solo Play sees one land
-			if now - (tried[id] or -math.huge) >= PLACE_TRY then
-				tried[id] = now
-				local ok, why = Items.press(id, now, math.random(0, 3), true)
-				if ok then
-					refused[id] = nil
-				elseif why ~= refused[id] then
-					refused[id] = why
-					print(("[Rotag] bots: %d's %s refused: %s (retrying every %gs)"):format(id, item, tostring(why), PLACE_TRY))
-				end
-			end
-		elseif item and item ~= "hex" and item ~= "grant" and x and not frozen and not Items.held(id, now) then
-			for _, other in r.order do
-				local ox = if r.alive[other] and not Bots.isBot(other) then lastX(history, other) else nil
-				if ox and math.abs(ox - x) <= Config.ICE_LENGTH then
-					d.facing = if ox >= x then 1 else -1
-					Items.press(id, now)
-					break
-				end
+		if item and not (r.it == id and Tag.frozen(r, now)) and not Items.holdOf(id, now) then
+			local use, aim, rot = BotMind.use(b.mind, id, b.s, item, r, now, history)
+			if use then
+				b.aim = aim
+				Items.press(id, now, rot, true)
 			end
 		end
 	end
 end
 
--- After the server sampled and judged the players' tags: a dummy holder tags the first living PLAYER it touches.
--- Never another dummy: with several they share one patrol lane and would pass the fuse between them for ever (seen
--- in Play, H15), so the fuse could not run out on a dummy and no dummy would ever become a ghost.
+local function sampleAt(h: { Tag.Sample }, t: number): Tag.Sample?
+	for i = #h, 1, -1 do
+		if h[i].t <= t then return h[i] end
+	end
+	return h[1]
+end
+
+-- After the server judged the players' tags: a bot holder tags the first living runner it touches, where a person
+-- SEES the bot (BOT_SEEN ago) against where that runner is now, with no grace: a bot never tags from out of reach.
 function Bots.tags(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample } },
 	pass: (Tag.Round, number, number, number) -> ())
 	local it = r and not r.over and r.it
-	if not (r and it and list[it]) or not Config.STUDIO_DUMMY_TAGS then return end -- off: solo item testing (H19)
+	if not (r and it and list[it]) or not Config.BOT_TAGS then return end -- off: solo item testing (H19)
+	local ha = history[it]
+	local here = ha and ha[#ha]
+	if not (ha and here) then return end
 	for _, id in r.order do
-		if id ~= it and r.alive[id] and not Bots.isBot(id) and Tag.canClaim(r, it, id, now)
-			and Items.canTag(it, now) then -- H20: an iced dummy holder cannot pass the fuse either
-			local ha, hb = history[it], history[id]
-			if ha and hb and Tag.confirm(ha, hb, now, 0) then pass(r, it, id, now) return end
+		if id ~= it and r.alive[id] and Tag.canClaim(r, it, id, now) and Items.canTag(it, now) then
+			local hb = history[id]
+			local sb = hb and hb[#hb]
+			local behind = 0 -- another bot is the server's own too: judged on this frame
+			local player = Players:GetPlayerByUserId(id)
+			if player then
+				local ok, ping = pcall(function() return player:GetNetworkPing() end)
+				behind = math.min(BOT_SEEN_MAX, Config.SNAPSHOT_DELAY + BOT_SEEN + (if ok and type(ping) == "number" then ping else 0))
+			end
+			local seen = sampleAt(ha, now - behind)
+			if sb and seen and Tag.overlaps(seen.x, seen.y, sb.x, sb.y, 0)
+				and Tag.overlaps(here.x, here.y, sb.x, sb.y, Config.TAG_GRACE) then
+				pass(r, it, id, now)
+				return
+			end
 		end
 	end
 end
 
--- After the players' hexes: a dummy ghost holding a hex hexes the holder it touches.
+-- After the players' hexes: a bot ghost holding a hex hexes the holder it touches.
 function Bots.hexes(r: Tag.Round?, g: Ghost.Ghosts?, o: OrbRules.State?, now: number,
 	history: { [number]: { Tag.Sample } }, land: (Tag.Round, Ghost.Ghosts, OrbRules.State, number, number) -> ())
 	local it = r and not r.over and r.it

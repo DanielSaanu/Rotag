@@ -4,7 +4,6 @@
 -- H6). Ghosts (H18, docs/systems/ghosts.md §6): a ghost's own status line (grab a ghost orb / hex the holder),
 -- "-N HEX  <ghost>" on every hex, and the IT marker's halo turns pale blue while the shared ward holds.
 -- Placeholder UI, not art: the growing, beeping bomb comes with the art pass.
-local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
@@ -13,19 +12,23 @@ local Others = require(script.Parent:WaitForChild("Others")) -- the IT marker si
 local Items = require(script.Parent:WaitForChild("Items")) -- what the local ghost holds (H18)
 local Place = require(script.Parent:WaitForChild("Place")) -- H22: the local boost grant
 local Controls = require(script.Parent:WaitForChild("Controls")) -- the trap line names the device's pry input (PR 3)
+local Flow = require(script.Parent:WaitForChild("Flow")) -- H31: names, and the match's cards own the round-over words
+local Ui = require(script.Parent:WaitForChild("Ui")) -- QA round 1: the HUD lives in the same scaled design space
+local Look = require(script.Parent:WaitForChild("Look")) -- the name tag's height: the IT marker sits clear of it
 
 local Hud = {}
 
 local RUNNER_TAG = "RotagRunner"
-local DUMMY_NAME = "Dummy"
 local POP_TIME = 1.2
 local GO_TIME = 0.7 -- seconds "GO!" stays up after the holder's wait ends
 local MARKER_PULSE = 1.5 -- glow pulses per second
 local MARKER_W, MARKER_H = 3, 2.6 -- studs: the triangle is nearly the runner's width (2) and height (3.5)
-local MARKER_UP = Config.RUNNER_HEIGHT / 2 + 0.6 + MARKER_H / 2 -- its centre above the holder's centre
+local MARKER_UP = Config.STUDS_PER_TILE / 2 + 0.2 + MARKER_H / 2 -- its centre above the holder's centre: over the
+-- sprite's top edge, plus the name tag's height (Look.nameHeight, added each frame)
 local MARKER_Z = Config.RUNNER_DEPTH / 2 + 0.4 -- in front of the runner's sprite plane, toward the camera
 local HIDDEN = CFrame.new(0, -1e4, 0)
 local gui, fuseLabel, statusLabel, popLabel, countLabel = nil, nil, nil, nil, nil
+local fusePill: Frame, fuseBar: Frame = nil :: any, nil :: any
 local halves: { BasePart } = {} -- the solid triangle's two wedges, then the halo's two
 local popAt, goAt, wasWaiting = -math.huge, -math.huge, false
 local GHOST_BLUE, POP_GOLD = Color3.fromRGB(170, 215, 255), Color3.fromRGB(255, 210, 90)
@@ -47,7 +50,7 @@ local function label(parent: Instance, y: number, h: number, size: number): Text
 	l.AnchorPoint = Vector2.new(0.5, 0)
 	l.Position = UDim2.new(0.5, 0, 0, y)
 	l.Size = UDim2.new(0, 420, 0, h)
-	l.Font = Enum.Font.GothamBold
+	l.Font = Enum.Font.GothamBlack
 	l.TextSize = size
 	l.TextColor3 = Color3.new(1, 1, 1)
 	l.TextStrokeTransparency = 0.4
@@ -57,10 +60,7 @@ local function label(parent: Instance, y: number, h: number, size: number): Text
 end
 
 function Hud.nameOf(id: number?): string
-	if id == nil then return "nobody" end
-	if id < -999 then return if id == -1000 then DUMMY_NAME else (DUMMY_NAME .. tostring(-999 - id)) end
-	local p = Players:GetPlayerByUserId(id)
-	return if p then p.DisplayName else ("runner " .. tostring(id))
+	return Flow.nameOf(id) -- H31: a person's display name, a bot's given one
 end
 
 local function rootOf(id: number): BasePart?
@@ -118,7 +118,7 @@ local function placeMarker(at: Vector3?, pulse: number, warded: boolean?, flash:
 			local side = if i % 2 == 1 then 1 else -1
 			local w = MARKER_W * scale
 			local z = MARKER_Z - (if i <= 2 then 0 else 0.1) -- the halo sits just behind
-			p.CFrame = CFrame.new(at + Vector3.new(side * w / 4, MARKER_UP, z)) * FLIP
+			p.CFrame = CFrame.new(at + Vector3.new(side * w / 4, MARKER_UP + Look.nameHeight(), z)) * FLIP
 				* CFrame.Angles(0, side * math.pi / 2, 0)
 			if i > 2 then
 				p.Transparency = 0.55 + 0.3 * pulse
@@ -134,18 +134,34 @@ function Hud.start(player: Player)
 	gui.Name = "RotagHud"
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = false
-	fuseLabel = label(gui, 8, 40, FUSE_SIZE)
-	phaseLabel = label(gui, 106, 24, 20)
+	-- QA round 1: every line below is in design pixels on a scaled root (client/Ui), as the menu and the cards are:
+	-- at a phone's size the unscaled HUD ran into the "ROUND n" card and its text did not shrink with the rest.
+	local root = Ui.scaled(gui)
+	-- H31: the fuse readout sits on a dark pill with a bar that burns down (rule 2: readable at a glance)
+	fusePill = Instance.new("Frame")
+	fusePill.AnchorPoint, fusePill.Position, fusePill.Size = Vector2.new(0.5, 0), UDim2.new(0.5, 0, 0, 4), UDim2.fromOffset(330, 50)
+	fusePill.BackgroundColor3, fusePill.BackgroundTransparency, fusePill.BorderSizePixel = Color3.fromRGB(12, 13, 18), 0.35, 0
+	fusePill.Visible = false
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 14)
+	corner.Parent = fusePill
+	fuseBar = Instance.new("Frame")
+	fuseBar.AnchorPoint, fuseBar.Position, fuseBar.Size = Vector2.new(0, 1), UDim2.new(0, 14, 1, -5), UDim2.new(1, -28, 0, 4)
+	fuseBar.BorderSizePixel, fuseBar.BackgroundColor3 = 0, Color3.fromRGB(150, 255, 110)
+	fuseBar.Parent = fusePill
+	fusePill.Parent = root
+	fuseLabel = label(root, 6, 40, FUSE_SIZE)
+	phaseLabel = label(root, 106, 24, 20)
 	phaseLabel.TextColor3 = Color3.fromRGB(255, 190, 60) -- QA round 1: a dark stroke and a brighter orange on the sky
 	phaseLabel.TextStrokeTransparency = 0
-	popLabel = label(gui, 48, 32, 28)
+	popLabel = label(root, 48, 32, 28)
 	popLabel.TextColor3 = Color3.fromRGB(255, 210, 90)
-	statusLabel = label(gui, 82, 24, 18)
+	statusLabel = label(root, 82, 24, 18)
 	-- The holder's wait, counted down big in the middle of the screen, then "GO!" (H6: a small "frozen 3.0" line
-	-- read as being stuck).
-	countLabel = label(gui, 0, 120, 72)
+	-- read as being stuck). Lower on a short screen, clear of the "ROUND n" card above it.
+	countLabel = label(root, 0, 120, 72)
 	countLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-	countLabel.Position = UDim2.fromScale(0.5, 0.38)
+	countLabel.Position = UDim2.fromScale(0.5, if Ui.compact() then 0.5 else 0.38)
 	countLabel.TextStrokeTransparency = 0
 	gui.Parent = player:WaitForChild("PlayerGui")
 	buildMarker()
@@ -209,6 +225,7 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 		phaseLabel.TextTransparency = if now - phaseAt < PHASE_FLASH then 0.6 * (0.5 + 0.5 * math.sin(now * 6 * math.pi))
 			else 0
 	end
+	fusePill.Visible = state ~= nil and not state.over
 	local pop = now - popAt
 	popLabel.TextTransparency = math.clamp((pop - POP_TIME * 0.6) / (POP_TIME * 0.4), 0, 1)
 	-- The holder's wait: a big count to GO on their screen; everyone else is told to run.
@@ -229,7 +246,7 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	end
 	if now - popAt > POP_TIME then popLabel.TextColor3 = POP_GOLD end
 	if not state then
-		fuseLabel.Text, statusLabel.Text = "", "waiting for the round"
+		fuseLabel.Text, statusLabel.Text = "", ""
 		placeMarker(nil, 0) wasWarded = false
 		return
 	end
@@ -240,14 +257,15 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	end
 	if state.over then
 		fuseLabel.Text = ""
-		statusLabel.Text = if state.winner == me then "you win the round!"
-			elseif state.winner then (Hud.nameOf(state.winner) .. " wins the round")
-			elseif state.held then "waiting for players" else "round over"
+		statusLabel.Text = "" -- H31: client/Board's cards say who won and what comes next
 		placeMarker(nil, 0) wasWarded = false
 		return
 	end
 	local mine = state.it == me
 	fuseLabel.Text = ("%s  %.1f"):format(if mine then "YOU'RE IT" else (Hud.nameOf(state.it) .. " is it"), fuseLeft)
+	local share = math.clamp(fuseLeft / Config.FUSE_START, 0, 1)
+	fuseBar.Size = UDim2.new(share, -28 * share, 0, 4)
+	fuseBar.BackgroundColor3 = Color3.fromRGB(150, 255, 110):Lerp(IGNITE_RED, math.clamp(1 - fuseLeft / 20, 0, 1))
 	local base = if mine then Color3.fromRGB(255, 90, 70) else Color3.new(1, 1, 1)
 	local lv = Tag.ignition(fuseLeft) -- H23: the same growth as the holder's ember rim (Look:ignite)
 	local beat = 0.5 + 0.5 * math.sin(now * 2 * math.pi * (FUSE_BEAT[1] + (FUSE_BEAT[2] - FUSE_BEAT[1]) * lv))

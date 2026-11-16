@@ -47,6 +47,12 @@ to (`roblox/default.project.json`).
   layout per verb, with sources. Before any input or `Controls.lua` change.
 - [`docs/systems/players.md`](docs/systems/players.md): more than one runner: other runners drawn on every screen, pass-through
   collision, off-screen arrows, round-ready. Before any multiplayer, collision or HUD-arrow change.
+- [`docs/systems/session.md`](docs/systems/session.md): the match as built (H31): lobby, three scored rounds, podium; who plays (PLAY /
+  sit out), bots in the empty seats; coins, profiles and the DataStore, the shop and the wheel, cosmetics only. Before any flow, score, reward, save or shop change.
+- [`docs/systems/bots.md`](docs/systems/bots.md): bots as built (H31): a runner the server plays with the real move rules, plans tried in its
+  head, what it wants, its fairness and handicaps. Before any bot change.
+- [`docs/systems/ui.md`](docs/systems/ui.md): the menu, the scoreboard and cards, sound, punch and cosmetics, the stage's look (H31), and what
+  has NOT been looked at yet. Before any UI, audio, effect or look change.
 - [`docs/systems/grapple.md`](docs/systems/grapple.md): the grapple as built (H25): anchors, aim assist, the swing's
   maths, release, the speed cap instead of a trust allowance, what was seen. Before any grapple or anchor change.
 - [`docs/systems/trust.md`](docs/systems/trust.md): movement trust: why there is no movement remote, the server's speed

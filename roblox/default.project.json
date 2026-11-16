@@ -38,6 +38,21 @@
         },
         "UseItem": {
           "$className": "RemoteEvent"
+        },
+        "Session": {
+          "$className": "RemoteEvent"
+        },
+        "Menu": {
+          "$className": "RemoteEvent"
+        },
+        "Profile": {
+          "$className": "RemoteEvent"
+        },
+        "Shop": {
+          "$className": "RemoteEvent"
+        },
+        "Looks": {
+          "$className": "RemoteEvent"
         }
       }
     },

@@ -346,12 +346,40 @@ end
 do -- a pad launches the way the runner is going (client/Place passes that direction) and up, off the floor, and
 	-- refreshes the dash and the double jump
 	local s = standing(FLOOR, 0)
+	frames(FLOOR, s, 20, input({ moveX = 1 })) -- at a run
 	local ev = tick(FLOOR, s, launched({ moveX = 1 }, 1))
 	assert(ev.launch and not s.grounded, "launched off the floor")
-	assert(near(s.vx, kept(Config.PAD_SPEED_X)), ("the launch speed: %.2f"):format(s.vx))
+	-- H30: across, the launch RAMPS from the run to PAD_SPEED_X over PAD_RAMP (was: at once), then glides
+	local ramp = math.ceil(Config.PAD_RAMP / DT)
+	assert(s.vx > Config.RUN_SPEED and s.vx < Config.PAD_SPEED_X, ("the first frame is on the ramp: %.2f"):format(s.vx))
 	assert(near(s.vy, Config.PAD_SPEED_Y - Config.GRAVITY * DT), "up at the launch speed, gravity from this frame")
 	tick(FLOOR, s, input({ moveX = 1 }))
 	assert(not s.grounded, "the next frame does not snap it back to the floor")
+	local last = s.vx
+	for _ = 3, ramp do -- two frames of the ramp have run
+		tick(FLOOR, s, input({ moveX = 1 }))
+		assert(s.vx > last, "the ramp climbs every frame")
+		last = s.vx
+	end
+	assert(near(s.vx, Config.PAD_SPEED_X, 1e-6), ("at the end of the ramp, the launch speed: %.2f"):format(s.vx))
+	-- the glide: held near the peak, then easing to the run, never a jump between frames, and at the run by PAD_GLIDE
+	local biggestDrop, prev, edges = 0, s.vx, 0
+	local n, bleed = math.ceil(Config.PAD_GLIDE / DT), Config.RUN_REDUCE * Config.AIR_MULT * DT
+	for f = 1, n + 1 do
+		tick(FLOOR, s, input({ moveX = 1, held = true }))
+		local drop = prev - s.vx
+		biggestDrop = math.max(biggestDrop, drop)
+		if f <= 4 or (f > n - 4 and f <= n) then edges = math.max(edges, drop) end -- the first and last 4 frames
+		prev = s.vx
+		if f == math.floor(0.2 / DT) then
+			assert(s.vx > Config.RUN_SPEED + 0.75 * (Config.PAD_SPEED_X - Config.RUN_SPEED), ("0.2 s in, still near the peak: %.1f"):format(s.vx))
+		end
+	end
+	assert(near(s.vx, Config.RUN_SPEED, 0.5), ("after PAD_GLIDE the run speed: %.2f"):format(s.vx))
+	print(("    pad glide: drops at most %.2f studs/s a frame mid-way and %.2f at its ends (the old bleed: %.2f every frame, at once)"):format(biggestDrop, edges, bleed))
+	-- "scales down": the ends of the glide are gentle (a third of the old bleed's step) and nothing in it is a snap
+	assert(edges < bleed / 3, "the glide starts and ends gently")
+	assert(biggestDrop < 2 * bleed, "and never drops faster than twice the old bleed mid-way")
 	-- in the air with both spent: a pad gives them back
 	local a = Movement.new(0, 30)
 	a.airJumps, a.dashes = 0, 0
@@ -364,9 +392,9 @@ do -- a pad launches the way the runner is going (client/Place passes that direc
 	for _ = 1, 60 do tick(FLOOR, r, input()) top = math.max(top, r.y) end
 	local rise = top - HH
 	print(("    pad: rises %.2f studs (a held jump: %.2f)"):format(rise, apex(30)))
-	-- Measured 2026-10-31 (H22): 11.38 studs, under a held jump's 14.25: a pad gives speed and the refresh, then the
-	-- refreshed double jump goes higher. A pad launching higher needs a launch allowance in MoveCheck (placement.md §6).
-	assert(rise > 11.2 and rise < 11.6, ("a pad's rise (measurement): %.2f"):format(rise))
+	-- Measured 2026-10-31 (H22): 11.38 studs at PAD_SPEED_Y 105, under a held jump's 14.25. H30 (Danzo: "more oomph"):
+	-- 15.00 at 120, a held jump's height, spending the speed check's up burst (move_check.test pins the chain's use).
+	assert(rise > 14.8 and rise < 15.2, ("a pad's rise (measurement): %.2f"):format(rise))
 end
 
 do -- rule 16: speed already carried the launch's way is kept, never cut; given the other way, the launch wins
@@ -379,7 +407,9 @@ do -- rule 16: speed already carried the launch's way is kept, never cut; given 
 	local b = standing(FLOOR, 0)
 	frames(FLOOR, b, 20, input({ moveX = -1 }))
 	tick(FLOOR, b, launched({ moveX = -1 }, 1))
-	assert(b.vx > 0 and near(b.vx, Config.PAD_SPEED_X, 10), "running left onto a right pad: thrown right")
+	assert(b.vx > 0, "running left onto a right pad: thrown right from the first frame (the ramp starts at 0)")
+	frames(FLOOR, b, math.ceil(Config.PAD_RAMP / DT), input({ moveX = 1 }))
+	assert(near(b.vx, Config.PAD_SPEED_X, 1), "... and at the launch speed after the ramp")
 	local f = Movement.new(0, 30)
 	f.vy = 200 -- already rising faster (a cheat or a future move): the pad never slows a rise
 	tick(FLOOR, f, launched({}, 1))

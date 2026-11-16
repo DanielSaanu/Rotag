@@ -1,6 +1,6 @@
 # Parkour Tag (working title): Game Design Notes
 
-_Last updated: 2 Nov 2026 (H26: rule 51's walls loosely follow the living and keep moving; §6.8; §2 unchanged). 1 Nov 2026 (H25: the grapple built, notes under rules 15 and 17; §2 unchanged). 1 Nov 2026 (H24: rule 3's map shrink built as the closing walls, rules 3 and 51, §6.8; §2 unchanged). 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
+_Last updated: 16 Nov 2026 (H31: the match, bots, the menu, coins and cosmetics built: notes under rules 31-36, §6.3-§6.5 and §6.7 answered as trials; §2 unchanged). 2 Nov 2026 (H26: rule 51's walls loosely follow the living and keep moving; §6.8; §2 unchanged). 1 Nov 2026 (H25: the grapple built, notes under rules 15 and 17; §2 unchanged). 1 Nov 2026 (H24: rule 3's map shrink built as the closing walls, rules 3 and 51, §6.8; §2 unchanged). 31 Oct 2026 (H23: rule 51's `END_PHASE_AFTER` trial 120 s and its "final two"; §6.9). 19 Oct 2026 (H16: ghosts v2, orbs and abilities adopted, §3 rules 37-51; §6.2 resolved; §6.8 maps added. H15: §6.1)_
 
 This is the design contract. Code and art are judged against it. A change to §2 (locked decisions) or §3 (the
 adopted rules) is escalation trigger 1 (`CLAUDE.md`). Portable principles that are not about this game live in
@@ -114,7 +114,8 @@ Moves should hand speed off to each other:
     - Never target off-screen anchors. Missed swings frustrate players (Grapple Dog, Parkour Reborn).
     *Built (H25, 2026-11-01): gold anchors, hold to hang, the nearest on-screen anchor in reach (ahead first), release
     keeps the swing x1.1; the swing is capped at the dash speed so the dash still redirects it and the speed check is
-    unchanged ([grapple.md](systems/grapple.md)).*
+    unchanged ([grapple.md](systems/grapple.md)). H30 (2026-11-11, Danzo: "pulling on the string to launch himself
+    off"): the release is a haul, x1.25 plus 25 studs/s along the swing, never past 140; the catch has a give.*
 18. **Easy to start, hard to master.** Casual players do fine with run and jump alone. Hidden speed tech lets experts break routes. A steep skill floor killed Rumbleverse and keeps Parkour Reborn small.
 19. **Mistakes cost little.** After a hit or fall, speed rebuilds fast (Pizza Tower).
 20. **Never use floaty or delayed controls.** MultiVersus lost players when its movement felt "underwater".
@@ -148,6 +149,10 @@ Moves should hand speed off to each other:
 34. **Celebrate the winner** with a pose, emote or effect. Rumbleverse's flat ending was a complaint.
 35. **Change the loop over time.** Roblox games lose players between sessions 2 and 5 when the loop never changes. New modifiers and modes matter more than new cosmetics.
 36. **Never lock moves or modes behind a grind or shop.** This was Vector's main complaint. Progression stays cosmetic.
+
+*Built (H31, 2026-11-16, trials; [session.md](systems/session.md), [bots.md](systems/bots.md)): 31 bots fill a round; 32 a free-run lobby; 33 three
+rounds scored 4 / 2 / 1 / 0; 34 a podium; 36 coins buy cosmetics only. Not built: 35, and Danzo's "rolls to unlock
+abilities" (against 36 and §2: his call, `ideas/INBOX.md`).*
 
 ### Ghosts, pickups and abilities, adopted 2026-10-19 (H16, replacing H15's rules 37-41)
 
@@ -240,10 +245,16 @@ No 2D, side-on parkour tag game has made it big on Roblox. The few 2D projects o
    *Partly answered 2026-10-10 (Danzo):* characters are smooth, high-resolution 2D figures (vector art, 128 px per
    tile), not pixel art, so they read as drawn figures living in a 3D stage. The theme (graphite vs neon) is still open;
    the current runner is inked graphite with one neon accent (visor, scarf), which fits any of the three.
-4. **Match structure.** Best of 3 or 5, and how scoring works.
+   *Trial 2026-11-16 (H31, Danzo to confirm):* **glowing graphite** for the stage and the UI, built from parts and UI
+   objects with no upload, so the others are a recolour away ([ui.md](systems/ui.md) §1, §7).
+4. **Match structure.** Best of 3 or 5, and how scoring works. *Trial 2026-11-16 (H31):* **three rounds, placement
+   points**, a podium, a warm-up lobby; only who pressed PLAY is seated ([session.md](systems/session.md) §1).
 5. **Monetisation.** Cosmetics only: trails, skins, tag effects, emotes, fuse/bomb skins, ignitions and burn-outs (rule 50). Plus possibly a VIP or private servers. Kid-friendly and fair.
+   *Scaffold 2026-11-16 (H31):* coins from playing, a saved profile, a shop and a wheel (trails, glows, burn-outs,
+   titles). **No Robux yet**: selling anything is Danzo's decision. Runner skins need an accent layer in the sheet.
 6. **Name.**
-7. **Bots.** Scope for a basic bot that chases, flees and uses abilities.
+7. **Bots.** Scope for a basic bot that chases, flees and uses abilities. *Built 2026-11-16 (H31):* the server plays
+   a runner with the real move rules; it chases, flees, uses items, haunts; no grapple yet ([bots.md](systems/bots.md)).
 8. **Maps** (H16). 3-4 from the start, differing in layout (rule 48): Tower (vertical), Yard (open), Warren (maze),
    Rooftops (gaps); feels in [ghosts-v2-proposal.md](systems/ghosts-v2-proposal.md) §6. *Answered for the first map 2026-11-07 (H27, heavy;
    Danzo to confirm):* **the Yard first**, 88 x 24 tiles (352 x 96 studs: the proposal's width, two screens tall so the

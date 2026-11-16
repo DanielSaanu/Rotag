@@ -24,11 +24,8 @@ Config.RAMP_DELAY = 5             -- rule 4: seconds into a chase before "it" st
 Config.RAMP_TIME = 15             -- seconds from no boost to the full boost
 Config.RAMP_MAX = 0.15            -- the full boost: +15% run speed; resets on every tag
 Config.HIT_STOP = 0.08            -- rule 21: seconds both runners hold still when a tag lands (client only)
-Config.STUDIO_DUMMY = true        -- in Studio only, a server-driven dummy runner joins the round (tag.md §4)
-Config.STUDIO_DUMMIES = 3         -- how many (ids -1000, -1001, ...); 3 = a solo 4-runner round where dummy ghosts hex
-                                  -- (3 while ghosts are under test, QA round 1; 1 = the old solo chase)
-Config.STUDIO_DUMMY_TAGS = true   -- false: a dummy holder never tags (it still chases), so solo Play can test items
-                                  -- without being "it" or tag-frozen every 1.5 s (H19 QA round 2). Studio only
+Config.BOT_TAGS = true            -- false: a bot holder never tags (it still chases), so solo Play can test items without
+                                  -- being "it" or tag-frozen (was STUDIO_DUMMY_TAGS before H31 made the dummies bots)
 -- Ghosts v2 (DESIGN §3 rules 37-42, docs/systems/ghosts.md; Danzo's trial numbers 2026-10-19, H16/H18). No comeback.
 Config.SPOOK_DRAIN = 3            -- seconds a held hex takes off the holder's fuse on a ghost's touch (rule 40)
 Config.GHOST_WARD = 6             -- after ANY hex no ghost may hex for this long: the fuse burns at most
@@ -67,8 +64,14 @@ Config.PLACE_CLEAR = 4            -- studs (1 tile) a placed part keeps from eve
 Config.PAD_W = 8                  -- studs: a boost pad, 2 tiles wide, set at your feet, its arrow your facing
 Config.PAD_H = 1
 Config.PAD_LIFE = 20              -- seconds a ghost's pad lasts
-Config.PAD_SPEED_X = 100          -- the launch along the arrow: speed you already carry that way is kept (rule 16) ...
-Config.PAD_SPEED_Y = 105          -- ... and up: 2 x JUMP_SPEED, the most whose rise averages the speed check's up rate
+Config.PAD_SPEED_X = 115          -- the launch along the arrow: speed you already carry that way is kept (rule 16) ...
+Config.PAD_SPEED_Y = 120          -- ... and up (H30: was 105 = 2 x JUMP_SPEED, a rise under a held jump's and "no
+                                  -- oomph"; a rise above 105 spends the speed check's up burst: move_check.test
+                                  -- measures the pad chain's use, config.test caps the knob). Danzo's to tune
+Config.PAD_RAMP = 0.1             -- H30: seconds the launch's across speed climbs to PAD_SPEED_X (0 = at once; "it
+                                  -- boosts you but feels sudden"). The up launch is always at once: it is a jump
+Config.PAD_GLIDE = 0.7            -- H30: seconds the launch's across speed eases back to the run (a smooth curve: held,
+                                  -- then easing, then settling) while you hold the launch's way; 0 = the plain bleed
 -- Ghosts v2 PR 5 (DESIGN §3 rules 2, 3, 50, 51; H23, docs/systems/endgame.md). Trial numbers, tuned by hand.
 Config.IGNITE_AT = 10             -- rule 50: seconds left on the fuse when the holder visibly ignites, growing to 0
 Config.END_PHASE_AFTER = 120      -- rule 51: seconds into a round when the end phase starts if the final two have not
@@ -96,7 +99,23 @@ Config.WALL_GRACE = 6             -- seconds a living runner may be past a wall;
 Config.WALL_BACK_IN = 2           -- studs: out once the whole body is past a wall, back IN (grace reset) only this much
                                   -- further in: 2 = RUNNER_WIDTH, the whole body back inside. Stops a runner at a
                                   -- swaying wall flapping out/in every frame (H26 follow-up, endgame.md §7.4)
-Config.ROUND_GAP = 4             -- seconds between one round ending and the next starting
+Config.ROUND_GAP = 6             -- seconds between one round ending and the next starting (H31: 4 -> 6, the results card)
+-- The match (H31, DESIGN §6.4, rules 31-34; docs/systems/session.md): a match is MATCH_ROUNDS rounds with a score, then
+-- a podium, then the lobby again. Bots fill the empty seats. Trial numbers, Danzo's to tune.
+Config.MATCH_ROUNDS = 3           -- rounds in a match (rule 33: one bad round does not decide everything)
+Config.LOBBY_TIME = 12            -- seconds of warm-up in the lobby once somebody has pressed Play
+Config.PODIUM_TIME = 12           -- seconds the podium and the rewards stay up
+Config.BOTS = true                -- bots fill a round up to PLAYERS_PER_MATCH (rule 31); false: only people play
+Config.BOT_SPEED = 0.93           -- a bot's run speed x this: a person who runs clean gets away, and catches one
+Config.BOT_THINK = 0.3            -- seconds between a bot's plans (shared/BotBrain); also its reaction time
+-- Rewards (H31, DESIGN §6.5; shared/Profile). Coins buy cosmetics and spins, never moves or power (rule 36).
+Config.COINS_MATCH = 10           -- for finishing a match ...
+Config.COINS_POINT = 5            -- ... plus this per match point ...
+Config.COINS_WIN = 25             -- ... plus this for winning it
+Config.COINS_START = 150          -- a new player's purse: enough for one spin at once
+Config.COINS_DAILY = 50           -- the first join of each day
+Config.SPIN_COST = 100            -- coins for one spin of the wheel (cosmetics only; a duplicate pays some back)
+Config.XP_LEVEL = 100             -- xp per level (xp = coins earned from play)
 Config.START_SPREAD = 120         -- studs of floor the runners are spread over at round start, centred on the spawn
                                   -- (H8, Tag.startPlaces): 5 runners (4 + the Studio dummy) start 30 apart
 Config.MAP = "yard"               -- H27: the map every round is played on (shared/Maps.lua: "yard", "test"; maps.md)
@@ -171,7 +190,17 @@ Config.GRAPPLE_YOINK = 20         -- H28: studs/s the rope's bite adds along the
 Config.GRAPPLE_PUMP = 60          -- studs/s^2 the stick pushes along the swing: a hanging runner can get going
 Config.GRAPPLE_MAX_SPEED = Config.DASH_SPEED -- the swing never goes faster than a dash: the dash still redirects it
                                   -- without a loss (DESIGN §2), and the server's speed check needs no new rate
-Config.GRAPPLE_RELEASE_BOOST = 1.1 -- rule 17's small release boost: the swing's velocity x this on letting go (1 = off)
+Config.GRAPPLE_RELEASE_BOOST = 1.25 -- rule 17's release boost: the swing's velocity x this on letting go (1 = off). H30:
+                                  -- 1.1 -> 1.25, Danzo: "on the release it should feel like the character is pulling
+                                  -- on the string to launch himself off"
+Config.GRAPPLE_RELEASE_KICK = 25  -- H30: the haul: studs/s added along the swing on letting go, all of it level or
+                                  -- rising, none straight down (0 = off). Danzo's to tune
+Config.GRAPPLE_RELEASE_MAX = 140  -- H30: the most a release can leave you with: the haul is felt most on a slow swing
+                                  -- and tops out here (at 150 the fastest chain spent 6.7 of the check's 24-stud x burst
+                                  -- and 5.3 of the 10.5 up; at 140 what move_check_grapple.test pins). Keep >= the cap
+Config.GRAPPLE_GIVE = 0.05        -- H30: the catch's give, seconds: the rope stretches and springs back (critically
+                                  -- damped, settles in ~3x this) instead of stopping the outward speed in one frame
+                                  -- ("the arc feels forced and sudden"). 0 = the hard catch
 Config.GRAPPLE_COOLDOWN = 0.2     -- seconds after a release before the next hook
 Config.GRAPPLE_BUFFER = 0.1       -- a press this early still hooks the moment an anchor is picked (x touch scale)
 Config.GRAPPLE_REFRESH = true     -- hooking an anchor gives back the dash and double jump (rule 15: a contact)

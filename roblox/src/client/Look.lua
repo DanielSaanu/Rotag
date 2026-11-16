@@ -67,6 +67,8 @@ end
 function Look:_clear()
 	if self.holder then self.holder:Destroy() end
 	self.holder, self.image, self.rim, self.iceLine, self.embers = nil, nil, nil, nil, nil
+	if self.namePart then self.namePart:Destroy() end
+	self.nameLabel, self.namePart, self.nameText, self.nameColor = nil, nil, nil, nil
 	self.frozenOn, self.igniteLevel = false, 0
 end
 
@@ -174,6 +176,7 @@ function Look:draw(spriteName: string, facing: number, dashing: boolean, vx: num
 	local rad = math.rad(self.lean)
 	local half = BASE * self.sy / 2
 	image.Position = UDim2.fromScale(0.5 + half * math.sin(rad), FEET + half * (1 - math.cos(rad)))
+	self:_placeName()
 	local rim = self.rim
 	if rim and rim.Visible then -- the same rect, turn and feet as the frame, a little larger (Look:frozen, Look:boost)
 		rim.Image, rim.ImageRectOffset, rim.ImageRectSize = image.Image, image.ImageRectOffset, image.ImageRectSize
@@ -210,7 +213,7 @@ end
 -- after. ImageColor3 multiplies, so the copy reads cyan only where the art is light (Danzo's Play judges it).
 function Look:_rim()
 	local tint = if self.frozenOn then RIM_TINT elseif self.igniteLevel > 0 then EMBER_TINT
-		elseif self.boostOn then BOOST_TINT else nil
+		elseif self.boostOn then BOOST_TINT else self.glowTint -- H31: a worn glow, under every state the game needs read
 	if tint and not self.rim then
 		local rim = Instance.new("ImageLabel")
 		rim.Name = "RotagRim"
@@ -277,6 +280,73 @@ function Look:ignite(level: number)
 		self.embers.Rate = EMBER_RATE * level
 		self.glow.Enabled, self.glow.Range, self.glow.Brightness = level > 0, 6 + 10 * level, 1 + 3 * level
 	end
+end
+
+-- H31 (cosmetics, client/Fx.wear): the worn glow's colour, or nil. The same rim, at the lowest priority.
+function Look:glow(color: Color3?)
+	if color == self.glowTint or not self.image then return end
+	self.glowTint = color
+	self:_rim()
+end
+
+-- H31: the runner's name over its head, in its seat's colour, so four identical figures can be told apart at a
+-- glance (nil: none). QA round 1: on the sprite's own canvas it was 0.57 studs tall whatever the screen, 4.6 points
+-- on a phone. Now its own thin part above the head, NAME_PX pixels tall on any screen (within NAME_H studs), placed
+-- every draw. A SurfaceGui, as the sprite is: a BillboardGui never drew in Studio (H6).
+local NAME_PX = 15
+local NAME_H = { 0.6, 1.7 }
+local NAME_FEET = SPRITE / 2 -- the tag's bottom edge above the collider's centre: the sprite's top edge
+
+-- The tag's height in studs on this screen (client/Hud lifts the IT marker clear of it).
+function Look.nameHeight(): number
+	local cam = workspace.CurrentCamera
+	local vh = if cam then math.max(cam.ViewportSize.Y, 1) else 720
+	return math.clamp(NAME_PX * Config.CAMERA_VIEW_HEIGHT / vh, NAME_H[1], NAME_H[2])
+end
+
+function Look:name(text: string?, color: Color3?)
+	if text == self.nameText and color == self.nameColor then return end
+	self.nameText, self.nameColor = text, color
+	local l = self.nameLabel
+	if not l and text and self.holder then
+		local part = Instance.new("Part")
+		part.Name = "RotagNameTag"
+		part.Transparency = 1
+		part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch, part.CastShadow = true, false, false, false, false
+		part.Size = Vector3.new(4, 0.6, 0.05)
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = Enum.NormalId.Back
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = SURFACE_PPS
+		gui.LightInfluence = 0
+		gui.Adornee = part
+		gui.Parent = part
+		l = Instance.new("TextLabel")
+		l.Name = "RotagName"
+		l.BackgroundTransparency = 1
+		l.Size = UDim2.fromScale(1, 1)
+		l.Font, l.TextScaled = Enum.Font.GothamBlack, true
+		l.TextStrokeTransparency, l.TextStrokeColor3 = 0.2, Color3.fromRGB(12, 13, 18)
+		l.Parent = gui
+		part.Parent = self.character
+		self.nameLabel, self.namePart, self.nameH = l, part, 0
+	end
+	if l then
+		l.Visible = text ~= nil
+		if text then l.Text, l.TextColor3 = text, color or Color3.new(1, 1, 1) end
+	end
+end
+
+-- Every draw: the tag sits over the head and keeps its size on screen.
+function Look:_placeName()
+	local part, holder = self.namePart, self.holder
+	if not (part and holder and self.nameText) then return end
+	local h = Look.nameHeight()
+	if h ~= self.nameH then
+		self.nameH = h
+		part.Size = Vector3.new(h * 8, h, 0.05) -- room for a 20-letter name at this height
+	end
+	part.CFrame = holder.CFrame * CFrame.new(0, NAME_FEET + h / 2, 0.03)
 end
 
 -- The sheet ids changed after this look was built (Remotes.SheetIds landed late): re-apply on the next draw.

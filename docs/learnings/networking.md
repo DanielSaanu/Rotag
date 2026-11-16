@@ -117,3 +117,17 @@ the snapshot's grapple bit is on: a cheat would set it always. Capping the swing
 burst. If a faster move is ever wanted, raise the rate for everyone and say so beside the knob, or bound the allowance
 by server-known data (the anchor positions it built), never by the client's word. *(2026-11-01, handoff H25,
 trust.md §11.)*
+
+**N17 — A runner the server plays gets no allowance the wire gave a player, and is judged where a player SEES it.**
+A bot's position is the server's own truth: its tag is judged with rewind 0 (as the old dummy's was), and on the box
+it had `BOT_SEEN` ago (a client draws it a snapshot delay behind), so on your screen a bot never tags from out of
+reach. The same care for saved data: a profile whose LOAD failed is played in memory and never saved, or one outage
+overwrites real progress with a new purse; and a spin is rolled on the server before the client's reel moves.
+*(2026-11-16, handoff H31, `server/Bots.tags`, `server/Data`, `server/Shop`.)*
+
+**N18 — A save has one writer: take a lock where you read, and carry a revision where you write.** `SetAsync` on
+leave lets a server the player hopped away from overwrite the newer save of the server they hopped to (or the
+reverse), silently. The load takes a lock inside the same `UpdateAsync` that reads (a fresh foreign lock is waited
+out: that server is still saving); every save is an `UpdateAsync` that refuses when the store holds a newer
+revision or another server's lock, and the loser stops saving and TELLS the player. Found by the reviewer reading
+the code, not by a lost save: this bug only shows in production. *(2026-11-16, QA round 1 on H31, `server/Data`.)*

@@ -45,13 +45,16 @@ end
 
 function MC.tileOf(x, y) return math.floor(x / T + 1e-9), math.floor(y / T + 1e-9) end
 
--- Every tile reachable from tile (si, sj): a set keyed j * w + (i - i0).
-function MC.reach(g, si, sj)
+-- Every tile reachable from tile (si, sj): a set keyed j * w + (i - i0). `noKick`: run and jumps only, no wall
+-- jumps (what a corridor must be entered with: on foot, QA round 1's sealed shafts).
+function MC.reach(g, si, sj, noKick)
 	local seen, tiles, queue, head = {}, {}, {}, 1
 	local function push(i, j, b, h, w)
 		if MC.isSolid(g, i, j) then return end
 		if MC.isSolid(g, i, j - 1) then
 			b, h, w = MC.UP, MC.AIR, 0
+		elseif noKick then
+			-- no kick: a wall beside you is just a wall
 		elseif MC.isSolid(g, i - 1, j) and w ~= -1 then
 			b, h, w = math.max(b, MC.KICK), math.max(h, MC.KICK_H), -1
 		elseif MC.isSolid(g, i + 1, j) and w ~= 1 then

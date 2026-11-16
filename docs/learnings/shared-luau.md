@@ -88,3 +88,35 @@ the maths pump energy? Euler's +110 does) was untouched. Before changing such a 
 the property still holds, then write the window as the system's own scale (a period, a close time) and the tolerance
 relative to the quantity, with the measured number beside it. Never just widen it until it passes. *(2026-11-07,
 handoff H28, `test/luau/grapple.test.luau`.)*
+
+**S19 — A layout is laid out by driving its routes through the real movement, not by reading the numbers.** The
+Yard's first pads and anchors were placed from the measured figures ("a pad rises 11 studs", "a rope reaches 7 tiles")
+and QA found every pad landed under the next deck and no swing could be verified. A scratch probe that ran the real
+`Movement` and `Grapple` from every deck edge (hook, hold, let go at several points, double jump or not) settled it in
+minutes: a pad arc with the jump at its apex lands 12 tiles out and bonks a deck nearer than 8; a release's air speed
+decays to the run in ~0.5 s so a swing carries ~10 tiles; a low anchor in a hole never lifts a floor runner. Three of
+eight anchors were useless. Put the probe in the map test (`maps.test`: every pad lands a tier up, every anchor
+carries deck to deck) so the next map is held to it, and keep the probe script's shape for the next kit piece.
+*(2026-11-11, handoff H29, `test/luau/maps.test.luau`, `shared/MapYard.lua`.)*
+
+**S20 — A feel change is sized by the speed check's burst, not by what feels right alone: drive the hardest chain
+and read the budget before picking the number.** The release haul at 150 studs/s felt like the right size and spent
+6.66 of the server's 24-stud x burst and 5.30 of its 10.5 up in the driven swing chain (from 1.38 and 2.47); at 140 it
+spent 1.81 and 2.21. A pad up-launch above 2 x `JUMP_SPEED` likewise spends the up burst on every launch (4.50 of
+10.5 at 120). Honest players must never get near a budget: two such moves back to back (a release onto a pad) add
+up. So: make the knob, run `move_check*.test`, pin the measured use with a ceiling (under a fifth, under 60%), and
+write the number's reason beside the knob. *(2026-11-11, handoff H30, `shared/Grapple.release`, `Config.PAD_SPEED_Y`.)*
+
+**S21 — A plan tried in the head must be stepped exactly as it will be played: the same step, the same rules.** The
+bots rate each plan by rolling it out through the real `Movement.step`. At a 1/30 rollout step a jump under a deck's
+lip landed in the rollout and missed on the server's 1/60 frames: the bot hopped under the Hub for three seconds,
+sure each time. Rolling out at the frame's step fixed it at once. A cheaper, coarser model of your own rules is a
+different game. *(2026-11-16, handoff H31, `shared/BotBrain.STEP`, `test/luau/bots.test.luau`.)*
+
+**S22 — A score rewards exactly what it measures, so read what the winner of it actually does.** Rating a seeking
+plan by where it ENDS made a bot bonk its head under a platform on purpose (0.35 s lost, then it arrived exactly on
+the orb) rather than run through the orb and overshoot; rating a fleeing plan by distance alone loved ending inside a
+solid tile (distance: "unreachable"); minding the walls only at the plan's end let a bot step out and back a dozen
+times. Each was found by printing every plan's score at one bad decision, not by staring at the formula. Score the
+thing the game counts (a touch, soonest), and trace one decision before trusting a tuning.
+*(2026-11-16, handoff H31, `BotBrain.rate`, `BoxWorld.far`.)*

@@ -17,7 +17,10 @@ export type View = { x: number, y: number, halfW: number, halfH: number }
 -- The rope: the anchor's centre and id, its length now and the length it reels in to.
 -- `w`: the swing's angular speed while taut (radians/s, counter-clockwise), nil while slack.
 -- `bit`: the yoink has been given (H28: once a hook, never again after a slack spell).
-export type Rope = { x: number, y: number, id: number, len: number, target: number, w: number?, bit: boolean? }
+-- `give`, `rest`: H30, the catch's give: the outward speed the rope is still stretching at (studs/s) and the length it
+-- springs back to; nil once settled.
+export type Rope = { x: number, y: number, id: number, len: number, target: number, w: number?, bit: boolean?,
+	give: number?, rest: number? }
 
 -- Aim assist (rule 17): of the anchors at least GRAPPLE_MIN_ABOVE above (x, y), within GRAPPLE_RANGE, and inside the
 -- view by GRAPPLE_INSET (never off-screen), the one with the lowest score: its distance, + GRAPPLE_BEHIND if it is
@@ -82,8 +85,18 @@ function Grapple.release(s: any, boost: boolean)
 	if not s.rope then return end
 	if s.rope.w then tangential(s, s.rope) end -- the swing's own velocity, not this step's chord
 	if boost then
-		s.vx *= Config.GRAPPLE_RELEASE_BOOST
-		s.vy *= Config.GRAPPLE_RELEASE_BOOST
+		-- H30, the haul (Danzo: "pulling on the string to launch himself off"): the swing's velocity x the boost, plus
+		-- GRAPPLE_RELEASE_KICK along it, all of the kick level or rising and none straight down (you let go to fly,
+		-- never to be thrown at the floor)
+		-- Never past the boosted cap: a kick on top of a capped swing would spend the server's x burst (measured:
+		-- 22 of 24 studs in the fastest chain), so the haul is felt most on a slow swing and tops out at the cap.
+		local v = math.sqrt(s.vx * s.vx + s.vy * s.vy)
+		if v > 1e-6 then
+			local rising = math.clamp(1 + s.vy / v, 0, 1)
+			local v2 = math.min(v * Config.GRAPPLE_RELEASE_BOOST + Config.GRAPPLE_RELEASE_KICK * rising,
+				Config.GRAPPLE_RELEASE_MAX)
+			s.vx, s.vy = s.vx * v2 / v, s.vy * v2 / v
+		end
 	end
 	s.rope = nil
 	s.grappleCooldown = Config.GRAPPLE_COOLDOWN
@@ -99,16 +112,31 @@ end
 -- The rope reels in at GRAPPLE_REEL while longer than its target. The swing never passes GRAPPLE_MAX_SPEED.
 function Grapple.swing(s: any, moveX: number, dt: number)
 	local r: Rope = s.rope
-	if r.len > r.target then r.len = math.max(r.target, r.len - Config.GRAPPLE_REEL * dt) end
+	if r.give == nil and r.len > r.target then r.len = math.max(r.target, r.len - Config.GRAPPLE_REEL * dt) end
 	local g, cap = Config.GRAVITY, Config.GRAPPLE_MAX_SPEED
 	-- Slack: catch on the step that would carry the runner past the rope's length (never a frame beyond it).
 	local dx, dy = s.x + s.vx * dt - r.x, s.y + (s.vy - g * dt) * dt - r.y
 	if r.w == nil and dx * dx + dy * dy >= r.len * r.len then
 		local a0 = angle(r, s.x, s.y)
-		r.w = (s.vx * math.cos(a0) + s.vy * math.sin(a0)) / r.len
+		local swing = s.vx * math.cos(a0) + s.vy * math.sin(a0) -- the tangential speed: what becomes the swing
+		r.w = swing / r.len
+		-- H30, the give: the outward part of the velocity is not lost in one frame but stretches the rope, which springs
+		-- back to this length (a critically damped spring, time constant GRAPPLE_GIVE): the bite is spread over a few
+		-- frames. 0 = the inelastic catch of H25.
+		local out = s.vx * math.sin(a0) - s.vy * math.cos(a0)
+		if Config.GRAPPLE_GIVE > 0 and out > 0 then
+			-- the stretch's speed and the swing's together never pass the cap (the body's speed is what the server sees)
+			r.give, r.rest = math.min(out, math.sqrt(math.max(0, cap * cap - swing * swing))), r.len
+		end
 	end
 	local w = r.w
 	if w ~= nil then
+		if r.give ~= nil then
+			local tau, rest = Config.GRAPPLE_GIVE, r.rest :: number
+			r.len += (r.give :: number) * dt
+			r.give = (r.give :: number) - ((r.len - rest) / (tau * tau) + 2 * (r.give :: number) / tau) * dt
+			if r.len <= rest and (r.give :: number) <= 0 then r.len, r.give, r.rest = rest, nil, nil end
+		end
 		local a, len = angle(r, s.x, s.y), r.len
 		-- H28, the yoink: the first step the rope is taut at its length (a floor hook's reel done: a bite before it
 		-- swept a fast runner into the floor), the rope whips the runner along the swing toward under the anchor:
@@ -129,6 +157,10 @@ function Grapple.swing(s: any, moveX: number, dt: number)
 		else
 			s.vx = (r.x + len * math.sin(a1) - s.x) / dt
 			s.vy = (r.y - len * math.cos(a1) - s.y) / dt
+			-- the body never moves faster than the cap, even on the catch's step (from inside the circle, H30's give
+			-- stretching the rope on top): it then sits a hair inside the rope's length, and the next step corrects
+			local v = math.sqrt(s.vx * s.vx + s.vy * s.vy)
+			if v > cap then s.vx, s.vy = s.vx * cap / v, s.vy * cap / v end
 			return
 		end
 	end
