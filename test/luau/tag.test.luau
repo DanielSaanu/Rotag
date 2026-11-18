@@ -325,4 +325,46 @@ do -- H24: Tag.eliminate, the one path for a burn-out and a wall kill. A non-hol
 	assert(not Tag.eliminate(r, A, 7) and r.alive[A], "nothing after the end")
 end
 
+
+do -- H38 (rule 45 as rewritten): a dashing tagger sweeps; a dashing runner cannot be tagged
+	local W, R = Config.RUNNER_WIDTH, Config.TAG_REACH
+	-- the sweep's geometry: a step straight through a box touches it though neither end does
+	assert(not Tag.overlaps(-6, 0, 0, 0, 0) and not Tag.overlaps(6, 0, 0, 0, 0), "neither end of the step touches")
+	assert(Tag.sweeps(-6, 0, 6, 0, 0, 0, 0), "but the step between them passes through")
+	assert(not Tag.sweeps(-6, 0, -4, 0, 0, 0, 0), "a step that stops short does not")
+	assert(Tag.sweeps(-6, 0, -(W + R), 0, 0, 0, 0), "one that ends exactly in reach does")
+	assert(not Tag.sweeps(-6, 9, 6, 9, 0, 0, 0), "passing overhead, out of reach, is no touch")
+	assert(Tag.sweeps(-6, 9, 6, -9, 0, 0, 0), "a diagonal through the box is")
+	assert(Tag.sweeps(0, 0, 0, 0, 1, 1, 0) == Tag.overlaps(0, 0, 1, 1, 0), "a step of no length is the plain overlap")
+	assert(not Tag.sweeps(-6, 0, -6, 9, 0, 0, 0), "a vertical step beside it never touches")
+	-- the server's record: the tagger dashes from x -8 to x +8 between two frames, the target stands at 0
+	local far = W + R + Config.TAG_GRACE + 2 -- further than any plain touch allows
+	local target = { { t = 0.98, x = 0, y = 0 }, { t = 1.0, x = 0, y = 0 } }
+	local dash = { { t = 0.98, x = -far, y = 0 }, { t = 1.0, x = far, y = 0, iframe = true } }
+	assert(Tag.touchedBetween(dash, target, 0.9, 1.0, 0), "a dash straight through a runner is a tag")
+	local run = { { t = 0.98, x = -far, y = 0 }, { t = 1.0, x = far, y = 0 } }
+	assert(not Tag.touchedBetween(run, target, 0.9, 1.0, 0), "the same step without a dash is not (nobody runs that fast)")
+	-- the extra reach: a dash that stops TAG_DASH_REACH short of a plain touch still tags; one stud more does not
+	local edge = W + R + Config.TAG_GRACE + Config.TAG_DASH_REACH
+	assert(Tag.touchedBetween({ { t = 0.98, x = -20, y = 0 }, { t = 1.0, x = -edge, y = 0, iframe = true } }, target, 0.9, 1, 0), "in dash reach")
+	assert(not Tag.touchedBetween({ { t = 0.98, x = -20, y = 0 }, { t = 1.0, x = -edge - 1, y = 0, iframe = true } }, target, 0.9, 1, 0), "past it")
+	assert(not Tag.touchedBetween({ { t = 0.98, x = -20, y = 0 }, { t = 1.0, x = -edge, y = 0 } }, target, 0.9, 1, 0), "the reach is the dash's only")
+	-- a dashing target: no tag, from a dash or from a plain touch (it is the one dashing through the tagger)
+	local dodging = { { t = 0.98, x = 0, y = 0, iframe = true }, { t = 1.0, x = 0, y = 0, iframe = true } }
+	assert(not Tag.touchedBetween(dash, dodging, 0.9, 1.0, 0), "both dashing: no tag")
+	local touching = { { t = 0.98, x = 1, y = 0 }, { t = 1.0, x = 1, y = 0 } }
+	assert(Tag.touchedBetween(touching, target, 0.9, 1.0, 0), "(a plain touch tags a runner who is not dashing)")
+	assert(not Tag.touchedBetween(touching, dodging, 0.9, 1.0, 0), "a runner dashing through the tagger is not tagged")
+	-- the dodge is judged when the tagger SAW the target: a dash begun after the touch does not undo it
+	local late = { { t = 0.9, x = 1, y = 0 }, { t = 1.0, x = 1, y = 0, iframe = true } }
+	assert(Tag.touchedBetween({ { t = 1.0, x = 1, y = 0 } }, late, 0.8, 1.0, 0.2), "touched 0.1 s ago, dashing now: a tag")
+	assert(not Tag.touchedBetween({ { t = 1.0, x = 1, y = 0 } }, late, 0.8, 1.0, 0), "... but not on this frame's dashing sample")
+	-- the sweep never joins two samples that are not one motion, nor uses a sample the speed check refused
+	assert(not Tag.touchedBetween({ { t = 0.5, x = -far, y = 0 }, { t = 1.0, x = far, y = 0, iframe = true } }, target, 0.4, 1, 0),
+		"half a second apart: a rebuilt body, not a dash")
+	assert(not Tag.touchedBetween({ { t = 0.98, x = -far, y = 0, untrusted = true }, { t = 1.0, x = far, y = 0, iframe = true } }, target, 0.9, 1, 0),
+		"a step from an untrusted sample is no sweep")
+	-- the dodge has a price: a dash's i-frames are a quarter of its cooldown at most
+	assert(Config.DASH_IFRAMES <= Config.DASH_COOLDOWN / 3, "a runner is untaggable for under a third of the time, mashing")
+end
 print("tag ok")

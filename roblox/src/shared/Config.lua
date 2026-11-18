@@ -15,6 +15,8 @@ Config.START_FREEZE = 1           -- the first "it" waits this long at round sta
                                   -- the HUD counts it down to GO). Danzo's to tune
 Config.TAG_REACH = 0.5            -- studs past touching boxes that still count as a tag (the hand)
 Config.TAG_GRACE = 1.5            -- extra studs the SERVER allows on top of TAG_REACH (lag, interpolation)
+Config.TAG_DASH_REACH = 1         -- H38 (Danzo: "dashing into or through you should count as a tag"): extra studs of
+                                  -- reach while "it" dashes, and its whole dash path counts, not only where it stops
 Config.TAG_VIEW_DELAY = 0.4      -- seconds, on top of ping, the target may be older than the claimant in the server's
                                   -- history (H6, tag.md §2: measured 0.18 s per hop in Studio; two clients = two hops)
 Config.TAG_REWIND_MAX = 0.5       -- that allowance at most, whatever the ping: lagging buys no more (rule 6; H6: was 0.3)

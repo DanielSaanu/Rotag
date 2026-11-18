@@ -16,6 +16,7 @@ local Fx = require(script.Parent:WaitForChild("Fx"))
 local Others = require(script.Parent:WaitForChild("Others"))
 local Items = require(script.Parent:WaitForChild("Items"))
 local Lobby = require(script.Parent:WaitForChild("Lobby")) -- H37: the doors and the callouts
+local Callout = require(script.Parent:WaitForChild("Callout"))
 
 local Present = {}
 
@@ -66,6 +67,13 @@ function Present.burst(id: number, at: Vector3, walled: boolean)
 	if not walled then Fx.burnout(id, at.X, at.Y) else Fx.shake(0.6) end
 	Audio.play("burnout")
 	if id == me then Fx.flash(Ui.C.ember, 0.5) end
+end
+
+-- H38: we dashed through the holder: its tag cannot land. Big, quick, ours only.
+function Present.dodged(x: number, y: number)
+	Fx.ring(x, y, Ui.C.cyan, 7)
+	Audio.play("go", 1.6)
+	Callout.big("DODGED!", nil, Ui.C.cyan, 0.9)
 end
 
 function Present.spook(v: any)

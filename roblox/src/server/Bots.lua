@@ -296,7 +296,8 @@ function Bots.tags(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample
 				behind = math.min(BOT_SEEN_MAX, Config.SNAPSHOT_DELAY + BOT_SEEN + (if ok and type(ping) == "number" then ping / 2 else 0))
 			end
 			local seen = sampleAt(ha, now - behind)
-			if sb and seen and Tag.overlaps(seen.x, seen.y, sb.x, sb.y, 0)
+			if sb and seen and not sb.iframe -- H38: a dash dodges a bot's tag as it does a person's
+				and Tag.overlaps(seen.x, seen.y, sb.x, sb.y, 0)
 				and Tag.overlaps(here.x, here.y, sb.x, sb.y, Config.TAG_GRACE) then
 				pass(r, it, id, now)
 				return

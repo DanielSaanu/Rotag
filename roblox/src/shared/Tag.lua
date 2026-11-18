@@ -93,6 +93,27 @@ function Tag.overlaps(ax: number, ay: number, bx: number, by: number, slack: num
 	return math.abs(ax - bx) <= Config.RUNNER_WIDTH + reach and math.abs(ay - by) <= Config.RUNNER_HEIGHT + reach
 end
 
+-- H38: does a runner box moving in a straight line from (ax0, ay0) to (ax1, ay1) touch the box at (bx, by) at any
+-- point on the way, within `slack` studs of reach? (Tag.overlaps at every point of the segment: a segment against a
+-- box, the slab test.) A dash covers 2-4 studs between two frames and a body is 2 wide: without this a dash straight
+-- through a runner could land on no frame at all.
+function Tag.sweeps(ax0: number, ay0: number, ax1: number, ay1: number, bx: number, by: number, slack: number): boolean
+	local hx, hy = Config.RUNNER_WIDTH + Config.TAG_REACH + slack, Config.RUNNER_HEIGHT + Config.TAG_REACH + slack
+	local t0, t1 = 0, 1
+	for _, axis in { { ax0 - bx, ax1 - ax0, hx }, { ay0 - by, ay1 - ay0, hy } } do
+		local p, d, h = axis[1], axis[2], axis[3]
+		if d == 0 then
+			if math.abs(p) > h then return false end
+		else
+			local u, v = (-h - p) / d, (h - p) / d
+			if u > v then u, v = v, u end
+			t0, t1 = math.max(t0, u), math.min(t1, v)
+			if t0 > t1 then return false end
+		end
+	end
+	return true
+end
+
 -- May `claimant` tag `target` at `now`? Returns ok and, when not ok, the reason (for the Studio log only).
 function Tag.canClaim(r: Round, claimant: number, target: number, now: number): (boolean, string?)
 	if r.over then return false, "round over" end
@@ -112,17 +133,32 @@ end
 -- the claimant saw the target late too, so "touching on the tagger's screen" is the claimant's sample against an
 -- older target sample, not the same frame. A claimant sample marked `untrusted` (H12: recorded while the server's speed
 -- check, shared/MoveCheck, held that runner suspect) is never used; a target's is (the tagger did nothing wrong).
--- `iframe` (H19): recorded inside a dash's i-frames (rule 45); only a hex and the items read it, never a tag.
+-- `iframe` (H19): recorded inside a dash's i-frames (rule 45: DASH_IFRAMES from a dash the SERVER saw start, at most
+-- one per dash cooldown, so nobody is "dashing" for ever).
+-- H38 (rule 45 as Danzo rewrote it, 2026-11-18: "as tagger, dashing into or through you should count as a tag,
+-- unless you are also dashing or are the one dashing through the tagger"):
+--   a DASHING TAGGER sweeps: the whole path between two of its samples counts (Tag.sweeps), with TAG_DASH_REACH more
+--   reach, so a dash through a runner tags even when no single frame has the two boxes touching;
+--   a DASHING TARGET cannot be tagged: a target sample inside its i-frames never pairs, with a dash or without.
+-- The target's dash is judged at the moment the tagger SAW it (the older target sample), like everything else here.
 export type Sample = { t: number, x: number, y: number, untrusted: boolean?, iframe: boolean? }
+local SWEEP_GAP = 0.1 -- two claimant samples further apart than this are not one motion (a stall, a rebuilt body)
 function Tag.touchedBetween(a: { Sample }, b: { Sample }, from: number, to: number, lag: number): boolean
 	for i = #a, 1, -1 do
 		local sa = a[i]
 		if sa.t < from then break end
 		if sa.t <= to and not sa.untrusted then
+			local prev = a[i - 1]
+			local dash = sa.iframe == true and prev ~= nil and not prev.untrusted and sa.t - prev.t <= SWEEP_GAP
 			for j = #b, 1, -1 do
 				local sb = b[j]
 				if sb.t < from or sb.t < sa.t - lag then break end
-				if sb.t <= sa.t and Tag.overlaps(sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE) then return true end
+				if sb.t <= sa.t and not sb.iframe then
+					if Tag.overlaps(sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE) then return true end
+					if dash and prev and Tag.sweeps(prev.x, prev.y, sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE + Config.TAG_DASH_REACH) then
+						return true
+					end
+				end
 			end
 		end
 	end

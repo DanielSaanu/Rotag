@@ -23,6 +23,8 @@ played solo with the dummy through the remotes in Studio (H6, §7, §9). Feel nu
 The server is the only thing that writes "it" or the fuse (DESIGN §3 rule 6). The client never decides a tag: it can
 only ask.
 
+> **H38 (2026-11-18):** a dashing tagger sweeps and a dashing runner cannot be tagged: [dash-tag.md](dash-tag.md).
+
 ## 2. Decision (a): the remotes, and what the server trusts
 
 Three RemoteEvents, declared in `default.project.json` and listed in [`README.md`](README.md):

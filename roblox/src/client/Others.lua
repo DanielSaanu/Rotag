@@ -33,6 +33,7 @@ type Drawn = { id: number, root: BasePart, look: any, params: RaycastParams, pos
 local drawn: { [Model]: Drawn } = {}
 local byId: { [number]: Model } = {}
 local byRoot: { [BasePart]: Vector3 } = {} -- where each other runner was drawn this frame (the IT marker, the claim)
+local dashingBy: { [BasePart]: boolean } = {} -- H38: drawn mid-dash this frame
 local streams: { [number]: Snapshot.Stream } = {}
 local player: Player? = nil
 local me = 0
@@ -73,6 +74,7 @@ local function remove(model: Instance)
 	if not d then return end
 	drawn[model :: Model] = nil
 	byRoot[d.root] = nil
+	dashingBy[d.root] = nil
 	if byId[d.id] == model then byId[d.id] = nil end
 	d.look:destroy()
 end
@@ -155,6 +157,7 @@ function Others.draw(dt: number, ghostMode: ((number) -> string?)?, iced: ((numb
 		end
 		d.at = Vector3.new(x, y, 0)
 		byRoot[d.root] = d.at
+		dashingBy[d.root] = dashing == true
 		d.look:place(x, y)
 		d.look:ghost(if ghostMode then ghostMode(d.id) else nil)
 		d.look:frozen(iced ~= nil and iced(d.id))
@@ -184,6 +187,12 @@ function Others.ropes(fn: (number, number, number, number, number?) -> ())
 	for _, d in drawn do
 		if d.anchor then fn(d.id, d.at.X, d.at.Y, d.facing or 1, d.anchor) end
 	end
+end
+
+-- H38: is that runner drawn mid-dash on this screen (a dashing runner cannot be tagged)? The server decides; this
+-- only saves a claim it would refuse.
+function Others.dashing(root: BasePart): boolean
+	return dashingBy[root] == true
 end
 
 -- Where another runner's sprite is drawn (its stream spot), or the root's own position for our runner and the dummy.

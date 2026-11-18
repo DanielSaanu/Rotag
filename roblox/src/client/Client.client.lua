@@ -152,7 +152,11 @@ RunService.PreSimulation:Connect(function(dt: number)
 	end
 	c.body:apply(s.x, s.y, s.vx, s.vy)
 	local held = Items.holdOf(player.UserId) -- H20: an iced holder's claim would be refused; the server decides anyway
-	if not (held and ItemRules.STOPS_TAG[held.kind]) then Tagging.claim(s.x, s.y) end
+	-- H38: a dash sweeps (the step from last frame's spot counts), and a dash through the holder is a dodge
+	local dashing = s.dashTime > 0
+	if not (held and ItemRules.STOPS_TAG[held.kind]) then Tagging.claim(s.x, s.y, c.lastX, c.lastY, dashing) end
+	if Tagging.dodge(s.x, s.y, dashing) then Present.dodged(s.x, s.y) end
+	c.lastX, c.lastY = s.x, s.y
 	if Items.held(player.UserId) == "hex" then Tagging.hex(s.x, s.y) end -- H18: a ghost's hex (docs/systems/ghosts.md)
 end)
 
@@ -323,6 +327,7 @@ local function drawnAt(id: number): Vector3?
 	return if current and current.root.Parent then current.root.Position else nil
 end
 Present.start(player)
+Tagging.dodging = Others.dashing -- H38: a runner drawn mid-dash is not claimed
 -- A verdict: the "+N" pop, and the tagger's drawn sprite catches up to the victim (rule 6, H14). The claim tests
 -- where Others draws each runner (the snapshot stream), as the server judges it.
 Tagging.start(player, function(s) -- H23: a burn-out bursts where this screen draws that runner

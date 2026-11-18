@@ -28,6 +28,8 @@ to (`roblox/default.project.json`).
   camera, controls, juice, the test map, the two drawing methods. Before any movement, camera or controls change.
 - [`docs/systems/tag.md`](docs/systems/tag.md): the tag, the fuse, elimination, what the server trusts from a tag claim,
   the Studio dummy runner. Before any tag, fuse, round or remote change.
+- [`docs/systems/dash-tag.md`](docs/systems/dash-tag.md): the dash and the tag (H38): a dashing tagger's whole path tags, a dashing runner cannot
+  be tagged; why tags missed, what the server trusts. Before any tag-reach, dash or i-frame change.
 - [`docs/systems/ghosts.md`](docs/systems/ghosts.md): ghosts as built (v2 PR 1, H18): no comeback, ghost orbs and the one
   slot, the hex and the shared ward, what the server trusts (orb touches, `GhostClaim`), `ItemEvent`, what each screen shows.
 - [`docs/systems/items.md`](docs/systems/items.md): items as built (v2 PR 2, H19): living orbs and pools, Use (`UseItem`), the holds

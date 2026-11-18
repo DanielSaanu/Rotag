@@ -123,6 +123,7 @@ One file each. Read only the one your task touches.
 | Bots: runners the server plays with the real move rules (H31) | [bots.md](bots.md) | `shared/BoxWorld`, `shared/BotBrain`, `server/Bots`, `server/BotMind`, `server/Dummy`, `server/Snapshots` (`inject`) |
 | The menu, the scoreboard and cards, sound, punch, cosmetics, the stage's look (H31) | [ui.md](ui.md) | `client/Ui`, `client/Menu`, `client/Locker`, `client/Board`, `client/Audio`, `client/Fx`, `client/Present`, `server/Stage` |
 | The walk-in lobby, private rooms, practice, the callouts (H37) | [lobby.md](lobby.md) | `shared/Lobby`, `server/LobbyMap`, `server/Doors`, `server/Room`, `server/Hub` (room / practice servers), `client/Lobby`, `client/Callout`, `client/CodePad` |
+| The dash and the tag (H38): the sweep, the dodge | [dash-tag.md](dash-tag.md) | `shared/Tag` (`sweeps`, `touchedBetween`), `client/Tagging`, `client/Others` (`dashing`), `server/Bots` |
 | HUD and mobile controls | the two touch buttons: [movement.md](movement.md) §5; the fuse HUD: [tag.md](tag.md) §6 | `client/Controls`, `client/Hud` |
 
 The per-module "who owns what" tables are the folder READMEs under [`roblox/src/`](../../roblox/src/README.md).

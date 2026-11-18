@@ -178,7 +178,10 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
     a frozen runner can still be tagged. Holds never chain (0.5 s immunity after one) and block starting an
     item; an item started before a hold goes off. Rule 11 stands as written.
 45. **Dash i-frames:** the first 0.2 s of a dash dodges aimed abilities (ice beam, hex) and carries you over a bear
-    trap; never through a crate (jump it), never a tag.
+    trap; never through a crate (jump it). **And the tag (H38, Danzo 2026-11-18, after his first match with a
+    friend: "it takes a decent amount of skill to actually tag anyone"): "as tagger, dashing into or through you
+    should count as a tag, unless you are also dashing or are the one dashing through the tagger."** A dashing
+    tagger's whole path tags; a dashing runner cannot be tagged ([tag.md](systems/tag.md) §11). *(Was: "never a tag".)*
 46. **The boost grant** (+15% run speed, 5 s) never stacks with the chaser ramp: on the holder, boost = max(ramp, grant).
 47. **Placement:** ghost parts go where the ghost stands, rotated on the grapple input, in empty space, on its
     screen, at least 1 tile from any living runner, never in a keep-clear zone; at most 3 live fixtures per ghost.

@@ -86,8 +86,13 @@ end
 -- spot, ~0.1 s old, not the replicated root, ~0.4 s old). The server judges the claim on the same stream.
 local positionOf: (BasePart) -> Vector3 = function(root) return root.Position end
 
+-- H38: is another runner drawn mid-dash on this screen (client/Others.dashing)? Set by the client entry point.
+Tagging.dodging = function(_root: BasePart): boolean return false end
+
 -- Every frame while the local runner is it: tag the first other live runner whose box touches ours on THIS screen.
-function Tagging.claim(x: number, y: number)
+-- H38: while we DASH (`dashing`, from (px, py) last frame to here) the whole of that step counts, with a little more
+-- reach: a dash into or through a runner is a tag. A runner drawn mid-dash is not claimed (its dash dodges).
+function Tagging.claim(x: number, y: number, px: number?, py: number?, dashing: boolean?)
 	if not (claimRemote and state) or state.over or state.it ~= me or Tagging.frozen() then return end
 	if os.clock() - lastClaimAt < CLAIM_EVERY then return end
 	for _, model in CollectionService:GetTagged(RUNNER_TAG) do
@@ -95,13 +100,35 @@ function Tagging.claim(x: number, y: number)
 		local root = model:FindFirstChild("HumanoidRootPart")
 		if type(id) == "number" and id ~= me and Tagging.isAlive(id) and root and root:IsA("BasePart") then
 			local p = positionOf(root)
-			if Tag.overlaps(x, y, p.X, p.Y, 0) then
+			local hit = Tag.overlaps(x, y, p.X, p.Y, 0)
+				or (dashing == true and px ~= nil and py ~= nil and Tag.sweeps(px, py, x, y, p.X, p.Y, Config.TAG_DASH_REACH))
+			if hit and not Tagging.dodging(root) then
 				lastClaimAt = os.clock()
 				claimRemote:FireServer(id)
 				return
 			end
 		end
 	end
+end
+
+-- H38: are we, dashing, passing through the holder right now (its tag cannot land)? True at most once a second: the
+-- "DODGED!" pop. What this screen sees only; the server's own record decides whether a tag lands.
+local lastDodge = -math.huge
+function Tagging.dodge(x: number, y: number, dashing: boolean): boolean
+	if not (dashing and state) or state.over or state.it == nil or state.it == me or not Tagging.isAlive(me) then return false end
+	if os.clock() - lastDodge < 1 then return false end
+	for _, model in CollectionService:GetTagged(RUNNER_TAG) do
+		local root = model:FindFirstChild("HumanoidRootPart")
+		if model:GetAttribute("RunnerId") == state.it and root and root:IsA("BasePart") then
+			local p = positionOf(root)
+			if Tag.overlaps(x, y, p.X, p.Y, 0.5) then
+				lastDodge = os.clock()
+				return true
+			end
+			return false
+		end
+	end
+	return false
 end
 
 -- Every frame while the local runner is a ghost holding a hex (the caller checks the slot; H18, DESIGN §3 rule 40):
