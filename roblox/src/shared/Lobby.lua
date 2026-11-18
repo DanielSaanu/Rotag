@@ -184,13 +184,17 @@ export type Dwell = { door: string?, t: number, armed: boolean }
 function Lobby.newDwell(): Dwell return { door = nil, t = 0, armed = true } end
 
 -- Returns fired (this is the frame the door was chosen) and the bar's fill, 0..1 (0 when no door answers).
-function Lobby.dwell(d: Dwell, door: string?, dt: number, need: number): (boolean, number)
+-- `standing` (nil = true): the runner is on the door's own floor. A door ENTERED from the air does not answer on that
+-- visit (QA rounds 2-3: a jump from the step carries 24 studs and landed runners inside ENTER A CODE, which then
+-- opened unchosen): only a door you walk into counts. In the air inside a door the clock waits.
+function Lobby.dwell(d: Dwell, door: string?, dt: number, need: number, standing: boolean?): (boolean, number)
 	if door ~= d.door then
 		d.door, d.t = door, 0
-		if door == nil then d.armed = true end
+		if door == nil then d.armed = true elseif standing == false then d.armed = false end
 		return false, 0
 	end
 	if door == nil or not d.armed or need <= 0 then return false, 0 end
+	if standing == false then return false, d.t / need end
 	d.t += dt
 	if d.t >= need then
 		d.armed, d.t = false, 0
@@ -199,9 +203,17 @@ function Lobby.dwell(d: Dwell, door: string?, dt: number, need: number): (boolea
 	return false, d.t / need
 end
 
--- How long door `id` must be held: leaving the queue is the one slow door (a deliberate two seconds).
-function Lobby.hold(id: string, queued: boolean): number
-	return if id == "quick" and queued then Config.LEAVE_HOLD else Config.DOOR_HOLD
+-- How long door `id` must be held: leaving the queue is the one slow door (a deliberate two seconds). `left`: the
+-- seconds until the match starts, if it is counting: the leave never takes longer than the count has (QA round 3: a
+-- runner who changed its mind at "2" could not finish the hold and was taken in), nor less than 0.6 s.
+function Lobby.hold(id: string, queued: boolean, left: number?): number
+	if not (id == "quick" and queued) then return Config.DOOR_HOLD end
+	return if left then math.clamp(left - 0.5, 0.6, Config.LEAVE_HOLD) else Config.LEAVE_HOLD
+end
+
+-- Is a runner whose centre is at world y standing on door `d`'s floor (not jumping or falling through it)?
+function Lobby.standing(area: string, d: Door, y: number): boolean
+	return y - (Lobby.AREAS[area].y + d.y0) <= Config.RUNNER_HEIGHT / 2 + 0.5
 end
 
 -- What choosing door `id` asks for: a Remotes.Menu op, or "locker" / "pad" (the client's own screens).

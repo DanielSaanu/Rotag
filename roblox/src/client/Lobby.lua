@@ -284,6 +284,8 @@ function Lobby.frame(pos: Vector3?)
 	lastBump = bump
 	-- The doors. Nothing answers while another screen is up, while we are being taken somewhere, or once a room's
 	-- match has been started; and the clock does not run then either (so nothing fires the moment a screen closes).
+	-- The pad belongs to its door: walk away and it closes (QA round 3: it stayed up across the whole lobby).
+	if CodePad.isOpen() and not Rules.inDoor(a, "code", pos.X, pos.Y, 3) then CodePad.close() end
 	local busy = Menu.open() or CodePad.isOpen() or (s ~= nil and has(s.launching, me)) or (r ~= nil and Flow.playing())
 	if busy then
 		Callout.caption(nil)
@@ -294,7 +296,8 @@ function Lobby.frame(pos: Vector3?)
 	local near = d or Rules.doorNear(a, pos.X, pos.Y, 5)
 	local hostOnly = d ~= nil and d.id == "start" and r ~= nil and r.host ~= me
 	local id = if d and not hostOnly then d.id else nil
-	local fired, frac = Rules.dwell(dwell, id, dt, if id then Rules.hold(id, queued) else 1)
+	local standing = d == nil or Rules.standing(a, d, pos.Y)
+	local fired, frac = Rules.dwell(dwell, id, dt, if id then Rules.hold(id, queued, Flow.left()) else 1, standing)
 	if fired and id then
 		lastThird = 0
 		Callout.caption(nil)
@@ -316,7 +319,9 @@ function Lobby.frame(pos: Vector3?)
 	elseif near then
 		lastThird = 0
 		local line: string? = near.line
-		if near.id == "quick" and queued then
+		if d and id and not dwell.armed and not (near.id == "quick" and queued) then
+			line = "Step out, then walk in to choose." -- landed in it from a jump, or already chose it this visit
+		elseif near.id == "quick" and queued then
 			line = nil -- the pill already says it all
 		elseif near.id == "start" and r then
 			line = if r.host == me then "Stay here to start the match for everyone." else ("Only the host (%s) can start."):format(upper(r.host))

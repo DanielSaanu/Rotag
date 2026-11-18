@@ -75,7 +75,13 @@ local function remove(model: Instance)
 	drawn[model :: Model] = nil
 	byRoot[d.root] = nil
 	dashingBy[d.root] = nil
-	if byId[d.id] == model then byId[d.id] = nil end
+	if byId[d.id] == model then
+		byId[d.id] = nil
+		-- H37: a bot is rebuilt for every match now, and its new body's snapshots count from 0 again: against the old
+		-- stream's sequence numbers every one of them looked stale (QA round 3: "has no stream" for all three bots in
+		-- a server's second match). A runner that is gone takes its stream with it.
+		streams[d.id] = nil
+	end
 	d.look:destroy()
 end
 

@@ -238,7 +238,7 @@ function Session.step(now: number)
 	local what = Rules.tick(state, now, count)
 	if state.phase == "lobby" then
 		if count == 0 then
-			quickAt, only = nil, nil
+			quickAt, only, practiceArmed = nil, nil, false
 		elseif quickAt and state.until_ > quickAt then
 			state.until_, dirty = quickAt, true -- PRACTICE, or a host's START: a short 3-2-1, not the queue's wait
 		end

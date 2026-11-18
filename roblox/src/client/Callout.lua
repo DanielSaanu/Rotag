@@ -19,11 +19,13 @@ local pill: Frame, pillText: TextLabel, pillSub: TextLabel, pillHint: TextLabel,
 	= nil :: any, nil :: any, nil :: any, nil :: any, nil :: any
 local big: TextLabel, sub: TextLabel, count: TextLabel, countLabel: TextLabel = nil :: any, nil :: any, nil :: any, nil :: any
 local caption: TextLabel = nil :: any
+local plate: Frame = nil :: any -- a dark plate under the big line / the count: they sit over the world's own signs
 local fill: Part? = nil
 local bigUntil, bigHeld = 0, false
 local shownCount: number? = nil
 local pillKey, bigKey = "", ""
 local wantHint, wantCaption, captionStrong = false, false, false
+local plateW, plateOne, plateBig, plateCount = 760, 74, 108, 148
 local captionSize = 21
 local low = false -- docked at the bottom, one line: a menu is open over the game (Callout.dock)
 local topY, pillH = 0, 46
@@ -140,12 +142,18 @@ function Callout.update()
 	end
 	-- the count takes the big line's place while it runs
 	big.Visible, sub.Visible = shownCount == nil and not low, shownCount == nil and not low
+	-- (QA round 3: the big line's second row ran across the PRACTICE and HOST A ROOM signs behind it.)
+	local counting = shownCount ~= nil
+	plate.Visible = not low and (counting or big.TextTransparency < 0.98)
+	plate.BackgroundTransparency = if counting then 0.3 else 0.3 + 0.7 * big.TextTransparency
+	plate.Size = UDim2.fromOffset(plateW, if counting then plateCount else (if sub.Text ~= "" then plateBig else plateOne))
 	-- One thing at a time (seen in Studio: six lines at once the moment a runner queued): while the big line or the
 	-- count is up, the quiet lines wait.
 	local line = bigHeld or os.clock() < bigUntil
 	local loud = line or shownCount ~= nil
 	-- (QA round 1: hidden through the count too, "how to leave" showed for 3 of a queue's 12 seconds)
-	pillHint.Visible = wantHint and not line and not low
+	-- ... and never five lines: while a doorway is filling, its line stands in for the hint
+	pillHint.Visible = wantHint and not line and not low and not (wantCaption and captionStrong)
 	caption.Visible = wantCaption and (captionStrong or not loud) and not low
 end
 
@@ -173,6 +181,11 @@ function Callout.start(player: Player)
 	caption = line(root, y, captionSize, C.text, Ui.BODY, captionSize * 1.35 + 10)
 	caption.RichText = true
 	y += if cmp then 28 else 36
+	plateW, plateOne = if cmp then 620 else 760, if cmp then 58 else 74
+	plateBig, plateCount = if cmp then 86 else 108, if cmp then 118 else 148
+	plate = Ui.frame(root, UDim2.fromOffset(plateW, plateBig), UDim2.new(0.5, 0, 0, y - 4), Vector2.new(0.5, 0))
+	plate.BackgroundColor3, plate.BackgroundTransparency, plate.Visible = C.ink, 1, false
+	Ui.corner(plate, 16)
 	big = line(root, y, if cmp then 44 else 58, C.text, Ui.HEAD)
 	big.TextTransparency = 1
 	countLabel = line(root, y, if cmp then 20 else 24, C.text, Ui.HEAD)

@@ -1,6 +1,6 @@
 -- The room-code pad (H37, docs/systems/lobby.md §5): the one thing in the lobby that is typed, not walked to. It
 -- opens when a runner stands in ENTER A CODE: four big boxes, a number pad (fingers), and the keyboard's digits,
--- Backspace, Enter and Escape. It only collects four digits and hands them over; the server decides if there is such
+-- Backspace (on an empty entry: close) and Enter. Its X, or walking out of the door, closes it too. It only collects four digits and hands them over; the server decides if there is such
 -- a room (client/Lobby shows its answer here with CodePad.status).
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -63,7 +63,7 @@ end
 function CodePad.open(go: (string) -> ())
 	if not panel then return end
 	typed, onGo = "", go
-	statusLabel.Text = ""
+	statusLabel.Text, statusLabel.TextColor3 = "X, or walk away, to close", C.dim
 	show()
 	panel.Visible = true
 	Ui.pop(panel, 0.8)

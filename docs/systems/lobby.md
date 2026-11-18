@@ -42,6 +42,9 @@ the one placement a client-owned body cannot undo (tag.md §4). Inside the snaps
 - **Leaving the queue** is the same door, slower: step out, come back, stay `LEAVE_HOLD` 2 s (a white fill,
   "LEAVING THE QUEUE..."). The pause menu (MENU, M) also has LEAVE THE QUEUE, for anyone who cannot find the door.
 - The clock does not run while a menu, the code pad or a teleport is up.
+- **Only a door you walk into counts** (QA round 3): entered from the air (a jump from the step lands 24 studs on),
+  a door does not answer on that visit; a hop inside a door pauses its clock. The caption says to step out and walk in.
+- Leaving the queue never takes longer than the count has left (2 s, down to 0.6 s).
 
 ## 4. The requests (`server/Doors`; the Remotes row is in [README.md](README.md))
 
@@ -107,7 +110,8 @@ for a refused request). Stacked down the top middle, never the lower middle (rul
 | the fill (in the world) | standing in a door | the doorway fills, bottom to top |
 
 The full list of moments that get a callout is the goals file, [../qa/lobby.md](../qa/lobby.md) "Indications". Over
-a menu or the code pad the pill docks at the bottom edge and the idle hint hides; a countdown closes every menu.
+a menu or the code pad the pill docks at the bottom edge and the idle hint hides; a countdown closes every menu. The big line and the count sit on a dark plate: they
+are drawn over the upstairs signs. The code pad closes when the runner leaves its door.
 
 ## 8. Numbers (`Config`, trial, Danzo's to tune)
 
@@ -120,6 +124,8 @@ The lobby on one screen; the doorway fill; the how-to cards on a first QUICK MAT
 the door's own 1 / 4); the 5-4-3 count into a real round; the locker over a live queue; leaving with the 2 s hold;
 a room made, its code on the wall, ROUNDS 5 and BOTS OFF set by jumping, START refused with YOU NEED 2 PLAYERS,
 then started into a round with three bots; the pad's NO ROOM WITH THAT CODE; PRACTICE's 3-2-1 into an unpaid match.
+
+QA loop: 6, 7, 7 of 10 over three rounds, every FIX done, the last round's not re-reviewed: [../qa/lobby-summary.md](../qa/lobby-summary.md).
 
 **Not seen:** a second person (a friend joining a room, host hand-over, a full queue); any live server (hub queue,
 room and practice servers, the MemoryStore, every teleport); a phone; how one second in a door FEELS by hand.

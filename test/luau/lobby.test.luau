@@ -162,6 +162,34 @@ do -- standing in a door: a full, unbroken hold; running past does nothing; one 
 	assert(across < Config.DOOR_HOLD * 0.5, "running through QUICK MATCH takes under half the hold")
 end
 
+do -- a door entered from the air does not answer on that visit; a jump inside a door only pauses its clock
+	local d = Lobby.newDwell()
+	Lobby.dwell(d, nil, 0.1, 1, true)
+	Lobby.dwell(d, "code", 0.1, 1, false) -- landed in it from a jump
+	for _ = 1, 40 do
+		local fired, f = Lobby.dwell(d, "code", 0.1, 1, true)
+		assert(not fired and f == 0, "landing in a door never chooses it, however long you then stand there")
+	end
+	Lobby.dwell(d, nil, 0.1, 1, true)
+	Lobby.dwell(d, "code", 0.1, 1, true) -- walked in
+	for _ = 1, 5 do Lobby.dwell(d, "code", 0.1, 1, true) end
+	local _, before = Lobby.dwell(d, "code", 0.1, 1, false) -- a hop on the spot
+	local _, during = Lobby.dwell(d, "code", 0.1, 1, false)
+	assert(before == during and before > 0.4, "in the air inside the door the clock waits (it does not reset)")
+	local fired, n = false, 0
+	repeat
+		fired = Lobby.dwell(d, "code", 0.1, 1, true)
+		n += 1
+	until fired or n > 20
+	assert(fired and n <= 6, "back on its floor the hold finishes")
+	local code = Lobby.door("lobby", "code") :: any
+	assert(Lobby.standing("lobby", code, L.y + code.y0 + FEET) and not Lobby.standing("lobby", code, L.y + code.y0 + FEET + 2),
+		"standing is being on the door's own floor")
+	-- leaving the queue never takes longer than the count has left
+	assert(Lobby.hold("quick", true, 10) == Config.LEAVE_HOLD and Lobby.hold("quick", true, 2) == 1.5, "the leave fits the count")
+	assert(Lobby.hold("quick", true, 0.2) == 0.6 and Lobby.hold("quick", false, 0.2) == Config.DOOR_HOLD, "never under 0.6 s; joining is unchanged")
+end
+
 do -- what each door asks for
 	assert(Lobby.hold("quick", false) == Config.DOOR_HOLD and Lobby.hold("quick", true) == Config.LEAVE_HOLD, "the holds")
 	assert(Config.LEAVE_HOLD > Config.DOOR_HOLD, "leaving the queue is the slow one")
