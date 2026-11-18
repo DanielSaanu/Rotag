@@ -51,12 +51,14 @@ end
 -- up"; and he likes it asymmetric). 112 studs of floor, two levels, the whole of it on one zoomed-out screen:
 --   downstairs  LOCKER (left), the spawn and open floor, QUICK MATCH (the big one), more open floor to the right
 --   upstairs    PRACTICE on the left deck, HOST A ROOM and ENTER A CODE on the right deck
--- A step beside QUICK MATCH leads up to each deck: one jump to the step, one to the deck.
+-- The way up is at the two ENDS, by the walls: a wide step (one jump), then the deck (one more), each marked UP.
+-- (QA round 1: the first steps flanked QUICK MATCH; a missed jump landed in its doorway and a kid who paused there
+-- was queued without meaning to be.)
 local lobbyBlocks = shell(56, 66)
-table.insert(lobbyBlocks, { "DeckLeft", -52, 17, -15, 18 })
-table.insert(lobbyBlocks, { "DeckRight", 23, 17, 54, 18 })
-table.insert(lobbyBlocks, { "StepLeft", -12, 8, -6, 9 })
-table.insert(lobbyBlocks, { "StepRight", 14, 8, 20, 9 })
+table.insert(lobbyBlocks, { "DeckLeft", -44, 17, -15, 18 })
+table.insert(lobbyBlocks, { "DeckRight", 21, 17, 44, 18 })
+table.insert(lobbyBlocks, { "StepLeft", -56, 8, -46, 9 })
+table.insert(lobbyBlocks, { "StepRight", 46, 8, 56, 9 })
 
 local lobbyBumps: { { any } } = {}
 local roomBumps: { { any } } = {
@@ -70,7 +72,7 @@ local AREAS: { [string]: Area } = {
 		spawn = { x = -24, y = 0 }, bumps = lobbyBumps,
 		-- Only a GROUP gets a name plate (seen in Studio: a plate under PRACTICE's deck ran into the LOCKER's sign, and
 		-- a one-door "group" says nothing its sign does not).
-		zones = { { "PLAY NOW", -4, 12, LIME, 0 }, { "PLAY WITH FRIENDS", 26, 50, PINK, 17 } },
+		zones = { { "PLAY NOW", -4, 12, LIME, 0 }, { "PLAY WITH FRIENDS", 23, 43, PINK, 17 } },
 		doors = {
 			{ id = "locker", x0 = -42, y0 = 0, x1 = -32, y1 = 9, name = "LOCKER", inside = "SKINS", color = GOLD,
 				line = "Dress your runner. Spin the wheel." },
@@ -78,9 +80,10 @@ local AREAS: { [string]: Area } = {
 				line = "Play now with other runners." },
 			{ id = "practice", x0 = -40, y0 = 18, x1 = -28, y1 = 27, name = "PRACTICE", inside = "SOLO", color = CYAN,
 				line = "Just you and bots. Nothing counts." },
-			{ id = "host", x0 = 26, y0 = 18, x1 = 36, y1 = 27, name = "HOST A ROOM", inside = "+ ROOM", color = PINK,
+			{ id = "host", x0 = 23, y0 = 18, x1 = 32, y1 = 27, name = "HOST A ROOM", inside = "+ ROOM", color = PINK,
 				line = "Make a room. Friends join with your code." },
-			{ id = "code", x0 = 40, y0 = 18, x1 = 50, y1 = 27, name = "ENTER A CODE", inside = "1 2 3 4", color = PINK,
+			-- ("# CODE", not "1 2 3 4": the first doorway's digits read as a code to type, and the reviewer typed them)
+			{ id = "code", x0 = 34, y0 = 18, x1 = 43, y1 = 27, name = "ENTER A CODE", inside = "# CODE", color = PINK,
 				line = "Join a friend's room with their code." },
 		},
 	},

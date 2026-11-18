@@ -21,7 +21,7 @@ export type Api = {
 	launching: { [number]: number },  -- being taken to another server, since when
 	idle: () -> boolean,              -- the flow is in its lobby and no round is due
 	quick: () -> number?,             -- a short countdown is running (PRACTICE, a host's START)
-	setQuick: (number) -> (),
+	setQuick: (number, { number }) -> (), -- ... for these players only (nobody else is seated in that match)
 	where: (number) -> (number?, number?),
 	sit: (Player) -> (),              -- out of the queue or the match
 	home: (Player) -> (),             -- a fresh body where this player waits (its room, else the lobby)
@@ -87,7 +87,7 @@ function Doors.ask(api: Api, player: Player, op: any)
 			return
 		end
 			playing[id], practice[id] = true, true
-			api.setQuick(now + Config.QUICK_START)
+			api.setQuick(now + Config.QUICK_START, { id })
 		elseif Room.create(player) then
 			api.home(player)
 			api.log(player.Name .. " hosts room " .. tostring(Room.code))
@@ -120,7 +120,7 @@ function Doors.ask(api: Api, player: Player, op: any)
 			return
 		end
 		for _, m in Room.members do playing[m] = true end
-		api.setQuick(now + Config.QUICK_START)
+		api.setQuick(now + Config.QUICK_START, Room.members)
 		api.log(player.Name .. " started room " .. tostring(Room.code))
 	elseif op == "leave" then
 		if not (Room.has(id) and idle) then refused() return end
@@ -128,7 +128,7 @@ function Doors.ask(api: Api, player: Player, op: any)
 		Room.remove(id)
 		if Hub.KIND == "room" then Hub.home({ player }) else api.home(player) end
 	elseif string.sub(op, 1, 4) == "set:" then
-		if not (Room.has(id) and idle and api.quick() == nil) then refused() return end
+		if not (Room.has(id) and area == "room" and idle and api.quick() == nil) then refused() return end
 		if not Room.set(id, string.sub(op, 5)) then
 			api.note(player, "hostonly")
 			return

@@ -68,9 +68,9 @@ in and what happens next, and never feel rushed or lost?**
 Rojo is syncing. Start Play; wait ~8 s. To put the runner somewhere exactly, from the SERVER datamodel:
 `require(game.ServerScriptService.Server.Runners).spawn(player, Vector3.new(x, y, 0))` (a rebuilt body, as the game
 itself moves people). To arm a door, be outside every door first, then in it. Lobby origin x 600: QUICK MATCH
-(604, 1.8), LOCKER (563, 1.8), PRACTICE (566, 19.9), HOST A ROOM (631, 19.9), ENTER A CODE (645, 19.9), open floor
-(585, 1.8), between the pink doors (638, 19.9). Room origin x 800: START (832, 1.8), LOBBY (767, 1.8), a block
-(783, 6.5 ROUNDS; 800, 6.5 ITEMS; 817, 6.5 BOTS). Keys go through the keyboard tool (A/D, Space, Return, digits,
+(604, 1.8), LOCKER (563, 1.8), PRACTICE (566, 19.9), HOST A ROOM (627.5, 19.9), ENTER A CODE (638.5, 19.9), open floor
+(585, 1.8), between the pink doors (633, 19.9), the UP steps (549, 10.8 and 651, 10.8), the decks' ends (558 and 643, 19.8). Room origin x 800: START (832, 1.8), LOBBY (767, 1.8), a block
+(783, 6.5 ROUNDS; 800, 6.5 ITEMS; 817, 6.5 BOTS; or stand under one at y 1.8 and press Space). Keys go through the keyboard tool (A/D, Space, Return, digits,
 Escape). `screen_capture` after each step and LOOK. The server log prints `[Rotag] session: ...` for accepted and
 refused requests. Stop Play when done. The how-to cards appear on the first QUICK MATCH of a session: Return closes them.
 

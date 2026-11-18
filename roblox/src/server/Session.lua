@@ -45,6 +45,9 @@ local playing: { [number]: boolean } = {}
 local practice: { [number]: boolean } = {} -- H37: in through the PRACTICE door (a match of only these pays nothing)
 local due: { number }? = nil -- the roster of the round that may start now
 local quickAt: number? = nil -- H37: PRACTICE, or a room's START: the lobby's countdown ends by then
+-- ... and that match is for these players only (QA round 1: on a solo server whoever was quick-queued in the lobby
+-- was swept into a stranger's practice or room match, and it paid). nil: a quick match, for everybody queued.
+local only: { [number]: boolean }? = nil
 local useBots, unpaid = Config.BOTS, false -- this match's (a room's BOTS block; a practice match)
 -- H34, a hub only: since when somebody has been queued (the wait's clock), and who has been sent to a match server
 -- and when (they are still here for a few seconds: not queued twice; LAUNCH_STALE later the teleport is taken to
@@ -72,7 +75,7 @@ local function people(): { number }
 	for _, id in order do
 		local sent = launching[id]
 		if sent and now - sent > LAUNCH_STALE then launching[id], sent = nil, nil end
-		if playing[id] and not sent and c and c.present(id) then table.insert(out, id) end
+		if playing[id] and not sent and c and c.present(id) and (only == nil or only[id]) then table.insert(out, id) end
 	end
 	return out
 end
@@ -85,6 +88,12 @@ local function view(now: number): any
 	v.seed = Bots.SEED -- H32: the bots' names (shared/Session.botName) are the same on every screen
 	v.mode = Hub.MODE -- H34: "hub" | "match" | "solo": what the queue means on this server
 	v.room, v.unpaid = Room.view(), unpaid -- H37
+	local o = only
+	if o then -- the match running or about to: these players' only
+		local group = {}
+		for id in o do table.insert(group, id) end
+		v.group = group
+	end
 	if waitingFor then v.waiting = { #people(), waitingFor } end -- a match server holding its lobby for its group
 	local sent = {}
 	for id in launching do table.insert(sent, id) end
@@ -193,12 +202,12 @@ end
 local function release()
 	for _, player in Players:GetPlayers() do
 		local id = player.UserId
-		if playing[id] then
+		if playing[id] and (only == nil or only[id]) then -- (whoever is quick-queued behind a private match stays queued)
 			playing[id], practice[id] = nil, nil
 			home(player)
 		end
 	end
-	quickAt, unpaid, useBots = nil, false, Config.BOTS
+	quickAt, only, unpaid, useBots = nil, nil, false, Config.BOTS
 	Orbs.ITEMS = true
 end
 
@@ -223,7 +232,7 @@ function Session.step(now: number)
 	local what = Rules.tick(state, now, count)
 	if state.phase == "lobby" then
 		if count == 0 then
-			quickAt = nil
+			quickAt, only = nil, nil
 		elseif quickAt and state.until_ > quickAt then
 			state.until_, dirty = quickAt, true -- PRACTICE, or a host's START: a short 3-2-1, not the queue's wait
 		end
@@ -312,7 +321,10 @@ local api: Doors.Api = {
 	playing = playing, practice = practice, launching = launching,
 	idle = function() return state.phase == "lobby" and not due end,
 	quick = function() return quickAt end,
-	setQuick = function(t: number) quickAt = t end,
+	setQuick = function(t: number, ids: { number })
+		quickAt, only = t, {}
+		for _, id in ids do (only :: any)[id] = true end
+	end,
 	where = function(id: number) local c = ctx if c then return c.where(id) end return nil, nil end,
 	sit = sit, home = home,
 	note = function(player: Player, why: string) send(os.clock(), player, why) end,
@@ -332,6 +344,8 @@ function Session.start(session: RemoteEvent?, menu: RemoteEvent?, context: Conte
 		if Hub.MODE == "match" and not playing[id] then
 			-- H34: a match server's players were sent here to play: in at once, in the arena
 			playing[id] = true
+			-- a practice server: a short count from the arrival, not the arena lobby's LOBBY_TIME (QA round 1)
+			if Hub.KIND == "practice" and quickAt == nil then quickAt = os.clock() + Config.QUICK_START + 4 end
 			Runners.spawn(player, context.spawn)
 			expected = math.max(expected, Hub.groupOf(player))
 			firstAt = firstAt or os.clock()

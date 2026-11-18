@@ -68,7 +68,14 @@ do -- the doors: on the floor, inside the walls, apart from each other; QUICK MA
 	for _, id in { "practice", "host", "code" } do assert((Lobby.door("lobby", id) :: any).y0 > 12, id .. " is upstairs") end
 	-- upstairs is not downstairs: a runner under a deck is not in the door on it, nor the other way round
 	assert(Lobby.doorAt("lobby", L.x - 34, L.y + FEET) == Lobby.door("lobby", "locker"), "under PRACTICE: the LOCKER")
-	assert(Lobby.doorAt("lobby", L.x + 30, L.y + FEET) == nil, "under HOST A ROOM: open floor")
+	assert(Lobby.doorAt("lobby", L.x + 28, L.y + FEET) == nil, "under HOST A ROOM: open floor")
+	-- the way up is nowhere near QUICK MATCH (QA round 1: a missed jump beside it queued the reviewer)
+	for _, b in L.blocks do
+		if string.sub(b[1], 1, 4) == "Step" then
+			assert(b[2] >= quick.x1 + 20 or b[4] <= quick.x0 - 20, b[1] .. " is far from QUICK MATCH")
+			assert(b[4] - b[2] >= 10, b[1] .. " is wide enough to land on")
+		end
+	end
 	-- open floor to stand on (Danzo: "you can't stand anywhere"): downstairs, outside every door
 	local free = 2 * L.half
 	for _, d in L.doors do if d.y0 == 0 then free -= d.x1 - d.x0 end end

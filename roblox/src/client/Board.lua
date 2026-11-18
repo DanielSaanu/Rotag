@@ -188,7 +188,8 @@ function Board.update(match: any, hidden: boolean)
 		key = "podium" .. tostring(s.match)
 		cardFoot.Text = (if earned then ("+%d coins   ·   "):format(earned) else "")
 			.. (if levelled then ("LEVEL %d!   ·   "):format(levelled) else "")
-			.. (if left then ("next match in %d"):format(math.ceil(left)) else "")
+			.. (if left then ((if s.mode == "match" then "back to the lobby in %d" elseif s.room then "back to the room in %d"
+				else "back to the lobby in %d")):format(math.ceil(left)) else "") -- H37: nothing starts by itself any more
 		cardFoot.TextColor3 = C.gold
 	end
 	if big.Text ~= "" and phase ~= "round" then big.TextTransparency, sub.TextTransparency = 0, 0 end

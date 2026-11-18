@@ -122,6 +122,11 @@ local function area(a: Lobby.Area): Model
 		end
 	end
 	for _, d in a.doors do door(m, ox, oy, d, k) end
+	for _, b in a.blocks do -- the way up says so (QA round 1: two thin ledges with no cue)
+		if string.sub(b[1], 1, 4) == "Step" then
+			sign(m, b[1] .. "Up", ox + (b[2] + b[4]) / 2, oy + b[5] + 4.6, 7, 3 * k, TEXT, "UP")
+		end
+	end
 	part(m, "SpawnMark", ox + a.spawn.x + 6, oy - 0.2, Z_FRONT, 15, 0.4, 0.12, TEXT, Enum.Material.Neon)
 	return m
 end
@@ -131,11 +136,14 @@ local function furnish(m: Model, a: Lobby.Area)
 	local ox, oy = a.x, a.y
 	local pink = rgb(Lobby.COLORS.pink)
 	-- Below the top half of the screen (the callouts' place: seen in Studio, the 3-2-1 sat on the code), above the blocks.
-	paint(m, "CodeTitle", ox, oy + 27.8, Z_SIGN, 30, 2.6, "ROOM CODE", pink, HEAD)
+	-- On the LEFT of the wall (QA round 1: centred, the 3-2-1 and the big line sat on it, and its help line ran into
+	-- START's sign): the middle of the screen is the callouts'.
+	local wx = ox - 24
+	paint(m, "CodeTitle", wx, oy + 31.6, Z_SIGN, 30, 2.8, "ROOM CODE", pink, HEAD)
 	for i = 1, Lobby.CODE_LEN do
-		sign(m, "Code" .. i, ox + (i - 2.5) * 8, oy + 22, 7, 8, pink, "-", "code" .. i)
+		sign(m, "Code" .. i, wx + (i - 2.5) * 8, oy + 25.4, 7, 8.4, pink, "-", "code" .. i)
 	end
-	paint(m, "CodeHelp", ox, oy + 15.9, Z_SIGN, 70, 2.6, "TELL YOUR FRIENDS.  THEY USE  ENTER A CODE.", TEXT, BODY)
+	paint(m, "CodeHelp", wx, oy + 18.8, Z_SIGN, 34, 2.4, "FRIENDS USE:  ENTER A CODE", TEXT, BODY)
 	paint(m, "BumpHelp", ox, oy + 11.6, Z_SIGN, 70, 2.3, "HOST: JUMP INTO A BLOCK TO CHANGE IT", TEXT, HEAD, "bumphelp")
 	for _, b in a.bumps do
 		local w, h = b[4] - b[2], b[5] - b[3]
@@ -148,9 +156,8 @@ local function furnish(m: Model, a: Lobby.Area)
 	local seats = { Lobby.COLORS.cyan, Lobby.COLORS.lime, Lobby.COLORS.pink, Lobby.COLORS.gold }
 	for i, sx in Lobby.SEATS_X do
 		part(m, "Seat" .. i, ox + sx, oy - 0.2, Z_FRONT, 9, 0.4, 0.12, rgb(seats[i]), Enum.Material.Neon)
-		paint(m, "SeatName" .. i, ox + sx, oy - 2.2, Z_FRONT, 11.5, 2.4, "", rgb(seats[i]), HEAD, "seat" .. i)
-	end
-	paint(m, "SeatHelp", ox, oy - 4.8, Z_FRONT, 70, 2, "A FRIEND WHO JOINS TAKES A BOT'S SEAT", TEXT, BODY, "seathelp")
+		paint(m, "SeatName" .. i, ox + sx, oy - 1.9, Z_FRONT, 11.5, 2.2, "", rgb(seats[i]), HEAD, "seat" .. i)
+	end -- (no line under the seats: it was clipped at the screen's bottom edge; BOTS says it when it changes)
 end
 
 -- Change one of the keyed words on every screen: "quick" (the queue's count in the QUICK MATCH doorway), "code1".."4",

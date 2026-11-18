@@ -142,8 +142,10 @@ function Callout.update()
 	big.Visible, sub.Visible = shownCount == nil and not low, shownCount == nil and not low
 	-- One thing at a time (seen in Studio: six lines at once the moment a runner queued): while the big line or the
 	-- count is up, the quiet lines wait.
-	local loud = bigHeld or os.clock() < bigUntil or shownCount ~= nil
-	pillHint.Visible = wantHint and not loud and not low
+	local line = bigHeld or os.clock() < bigUntil
+	local loud = line or shownCount ~= nil
+	-- (QA round 1: hidden through the count too, "how to leave" showed for 3 of a queue's 12 seconds)
+	pillHint.Visible = wantHint and not line and not low
 	caption.Visible = wantCaption and (captionStrong or not loud) and not low
 end
 

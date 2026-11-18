@@ -32,8 +32,9 @@ function CodePad.status(text: string, color: Color3?, clear: boolean?)
 	if clear then
 		typed = ""
 		show()
+		for _, b in boxes do Ui.pop(b.Parent :: GuiObject, 1.15) end -- the boxes jump: that try is gone
 	end
-	Ui.pop(statusLabel, 1.2)
+	Ui.pop(statusLabel, 1.4)
 end
 
 local function press(key: string)
@@ -76,8 +77,8 @@ local KEYS = { One = "1", Two = "2", Three = "3", Four = "4", Five = "5", Six = 
 function CodePad.start(player: Player)
 	local _, root = Ui.screen(player:WaitForChild("PlayerGui"), "RotagCodePad", 28)
 	local cmp = Ui.compact()
-	local keyH, gap = if cmp then 50 else 60, 8
-	local h = (if cmp then 150 else 184) + 4 * (keyH + gap) + 12
+	local keyH, gap = 60, 8 -- 45 points tall at the smallest scale: a finger's (QA round 1: 50 was 37)
+	local h = (if cmp then 160 else 194) + 4 * (keyH + gap) + 12
 	panel = Ui.panel(root, UDim2.fromOffset(344, h), UDim2.fromScale(0.5, 0.5), Vector2.new(0.5, 0.5), 18)
 	panel.Visible = false
 	Ui.stroke(panel, PINK, 3, 0.1)
@@ -94,9 +95,9 @@ function CodePad.start(player: Player)
 		Ui.stroke(f, PINK, 3, 0)
 		boxes[i] = Ui.label(f, "", if cmp then 44 else 54, C.text, Ui.HEAD)
 	end
-	statusLabel = Ui.label(panel, "", 17, C.text, Ui.BODY)
-	statusLabel.Size, statusLabel.Position = UDim2.new(1, -24, 0, 24), UDim2.fromOffset(12, 56 + boxH)
-	local y0 = 56 + boxH + 30
+	statusLabel = Ui.label(panel, "", 22, C.text, Ui.HEAD) -- big enough to be the answer (QA round 1: 17 px)
+	statusLabel.Size, statusLabel.Position = UDim2.new(1, -16, 0, 32), UDim2.fromOffset(8, 56 + boxH)
+	local y0 = 56 + boxH + 40
 	local grid = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "go" }
 	for i, key in grid do
 		local col, row = (i - 1) % 3, (i - 1) // 3

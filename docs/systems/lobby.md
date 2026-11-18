@@ -20,7 +20,8 @@ A player lands **in the lobby with a body**, not on a title screen. Every choice
 | **HOST A ROOM** | upstairs, right deck | pink | a private room with a 4-digit code; you are its host |
 | **ENTER A CODE** | upstairs, right deck | pink | a number pad; the code of a friend's room takes you there |
 
-Upstairs is two jumps: a step beside QUICK MATCH, then the deck. The lobby is 112 studs of floor on two levels, seen
+Upstairs is two jumps, at either END of the lobby: a wide step under an UP sign, then the deck (never beside
+QUICK MATCH: QA round 1). The lobby is 112 studs of floor on two levels, seen
 from further back than a round (64 studs top to bottom, not 48), so the whole of it is on one still screen; a narrow
 screen slides with the runner. The pieces: `shared/Lobby` (the data and rules), `server/LobbyMap` (the parts),
 `client/Lobby` (the doors and words), `client/Callout` (how the words are drawn), `client/CodePad`.
@@ -66,6 +67,8 @@ as a word in that player's `Session` view (`note = { word, n }`: `noroom`, `full
 - Three blocks the host jumps into: ROUNDS (1 / 3 / 5), ITEMS (off = no orbs at all: rule 13's vanilla toggle),
   BOTS (off needs two players). Seats on the floor name who is in; a friend who joins takes a bot's seat.
 - START: a 3-2-1 for everybody in the room, the match, the podium, then **back in the room** (not the hub).
+- **A private match is its group's** (a room's, or practice): on a server that also has a quick queue (a solo
+  server), only the group is seated, counted and paid; the queue behind it waits and is told so.
 - **A room never stalls:** a host who has not moved for `HOST_IDLE` 60 s between matches, or who leaves, hands
   the room to the next member.
 - A match shorter than 3 rounds pays in proportion (`rounds / 3`): a one-round room is not a coin farm.

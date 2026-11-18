@@ -169,7 +169,11 @@ local function onSession(new: any, old: any)
 		Callout.big("STILL LOOKING...", "that match didn't start: you're still in the queue", C.gold, 4)
 	end
 	if old.phase == "podium" and new.phase == "lobby" and wasIn then
-		Callout.big("GOOD GAME!", "stand in a door to play again", C.gold, 5)
+		Callout.big("GOOD GAME!", if is then (if is.host == me then "stand in START to play again" else "the host can start another")
+			else "stand in a door to play again", C.gold, 5)
+	elseif wasIn and not isIn and (old.phase == "round" or old.phase == "gap") then
+		Audio.play("card") -- out through the menu's LEAVE THE MATCH (QA round 1: back in the lobby with no words)
+		Callout.big("YOU LEFT THE MATCH", if is then "you are back in the room" else "stand in a door to play", WHITE, 4)
 	end
 end
 
@@ -193,7 +197,9 @@ local function status(s: any, queued: boolean, r: any)
 		return
 	end
 	Callout.release()
-	local counting = (queued or started) and left ~= nil and left <= 5
+	-- a private match (practice, a room) on this server is its group's: its count is not ours to see
+	local outside = s ~= nil and type(s.group) == "table" and not has(s.group, me)
+	local counting = (queued or started) and left ~= nil and left <= 5 and not outside
 	if counting and (Menu.open() or CodePad.isOpen()) then -- the match is about to start: every screen out of the way
 		Menu.close()
 		CodePad.close()
@@ -214,10 +220,14 @@ local function status(s: any, queued: boolean, r: any)
 		end
 	elseif queued and mine == "practice" then
 		Callout.pill("PRACTICE", C.cyan, "starting: nothing counts")
+	elseif Flow.playing() and outside then
+		Callout.pill("IN THE QUEUE", C.lime, "a private match here goes first  ·  keep moving!",
+			"to leave: go back to QUICK MATCH and stay 2 seconds")
 	elseif queued then
 		local n = if s then tonumber(s.queued) or 1 else 1
 		Callout.pill(("IN THE QUEUE   %d / %d"):format(n, SEATS), C.lime,
-			if left then ("match starts in %d  ·  keep moving!"):format(math.ceil(left)) else "finding runners  ·  keep moving!",
+			if left and left > 5 then ("match starts in %d  ·  keep moving!"):format(math.ceil(left))
+				elseif left then "here it comes!" else "finding runners  ·  keep moving!",
 			"to leave: go back to QUICK MATCH and stay 2 seconds")
 	elseif Flow.playing() then -- a solo server, mid-match: in from the next round
 		Callout.pill("YOU'RE IN NEXT ROUND", C.lime, "this round is finishing")
@@ -261,6 +271,9 @@ function Lobby.frame(pos: Vector3?)
 	end
 	-- The room's setting blocks: jumping into one asks for the change (only the host's is granted).
 	local bump = Rules.bumpAt(a, pos.X, pos.Y)
+	if bump == nil and lastBump ~= nil and pos.Y - Rules.AREAS[a].y > 3 then
+		bump = lastBump -- still in the air above or below it: the same jump (QA round 1: one jump changed it twice)
+	end
 	if bump and bump ~= lastBump and r and not Flow.playing() then
 		if r.host == me then
 			Flow.op("set:" .. bump)

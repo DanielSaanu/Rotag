@@ -23,6 +23,8 @@ Room.changed = function() end -- server/Session: something every screen shows ha
 local wantHost: number? = nil -- a room server: who asked for it (it is host once it arrives)
 local hostAt: { x: number, y: number, since: number }? = nil
 local KEEP = 240 -- seconds between a room server's refreshes of its code
+local SET_GAP = 1 -- seconds between two changes of one setting
+local lastSet: { [string]: number } = {}
 local lastKeep = 0
 
 function Room.has(id: number): boolean return Room.active and table.find(Room.members, id) ~= nil end
@@ -47,7 +49,6 @@ local function paint()
 		LobbyMap.say("seat" .. i, if id then nameOf(id) .. (if id == Room.host then "  (HOST)" else "")
 			elseif s.bots then "BOT" else "EMPTY")
 	end
-	LobbyMap.say("seathelp", if s.bots then "A FRIEND WHO JOINS TAKES A BOT'S SEAT" else "BOTS ARE OFF: YOU NEED TWO PLAYERS")
 end
 
 local function touch()
@@ -95,6 +96,10 @@ end
 -- The host jumped into a setting block. Returns the new value as words for the banner, or nil (not the host).
 function Room.set(id: number, key: string): string?
 	if not (Room.active and Room.host == id) then return nil end
+	-- One change a jump (QA round 1: a jump passes up through a block and back down, and BOTS went OFF then ON).
+	local now = os.clock()
+	if now - (lastSet[key] or -math.huge) < SET_GAP then return key end
+	lastSet[key] = now
 	local s = Room.settings
 	if key == "rounds" then
 		s.rounds = Lobby.nextRounds(s.rounds)
