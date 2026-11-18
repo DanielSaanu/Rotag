@@ -31,6 +31,14 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Resolved
 
+### H39 — A roof on every map (bots left over the end walls to dodge the tagger) — 2026-11-18 — RESOLVED
+- **Resolved 2026-11-18 (Fable session, trigger 2: `shared/MapYard`, `MapTest`):** a `Roof` block on the end walls of
+  both maps, held by `maps.test` → `docs/systems/maps.md` (the H39 note).
+
+### H38 — The dash and the tag: a dashing tagger sweeps, a dashing runner cannot be tagged — 2026-11-18 — RESOLVED (not yet played)
+- **Resolved 2026-11-18 (Fable session, triggers 1, 2, 3; Danzo's rule, DESIGN rule 45 rewritten):** `Tag.sweeps`, the
+  sweep and the dodge on the server's own dash record, `TAG_DASH_REACH` 1 → `docs/systems/dash-tag.md`.
+
 ### H37 — Build the walk-in lobby: doors, the queue, private rooms, practice, the callouts — 2026-11-18 — RESOLVED (built; the live servers NOT run)
 - **Trigger:** 1 (how a player picks a game; DESIGN §6.4), 2 (`shared/Lobby`, `shared/Session.rounds`, `Config`), 3 (the
   door requests, rooms, codes), 5-adjacent (MemoryStore, more TeleportService).

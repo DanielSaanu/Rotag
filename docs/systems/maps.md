@@ -107,6 +107,12 @@ moved 2-3 tiles inward and the end pads to the ends, feeding 9-tile quays.
   them in `syncTo`.
 - Plain grey parts as before; the Yard's look is the art block's (after this PR in the §12 order).
 
+> **H39 (2026-11-18): every map has a roof.** Danzo: "the bots especially like to jump off the map to avoid the
+> tagger". The end walls stopped at the map's top and nothing joined them; past a wall there is no floor, so a runner
+> fell out and came back at the spawn. A `Roof` block now sits on the walls (the Yard: 24 tiles, 9 over the Mast);
+> `maps.test` holds every map to a roof that spans wall to wall with 8 tiles of air under it. Seen in Studio: the
+> part is there and solid. Which move cleared the wall was not reproduced (a swing's release from a Mast anchor can).
+
 ## 4. The shrink per map (DESIGN §6.8)
 
 `shared/Walls` takes `{ lo, hi }` and is unchanged. Horizontal only is right for the Yard because it is wide and only

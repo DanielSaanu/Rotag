@@ -14,6 +14,7 @@ return {
 		{ "Floor", -20 * T, -2 * T, 30 * T, 0 },
 		{ "EndWallLeft", -21 * T, -2 * T, -20 * T, 20 * T },
 		{ "EndWallRight", 30 * T, -2 * T, 31 * T, 20 * T },
+		{ "Roof", -21 * T, 20 * T, 31 * T, 22 * T }, -- H39: a lid on the end walls: nobody leaves over the top
 		{ "PlatformLow", 3 * T, 2 * T - 1, 7 * T, 2 * T }, -- 2 tiles up: a hop
 		{ "PlatformMid", 9 * T, 5 * T - 1, 12 * T, 5 * T }, -- 3 tiles above the low one: a full jump from it
 		{ "PlatformHigh", -8 * T, 3 * T - 1, -4 * T, 3 * T }, -- a ledge to walk off (coyote) and dash off

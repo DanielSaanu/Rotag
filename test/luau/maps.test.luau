@@ -299,6 +299,27 @@ do -- the map rule's test has teeth: drop the Yard's keep-clear zones and a fill
 	print("    mutation: no keep-clear zones -> " .. problems[1])
 end
 
+do -- H39: every map is a closed box: a roof sits on the end walls, wall to wall, so nobody leaves over the top
+	for _, name in Maps.NAMES do
+		local m = Maps.ALL[name]
+		local left, right, roof
+		for _, b in m.blocks do
+			if b[1] == "EndWallLeft" then left = b elseif b[1] == "EndWallRight" then right = b elseif b[1] == "Roof" then roof = b end
+		end
+		assert(left and right and roof, name .. " has two end walls and a roof")
+		assert(roof[2] <= left[2] and roof[4] >= right[4], name .. ": the roof spans wall to wall")
+		assert(roof[3] <= left[5] and roof[3] <= right[5] and roof[5] > roof[3], name .. ": the roof sits on the walls (no gap over them)")
+		assert(roof[3] >= m.top, name .. ": the roof is at the map's top or over it (outside the grid the rules check)")
+		-- well clear of everything that is played: a double jump (7 tiles) off the highest deck does not reach it
+		local highest = 0
+		for _, b in m.blocks do
+			if b ~= roof and b ~= left and b ~= right then highest = math.max(highest, b[5]) end
+		end
+		assert(roof[3] - highest >= 8 * Config.STUDS_PER_TILE, name .. ": 8 tiles of air between the highest deck and the roof")
+		for _, a in m.anchors do assert(roof[3] - a.y >= 4 * Config.STUDS_PER_TILE, name .. ": no anchor hangs in the roof") end
+	end
+end
+
 do -- Maps.get falls back to the Yard (a typo in Config must not leave the server mapless); orbs: ghost ones first
 	assert(Maps.get("nope") == Maps.ALL.yard and Maps.get(nil) == Maps.ALL.yard, "unknown map: the Yard")
 	local o = Maps.orbs(Maps.ALL.yard)

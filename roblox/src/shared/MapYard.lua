@@ -33,6 +33,11 @@ return {
 		block("Floor", -45, -2, 45, 0),
 		block("EndWallLeft", -45, -2, -44, 24),
 		block("EndWallRight", 44, -2, 45, 24),
+		-- H39 (Danzo, 2026-11-18: "we need to put a roof on the maps; the bots especially like to jump off the map to
+		-- avoid the tagger"): the end walls stop at 24 tiles and a swing's release from the Mast's anchors clears that;
+		-- past a wall there is no floor, so a runner fell out and came back at the spawn, far from "it". The roof sits
+		-- on the walls, 9 tiles over the Mast (a double jump off it peaks at 22): nothing that is played reaches it.
+		block("Roof", -45, 24, 45, 26),
 		-- THE DOCK (left): a shaft (the end wall and a pillar 3 tiles apart) up to the ledge. The pillar hangs from
 		-- 4 tiles, so the shaft is walked into from the floor, and the end pad's hop fits under it into the shaft
 		block("PillarLeft", -41, 4, -40, 10),
