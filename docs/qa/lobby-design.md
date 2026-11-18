@@ -21,7 +21,7 @@ The question: **would a kid who has never seen the game know, within five second
 how-to, where to go to (a) play with strangers now, (b) make a room for friends, (c) get into a friend's room? And
 does choosing by running feel like the game, not like a menu with extra steps?**
 
-## The design in words (after QA round 1)
+## The design in words (after QA round 2)
 
 - **One screen, three colour zones, the spawn in the middle.** Gold left = your stuff (LOCKER: the shop and the wheel
   behind one door). Lime centre = play now (QUICK MATCH, the biggest door, nearest the spawn). Pink right = friends
@@ -39,13 +39,16 @@ does choosing by running feel like the game, not like a menu with extra steps?**
 ## The rules (one line each)
 
 - **Queue:** one second in QUICK MATCH puts you in the queue; you stay in it wherever you run in the lobby (a HUD
-  pill: IN QUEUE 2 / 4). Standing in QUICK MATCH again leaves it. Committing to another door swaps you.
+  pill: IN QUEUE 2 / 4), the LOCKER included. To leave: walk out, come back and hold the door for two seconds (a
+  white LEAVE QUEUE bar). Committing to PRACTICE, HOST A ROOM or ENTER A CODE swaps you; the LOCKER never does.
 - **Who can join a room:** anyone with the code. No friends-only setting.
-- **Host only:** START and the blocks answer only to the host; anyone else gets a HOST ONLY flash.
+- **Host only:** START (STAND HERE on the host's screen) and the blocks answer only to the host; anyone else gets
+  a HOST ONLY flash.
 - **Host idle 60 s, or gone:** the longest-seated player becomes host. A room never stalls.
 - **A friend who joins** takes a bot's seat; with four people there are no bots.
 - **Leaving a room** is the LOBBY door (a teleport: a few seconds, not instant).
-- **The how-to cards** show on a new player's first door commit. In a match, the MENU pill reads BACK TO LOBBY.
+- **The how-to cards** show on a new player's first door commit and live on as a "?" card in the LOCKER. In a
+  match, the MENU pill reads BACK TO LOBBY.
 
 ## Goals
 
@@ -53,8 +56,8 @@ does choosing by running feel like the game, not like a menu with extra steps?**
    friend) is findable at a glance by size, colour and one or two words. Nothing needs the HUD hint to be found.
 2. **One obvious default.** A player who does nothing clever ends up in a random match: QUICK MATCH is the biggest,
    brightest and nearest thing.
-3. **Friends without confusion.** The difference between HOST A ROOM, ENTER A CODE and FRIENDS' ROOMS is clear from
-   the lobby alone; a host knows how friends get in; a friend knows two ways to join.
+3. **Friends without confusion.** The difference between HOST A ROOM and ENTER A CODE is clear from the lobby
+   alone; a host knows how friends get in (the code); a friend knows where to type it.
 4. **No accidental choices.** Passing a door, or being bumped into one, never commits you; leaving is as physical as
    entering.
 5. **It feels like Rotag.** Getting to a door uses the game's own moves (run, jump, pads); the lobby is a small
