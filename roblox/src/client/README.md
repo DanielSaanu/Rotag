@@ -34,3 +34,6 @@ windows, momentum, the side-on camera, juice and the HUD. It predicts with the s
 Why it is split this way, and the character choice: [`docs/systems/movement.md`](../../../docs/systems/movement.md).
 Planned: corner correction in `shared/Movement`. How sprites and frames are drawn:
 [`docs/systems/sprites-and-animation.md`](../../../docs/systems/sprites-and-animation.md).
+
+H37 ([lobby.md](../../../docs/systems/lobby.md)): `Lobby.lua` (which door the runner is in, the dwell, what each door asks, every word about the queue and rooms,
+the still camera), `Callout.lua` (the pill, the big line, the count, the caption, the doorway's fill), `CodePad.lua` (the room-code pad).

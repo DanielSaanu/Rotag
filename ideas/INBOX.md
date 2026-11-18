@@ -53,6 +53,10 @@
 - [x] **Danzo (2026-11-16, playing): hard to see walls and items; ghost mode broken; traps, pickups, a bigger ice
       beam.** All done (H33): the ghost bug was one crash; the stage is relit and outlined; the beam is body-sized,
       shoots out and rides with you; traps glow; a pickup tells you what you got. `docs/systems/items.md`, `ui.md` §8.
+- [ ] **Danzo: play the walk-in lobby (H37, 2026-11-18).** In Studio: every door, the queue (leave it too), a room
+      (jump into the blocks, START), practice. On the PUBLISHED game with a friend, which nothing has run yet: QUICK
+      MATCH from the hub, HOST A ROOM and your friend's ENTER A CODE, PRACTICE, the LOBBY door home. If rooms
+      misbehave live, QUICK MATCH is the old hub path and still the fallback. Checklist: `docs/qa/lobby-summary.md`.
 - [ ] **Danzo (2026-11-18, first real match with a friend): tagging is too hard.** "It takes a decent amount of
       skill to actually tag anyone; maybe it's all too small or too fast, or the way we built it." Not looked into
       yet. Facts: "it" runs at the same 45 as everyone (no chase edge), the hand reaches 0.5 studs past touching

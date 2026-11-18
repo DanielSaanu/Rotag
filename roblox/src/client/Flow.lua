@@ -50,6 +50,11 @@ function Flow.sit()
 	if menuRemote then menuRemote:FireServer("sit") end
 end
 
+-- H37: any door's request (Remotes.Menu, one string: server/Doors lists them).
+function Flow.op(op: string)
+	if menuRemote then menuRemote:FireServer(op) end
+end
+
 -- "buy" | "equip" | "spin", and the item id for the first two.
 function Flow.shop(op: string, id: string?)
 	if shopRemote then shopRemote:FireServer(op, id) end

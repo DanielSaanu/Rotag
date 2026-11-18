@@ -30,3 +30,5 @@ edit it by hand.
 | `Sprites` | GENERATED sprite table: `Apply`, `New`, `Has`, `ResolveOnServer`, `ApplySheetIds` | Server, Client | generated |
 
 Each module returns its own table (`return <Name>`) and gets a `test/luau/<name>.test.luau`. Planned: none (PR 5's end-phase speed went in `Tag`; `MoveCheck` needed no change, H23; the walls in `Walls`, H24).
+
+H37: `Lobby` (the lobby's and the room's geometry, `doorAt` / `inDoor`, `dwell`, `ask`, `camera`, `code`; `lobby.test.luau`). `Session.State` gained `rounds`.

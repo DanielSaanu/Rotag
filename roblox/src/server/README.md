@@ -25,6 +25,9 @@ only side that changes a player's state (DESIGN §3 rule 6). Update this table i
 | `Stage.lua` | H31 ([ui.md](../../../docs/systems/ui.md) §7): the stage's look: the blocks' colour and lit top edges, the backdrop, the far skyline, night lighting and bloom. No rule reads it | 97 |
 | `Hub.lua` | H34 ([session.md](../../../docs/systems/session.md) §8): what kind of server this is (`MODE`: hub, match, solo), `launch` (a queued group to a reserved match server), `home` (back to a hub), a failed teleport requeued, two failed launches fall back to solo | 82 |
 | `TagLog.lua` | the Studio-only "why was this claim dropped" maths, split out of `Match` for the line ceiling (H31) | 46 |
+| `LobbyMap.lua` | H37 ([lobby.md](../../../docs/systems/lobby.md)): builds the lobby and the room as parts from `shared/Lobby` (solid floor, walls, decks; doors, signs and the room's furniture as paint), and `say` sets the few words that change for every screen |
+| `Doors.lua` | H37: the door requests (`Remotes.Menu`'s one string): each judged against the server's own position of the sender, the room's host and a rate gap; Studio logs every refusal |
+| `Room.lua` | H37: a private room: members, host, code, the three settings, host hand-over; a room server's, or the stand-in on a solo server |
 
 Planned: a second map and a rotation. Keep each under the 400-line
 ceiling in `test/structure.test.js` (→ learnings T1).

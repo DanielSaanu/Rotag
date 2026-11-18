@@ -10,24 +10,30 @@ local SideCamera = {}
 
 local cam = nil
 local DISTANCE = SideCam.distance()
+-- H37: studs of world shown top to bottom right now. A round is always CAMERA_VIEW_HEIGHT; the walk-in lobby is seen
+-- from further back (its whole floor on one screen), and the view eases between the two.
+local shown = Config.CAMERA_VIEW_HEIGHT
 
--- Jump straight to (x, y): on spawn, so the camera does not swoop in from the old body.
-function SideCamera.reset(x: number, y: number)
+-- Jump straight to (x, y): on spawn, so the camera does not swoop in from the old body. `height`: as for update.
+function SideCamera.reset(x: number, y: number, height: number?)
 	cam = SideCam.new(x, y)
+	shown = height or Config.CAMERA_VIEW_HEIGHT
 end
 
 -- `ox`, `oy` (H31): a shake offset in studs added to where the camera sits this frame only (client/Fx), never to the
 -- follow's own state, so a shake cannot drift the view.
-function SideCamera.update(x: number, y: number, vx: number, dt: number, ox: number?, oy: number?)
+-- `height` (H37): studs of world to show top to bottom (nil: a round's CAMERA_VIEW_HEIGHT).
+function SideCamera.update(x: number, y: number, vx: number, dt: number, ox: number?, oy: number?, height: number?)
 	local camera = workspace.CurrentCamera
 	if not camera then return end
 	if not cam then cam = SideCam.new(x, y) end
 	SideCam.step(cam, x, y, vx, dt)
+	shown += ((height or Config.CAMERA_VIEW_HEIGHT) - shown) * (1 - math.exp(-8 * dt))
 	-- Re-asserted every frame: Roblox's camera scripts may set Custom again when a character spawns.
 	if camera.CameraType ~= Enum.CameraType.Scriptable then camera.CameraType = Enum.CameraType.Scriptable end
 	if camera.FieldOfView ~= Config.CAMERA_FOV then camera.FieldOfView = Config.CAMERA_FOV end
 	local sx, sy = cam.x + (ox or 0), cam.y + (oy or 0)
-	camera.CFrame = CFrame.lookAt(Vector3.new(sx, sy, DISTANCE), Vector3.new(sx, sy, 0))
+	camera.CFrame = CFrame.lookAt(Vector3.new(sx, sy, DISTANCE * shown / Config.CAMERA_VIEW_HEIGHT), Vector3.new(sx, sy, 0))
 end
 
 -- H25: the world this screen shows, for the grapple's aim assist (rule 17: never an off-screen anchor). Centre and
@@ -38,6 +44,7 @@ function SideCamera.view(): { x: number, y: number, halfW: number, halfH: number
 	if not (cam and camera) then return nil end
 	local size = camera.ViewportSize
 	view.x, view.y = cam.x, cam.y
+	view.halfH = shown / 2
 	view.halfW = view.halfH * (if size.Y > 0 then size.X / size.Y else 16 / 9)
 	return view
 end

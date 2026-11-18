@@ -114,6 +114,13 @@ Config.BOTS = true                -- bots fill a round up to PLAYERS_PER_MATCH (
 Config.HUB = true                 -- H34: a public server is a HUB (PLAY queues you; groups of PLAYERS_PER_MATCH are sent
                                   -- to their own match server after at most LOBBY_TIME, and come back after the match).
                                   -- false: every server runs its own matches, as before (server/Hub; Studio always does)
+-- The walk-in lobby and private rooms (H37, docs/systems/lobby.md). Trial numbers, Danzo's to tune by hand.
+Config.DOOR_HOLD = 1              -- seconds a runner stays in a door to choose it (running past does nothing)
+Config.LEAVE_HOLD = 2             -- ... and in QUICK MATCH to LEAVE the queue: slower, so it is never an accident
+Config.QUICK_START = 3            -- seconds from PRACTICE, or a room host's START, to the round (a short 3-2-1)
+Config.HOST_IDLE = 60             -- seconds a room's host may stand still before the next player becomes host
+Config.CODE_GAP = 2               -- seconds between two room-code tries from one player (4 digits: 10 000 codes)
+Config.ROOM_TTL = 3600            -- seconds a room's code lives without a refresh from its server
 Config.BOT_SPEED = 0.93           -- a bot's run speed x this: a person who runs clean gets away, and catches one
 Config.BOT_THINK = 0.3            -- seconds between a bot's plans (shared/BotBrain); also its reaction time
 Config.BOT_LABEL = false          -- true: the scoreboard and the cards mark each bot "AI" and the how-to cards say

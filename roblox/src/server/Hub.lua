@@ -11,6 +11,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
+local MemoryStoreService = game:GetService("MemoryStoreService")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local Hub = {}
@@ -30,6 +31,36 @@ local function mode(): string
 	return "hub"
 end
 Hub.MODE = mode()
+
+-- H37 (docs/systems/lobby.md §6): a reserved server is a quick match's (nothing recorded), a private ROOM's or a
+-- PRACTICE server's. What it is was written by the hub that reserved it, server to server, under its PrivateServerId
+-- in a MemoryStore map (teleport data passes through the client: it is never what decides this). A room's code is a
+-- second key in the same map: code -> the access code that lets a hub send a friend there.
+--   "sid:<PrivateServerId>" = { kind = "room" | "practice", code = "4827"?, host = userId }
+--   "code:<4 digits>"       = { access = <reserved server access code>, sid = <PrivateServerId>, n = players there }
+Hub.KIND = "match" -- "match" | "room" | "practice": only read on a reserved server
+Hub.RECORD = nil :: any
+local map: any = nil
+local function store(): any
+	if map == nil then
+		local ok, m = pcall(function() return MemoryStoreService:GetHashMap("RotagRooms") end)
+		map = if ok then m else false
+	end
+	return map or nil
+end
+if Hub.MODE == "match" then
+	local ok, rec = pcall(function()
+		local m = store()
+		return m and m:GetAsync("sid:" .. game.PrivateServerId)
+	end)
+	if ok and type(rec) == "table" and (rec.kind == "room" or rec.kind == "practice") then
+		Hub.KIND, Hub.RECORD = rec.kind, rec
+	elseif not ok then
+		warn("[Rotag] hub: could not read what this reserved server is for (" .. tostring(rec) .. "); running a quick match")
+	end
+	-- A room runs its matches itself, when its host says so, and keeps its players between them: the solo flow.
+	if Hub.KIND == "room" then Hub.MODE = "solo" end
+end
 
 local fails = 0
 local failed: ((Player) -> ())? = nil
@@ -98,6 +129,101 @@ function Hub.home(players: { Player })
 	end)
 end
 
+-- H37: reserve a server of `kind` ("room" | "practice") for `player`, record what it is, and send the player there.
+-- Never yields the caller. `done(why)` runs only when it did NOT happen (the player is still here), with a word for
+-- the banner. A room gets a fresh 4-digit code (a few tries to find a free one).
+function Hub.open(kind: string, player: Player, done: (string) -> ())
+	task.spawn(function()
+		local m = store()
+		if RunService:IsStudio() or not m then
+			task.wait(1)
+			done("failed")
+			return
+		end
+		local ok, access, sid = pcall(function() return TeleportService:ReserveServer(game.PlaceId) end)
+		if not (ok and type(access) == "string" and type(sid) == "string") then
+			warn("[Rotag] hub: could not reserve a " .. kind .. " server: " .. tostring(access))
+			done("failed")
+			return
+		end
+		local code: string? = nil
+		local wrote = pcall(function()
+			if kind == "room" then
+				for _ = 1, 6 do
+					local try = ("%04d"):format(math.random(0, 9999))
+					if m:GetAsync("code:" .. try) == nil then
+						code = try
+						break
+					end
+				end
+				if not code then error("no free room code") end
+				m:SetAsync("code:" .. code, { access = access, sid = sid, n = 0 }, Config.ROOM_TTL)
+			end
+			m:SetAsync("sid:" .. sid, { kind = kind, code = code, host = player.UserId }, Config.ROOM_TTL)
+		end)
+		if not wrote or player.Parent ~= Players then
+			if wrote and code then pcall(function() m:RemoveAsync("code:" .. code) end) end
+			done("failed")
+			return
+		end
+		local options = Instance.new("TeleportOptions")
+		options.ReservedServerAccessCode = access
+		local sent, err = pcall(function() return TeleportService:TeleportAsync(game.PlaceId, { player }, options) end)
+		if not sent then
+			warn("[Rotag] hub: could not send " .. player.Name .. " to its " .. kind .. " server: " .. tostring(err))
+			done("failed")
+		end
+	end)
+end
+
+-- H37: send `player` to the room with `code`. `done(why)` only when it did not happen: "noroom" | "full" | "failed".
+function Hub.join(player: Player, code: string, done: (string) -> ())
+	task.spawn(function()
+		local m = store()
+		if RunService:IsStudio() or not m then
+			done("noroom")
+			return
+		end
+		local ok, rec = pcall(function() return m:GetAsync("code:" .. code) end)
+		if not ok then
+			done("failed")
+		elseif type(rec) ~= "table" or type(rec.access) ~= "string" then
+			done("noroom")
+		elseif type(rec.n) == "number" and rec.n >= Config.PLAYERS_PER_MATCH then
+			done("full")
+		elseif player.Parent == Players then
+			local options = Instance.new("TeleportOptions")
+			options.ReservedServerAccessCode = rec.access
+			local sent = pcall(function() return TeleportService:TeleportAsync(game.PlaceId, { player }, options) end)
+			if not sent then done("failed") end
+		end
+	end)
+end
+
+-- H37, a room server: keep its code alive and say how many are in it (`n`); `n` nil closes the room (its code is
+-- free again). Never yields the caller.
+function Hub.keep(n: number?)
+	local rec = Hub.RECORD
+	local m = store()
+	if not (m and rec and type(rec.code) == "string") or RunService:IsStudio() then return end
+	task.spawn(function()
+		pcall(function()
+			local key = "code:" .. rec.code
+			if n == nil then
+				m:RemoveAsync(key)
+				m:RemoveAsync("sid:" .. game.PrivateServerId)
+				return
+			end
+			local cur = m:GetAsync(key)
+			if type(cur) == "table" then
+				cur.n = n
+				m:SetAsync(key, cur, Config.ROOM_TTL)
+			end
+			m:SetAsync("sid:" .. game.PrivateServerId, rec, Config.ROOM_TTL)
+		end)
+	end)
+end
+
 -- `fn(player)`: this player's teleport did not happen (it is still here): put it back in the queue.
 function Hub.onFailed(fn: (Player) -> ())
 	failed = fn
@@ -108,6 +234,6 @@ TeleportService.TeleportInitFailed:Connect(function(player: Player, result, mess
 	if failed and player.Parent == Players then failed(player) end
 end)
 
-print(("[Rotag] hub: this server is a %s server"):format(Hub.MODE))
+print(("[Rotag] hub: this server is a %s server%s"):format(Hub.MODE, if Hub.KIND ~= "match" then " (" .. Hub.KIND .. ")" else ""))
 
 return Hub

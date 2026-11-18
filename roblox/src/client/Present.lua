@@ -15,6 +15,7 @@ local Audio = require(script.Parent:WaitForChild("Audio"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
 local Others = require(script.Parent:WaitForChild("Others"))
 local Items = require(script.Parent:WaitForChild("Items"))
+local Lobby = require(script.Parent:WaitForChild("Lobby")) -- H37: the doors and the callouts
 
 local Present = {}
 
@@ -174,7 +175,9 @@ function Present.frame(look: any, match: any, fuse: number, ghostMode: (number) 
 		end)
 	end)
 	guard("menu", Menu.update)
-	guard("board", Board.update, match, Menu.open())
+	guard("lobby", Lobby.frame, if look then myAt else nil) -- H37: the doors, the bar, every word about the queue
+	-- In the lobby a round that is not ours (a solo server) is not on our screen: its cards stay off it too.
+	guard("board", Board.update, match, Menu.open() or (Lobby.here() and not Flow.playing()))
 end
 
 function Present.start(player: Player)
@@ -184,6 +187,7 @@ function Present.start(player: Player)
 	Fx.start(player)
 	Menu.start(player)
 	Board.start(player)
+	Lobby.start(player)
 	Ui.onClick = function() Audio.play("click") end
 	Ui.onHover = function() Audio.play("hover") end
 	Items.listen(onItem)

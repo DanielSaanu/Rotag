@@ -28,6 +28,7 @@ local Walls = require(script.Parent:WaitForChild("Walls")) -- H24: the closing w
 local Grapple = require(script.Parent:WaitForChild("Grapple")) -- H25: anchors, the aim assist, ropes (grapple.md)
 local Present = require(script.Parent:WaitForChild("Present")) -- H31: the menu, the cards, sound and punch (ui.md)
 local Fx = require(script.Parent:WaitForChild("Fx")) -- H31: the camera's shake
+local Lobby = require(script.Parent:WaitForChild("Lobby")) -- H37: the walk-in lobby's still camera (lobby.md)
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -108,7 +109,8 @@ local function setup(character: Model)
 		toSend = {}, -- juice events since the last snapshot went out (H14)
 	}
 	Controls.read(humanoid) -- drop any press made before the body existed
-	SideCamera.reset(p.X, p.Y)
+	local lx, ly, lh = Lobby.camera(p.X, p.Y) -- H37: in the lobby the camera is still: start it there, no swoop
+	SideCamera.reset(lx or p.X, ly or p.Y, lh)
 	print(("[Rotag] client: runner ready at (%.1f, %.1f)"):format(p.X, p.Y))
 end
 
@@ -223,7 +225,8 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	local ox, oy = Fx.offset(dt)
 	if c and c.root.Parent then
 		local pos = c.root.Position
-		SideCamera.update(pos.X, pos.Y, c.state.vx, dt, ox, oy)
+		local lx, ly, lh = Lobby.camera(pos.X, pos.Y) -- H37: the whole lobby on one still screen, from further back
+		if lx and ly then SideCamera.update(lx, ly, 0, dt, ox, oy, lh) else SideCamera.update(pos.X, pos.Y, c.state.vx, dt, ox, oy) end
 		Present.moves(c.pending, pos.X, pos.Y) -- H31: the move's sound and dust
 		c.look:react(c.pending)
 		c.pending = {}
@@ -239,6 +242,7 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	end
 	Others.draw(dt, ghostMode, iced, heldOf, function(id) return Place.grantLeft(id) > 0 end, Tagging.ignition)
 	local st = Tagging.state()
+	local away = Lobby.here() -- H37: in the lobby a round's HUD (the fuse, the arrows, the walls) is not ours to see
 	Items.draw(player.UserId, Tagging.ghost(player.UserId) ~= nil, st ~= nil and st.over == true, -- held items, slot
 		Tagging.isAlive(player.UserId))
 	-- PR 3 (controls.md §2): the ITEM touch button only while Use would fire (a hex and the grant are used by touch);
@@ -254,9 +258,9 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	Place.draw(player.UserId, if c and c.root.Parent then c.state.x else nil, if c then c.state.y else nil,
 		if c then c.state.facing else 1)
 	-- After Others.draw: the IT marker sits where this frame drew the holder (H13).
-	Hud.update(Tagging.state(), Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
-	Arrows.update(Tagging.me(), Tagging.state(), Tagging.ignition) -- H23: the holder's arrow beats as it ignites
-	Walls.update(st, if c and c.root.Parent and Tagging.isAlive(player.UserId) then c.state.x else nil,
+	Hud.update(if away then nil else st, Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
+	Arrows.update(Tagging.me(), if away then nil else st, Tagging.ignition) -- H23: the holder's arrow beats as it ignites
+	Walls.update(if away then nil else st, if c and c.root.Parent and Tagging.isAlive(player.UserId) then c.state.x else nil,
 		Tagging.graceLeft(player.UserId)) -- H24: drawn from MatchState; a ghost is never warned
 	-- H31, last: the menu, the cards, sound and cosmetics. Nothing the round needs drawn comes after it.
 	Present.frame(if c and c.root.Parent then c.look else nil, st, Tagging.fuseLeft(), ghostMode)

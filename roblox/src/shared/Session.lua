@@ -13,7 +13,8 @@ export type State = {
 	phase: string,              -- "lobby" | "round" | "gap" | "podium"
 	until_: number,             -- when the lobby, gap or podium ends; math.huge in an idle lobby and during a round
 	match: number,              -- +1 per match started
-	round: number,              -- 1..MATCH_ROUNDS inside a match, 0 in the lobby
+	round: number,              -- 1..rounds inside a match, 0 in the lobby
+	rounds: number,             -- rounds in this match (H37: a private room's host may set it; else MATCH_ROUNDS)
 	scores: { [number]: Score },
 	seen: { number },           -- every id that scored this match, in first-seen order (a stable tie-break)
 	roster: { number },         -- who plays the current (or last) round
@@ -25,7 +26,7 @@ export type State = {
 }
 
 function Session.new(): State
-	return { phase = "lobby", until_ = math.huge, match = 0, round = 0, scores = {}, seen = {}, roster = {}, out = {},
+	return { phase = "lobby", until_ = math.huge, match = 0, round = 0, rounds = Config.MATCH_ROUNDS, scores = {}, seen = {}, roster = {}, out = {},
 		last = {}, lastPts = {}, winner = nil, waited = {} }
 end
 
@@ -134,7 +135,7 @@ function Session.tick(s: State, now: number, people: number): string?
 		return "abort"
 	end
 	if s.phase == "gap" and now >= s.until_ then
-		if s.round < Config.MATCH_ROUNDS then
+		if s.round < s.rounds then
 			s.phase, s.until_, s.round = "round", math.huge, s.round + 1
 			return "start"
 		end
@@ -203,7 +204,7 @@ function Session.view(s: State, now: number): any
 	end
 	return {
 		phase = s.phase, left = if s.until_ == math.huge then -1 else math.max(0, s.until_ - now),
-		match = s.match, round = s.round, rounds = Config.MATCH_ROUNDS, scores = rows, roster = s.roster,
+		match = s.match, round = s.round, rounds = s.rounds, scores = rows, roster = s.roster,
 		last = s.last, lastPts = s.lastPts, winner = s.winner,
 	}
 end

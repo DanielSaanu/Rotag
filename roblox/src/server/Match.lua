@@ -134,6 +134,11 @@ end
 
 local function startRound(now: number, roster: { number })
 	local present, ids = {}, {}
+	-- H37: a bot seated this very frame has no body on record yet (seen in Studio: a room's first round began with the
+	-- host alone and "it", its three bots a frame late). Hold the round until every seated bot stands.
+	for _, id in roster do
+		if Bots.isBot(id) and not rootOf(id) then return end
+	end
 	for _, id in roster do
 		if rootOf(id) then
 			present[id] = true
@@ -331,13 +336,7 @@ function Match.start(tagName: string)
 		changed = function() dirty = true end })
 	if readyRemote then readyRemote.OnServerEvent:Connect(onReady) end
 	Bots.start(tagName)
-	Session.start(remote("Session"), remote("Menu"), { present = present, drop = drop, spawn = Arena.SPAWN,
-		abort = function() round, dueSince, dirty = nil, nil, true end })
-	Snapshots.start(unreliable("Snapshot"))
-	-- Server -> client events: the server never listens (→ N3).
-	if stateRemote then stateRemote.OnServerEvent:Connect(function() end) end
-	if verdictRemote then verdictRemote.OnServerEvent:Connect(function() end) end
-	if claimRemote then claimRemote.OnServerEvent:Connect(onClaim) end
+	-- Before Session.start (H37): it gives everybody already here a body at once, and this is how a body is known.
 	CollectionService:GetInstanceAddedSignal(tagName):Connect(function(model)
 		local id = model:GetAttribute("RunnerId")
 		local root = model:FindFirstChild("HumanoidRootPart")
@@ -348,6 +347,19 @@ function Match.start(tagName: string)
 			Snapshots.bodyBuilt(id, p.X, p.Y, os.clock()) -- in-flight snapshots about the old body are dropped
 		end
 	end)
+	Session.start(remote("Session"), remote("Menu"), { present = present, drop = drop, spawn = Arena.SPAWN,
+		abort = function() round, dueSince, dirty = nil, nil, true end,
+		where = function(id: number): (number?, number?) -- H37: the newest sample of `id` (a door request's check)
+			local h = history[id]
+			local s = h and h[#h]
+			if s then return s.x, s.y end
+			return nil, nil
+		end })
+	Snapshots.start(unreliable("Snapshot"))
+	-- Server -> client events: the server never listens (→ N3).
+	if stateRemote then stateRemote.OnServerEvent:Connect(function() end) end
+	if verdictRemote then verdictRemote.OnServerEvent:Connect(function() end) end
+	if claimRemote then claimRemote.OnServerEvent:Connect(onClaim) end
 	local function onPlayer(player: Player)
 		join(player.UserId)
 		sendState(os.clock(), player)

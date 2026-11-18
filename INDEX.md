@@ -49,6 +49,8 @@ to (`roblox/default.project.json`).
   collision, off-screen arrows, round-ready. Before any multiplayer, collision or HUD-arrow change.
 - [`docs/systems/session.md`](docs/systems/session.md): the match as built (H31): lobby, three scored rounds, podium; who plays (PLAY /
   sit out), bots in the empty seats; coins, profiles and the DataStore, the shop and the wheel, cosmetics only. Before any flow, score, reward, save or shop change.
+- [`docs/systems/lobby.md`](docs/systems/lobby.md): the walk-in lobby as built (H37): the five doors and standing in one, the door requests
+  and what the server trusts, private rooms and their settings, room / practice servers (not run live), the callouts. Before any lobby, queue, room or callout change.
 - [`docs/systems/bots.md`](docs/systems/bots.md): bots as built (H31): a runner the server plays with the real move rules, plans tried in its
   head, what it wants, its fairness and handicaps. Before any bot change.
 - [`docs/systems/ui.md`](docs/systems/ui.md): the menu, the scoreboard and cards, sound, punch and cosmetics, the stage's look (H31), and what

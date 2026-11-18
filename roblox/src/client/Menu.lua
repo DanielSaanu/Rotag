@@ -20,9 +20,6 @@ local sitButton: TextButton, unsaved: TextLabel = nil :: any, nil :: any
 local screen = "title" -- "title" | "how" | "locker" | "wheel" | "none"
 local shownCoins = -1
 local taught, playAfterHow = false, false
-local autoHid = false
-local PLAY_SIZE = 40 -- PLAY's text; "BACK TO THE GAME" is smaller
-local asked = -math.huge -- when PLAY was last asked for: no bouncing back to the title while the answer is on its way
 
 function Menu.open(): boolean return screen ~= "none" end
 
@@ -37,23 +34,29 @@ end
 local function back()
 	if playAfterHow then -- "GOT IT" on the first-time cards goes straight into the game
 		playAfterHow = false
-		asked = os.clock()
 		Flow.play()
 		show("none")
 		return
 	end
-	show(if Flow.playing() then "none" else "title")
+	show("none") -- H37: the game is always behind the menu now (the lobby): closing a screen goes back to it
 end
 
--- PLAY. A player who has never finished a match sees the how-to cards first, once (rule 18: easy to start).
-local function play()
+-- H37: the LOCKER door, and "every screen out of the way" when a match is found.
+function Menu.locker() show("locker") end
+function Menu.close()
+	playAfterHow = false
+	if screen ~= "none" then show("none") end
+end
+
+-- PLAY (H37: asked by standing in QUICK MATCH, client/Lobby). A player who has never finished a match sees the
+-- how-to cards first, once (rule 18: easy to start); GOT IT then queues them.
+function Menu.play()
 	local p = Flow.profile()
 	if not taught and not Flow.playing() and (p == nil or p.matches == 0) then
 		taught, playAfterHow = true, true
 		show("how")
 		return
 	end
-	asked = os.clock()
 	Flow.play()
 	show("none")
 end
@@ -93,8 +96,8 @@ local function buildTitle()
 	Ui.outline(tag, 2)
 	y += if cmp then 40 else 66
 	local playH, h, gap = if cmp then 62 else 84, if cmp then 44 else 54, if cmp then 8 else 10
-	playButton = Ui.button(title, "PLAY", "primary", UDim2.fromOffset(320, playH), UDim2.fromOffset(66, y), play)
-	Ui.setText(playButton, nil, PLAY_SIZE)
+	playButton = Ui.button(title, "BACK TO THE GAME", "primary", UDim2.fromOffset(320, playH), UDim2.fromOffset(66, y), back)
+	Ui.setText(playButton, nil, 26)
 	y += playH + gap
 	for _, def in { { "LOCKER", "plain", "locker" }, { "SPIN THE WHEEL", "gold", "wheel" }, { "HOW TO PLAY", "ghost", "how" } } do
 		Ui.button(title, def[1], def[2], UDim2.fromOffset(320, h), UDim2.fromOffset(66, y), function() show(def[3]) end)
@@ -187,29 +190,20 @@ function Menu.update()
 		levelLabel.Text = "LVL " .. tostring(p.level)
 	end
 	unsaved.Visible = p ~= nil and p.saved == false -- a DataStore outage: say so before a kid spends coins that vanish
-	if screen == "none" and not Flow.playing() and Flow.session() and os.clock() - Flow.session().at < 2 then
-		-- the server says we are out (sat out, or it never got our Play): the title is where to be
-		if os.clock() - asked > 3 then show("title") end
-	end
-	local s = Flow.session()
-	if s and s.mode == "match" and Flow.playing() and screen == "title" and not autoHid then
-		autoHid = true -- H34: sent to a match server to play: straight in (M brings the title back)
-		show("none")
-	end
 	if screen ~= "title" then return end
-	local phase, left = Flow.phase(), Flow.left()
-	Ui.setText(playButton, if Flow.playing() then "BACK TO THE GAME" else "PLAY", if Flow.playing() then 26 else PLAY_SIZE)
+	-- H37: the title is the pause menu now (the MENU pill, M): the game goes on behind it. Its one way OUT of
+	-- whatever you are in is this button, for anyone who cannot find the door.
+	local s = Flow.session()
+	local phase = Flow.phase()
+	local queued = Flow.playing() and phase == "lobby" and not (s and s.mode == "match")
 	sitButton.Visible = Flow.playing()
-	Ui.setText(sitButton, if s and s.mode == "match" then "BACK TO THE LOBBY" else "SIT OUT AND WATCH")
+	Ui.setText(sitButton, if queued then "LEAVE THE QUEUE" else "LEAVE THE MATCH")
 	statusLabel.Text = if not s then "connecting..."
 		elseif type(s.waiting) == "table" then ("Waiting for your group  ·  %d of %d here"):format(tonumber(s.waiting[1]) or 1, tonumber(s.waiting[2]) or 1)
-		elseif s.mode == "hub" and Flow.playing() then "In the queue  ·  a match starts when four are in, or in a few seconds"
-		elseif s.mode == "hub" then "Press PLAY to find a match"
-		elseif Flow.playing() and phase ~= "lobby" and phase ~= "podium" then ("You are in  ·  round %d of %d"):format(s.round, s.rounds)
-		elseif phase == "lobby" and left then ("Match starts in %d"):format(math.ceil(left))
-		elseif phase == "lobby" then "Press PLAY to start a match"
-		elseif phase == "podium" then "Match over  ·  the next one starts soon"
-		else ("Match in progress  ·  round %d of %d  ·  PLAY to join the next round"):format(s.round, s.rounds)
+		elseif queued then "You are in the queue  ·  the game goes on behind this menu"
+		elseif Flow.playing() and phase ~= "podium" then ("You are in a match  ·  round %d of %d"):format(s.round, s.rounds)
+		elseif phase == "podium" then "Match over"
+		else "Stand in a door in the lobby to choose what to play"
 end
 
 function Menu.start(player: Player)
@@ -219,13 +213,13 @@ function Menu.start(player: Player)
 	buildHow()
 	buildWallet(Ui.topInset() + 6)
 	Locker.start(root, back)
-	show("title")
+	show("none") -- H37: a player lands IN the lobby, not on a title screen
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if processed then return end
 		if input.KeyCode == Enum.KeyCode.M or input.KeyCode == Enum.KeyCode.ButtonStart then
 			if screen == "none" then show("title") else back() end
 		elseif screen == "title" and (input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.ButtonA) then
-			play() -- Enter / A on the title is PLAY
+			back() -- Enter / A on the title is BACK TO THE GAME
 		elseif screen == "how" and (input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.Space
 			or input.KeyCode == Enum.KeyCode.ButtonA) then
 			back() -- ... and GOT IT on the cards (QA round 3: only a click closed them)

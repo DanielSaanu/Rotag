@@ -47,8 +47,10 @@ function Orbs.syncTo(player: Player)
 end
 
 -- Round start: every orb down until ORB_FIRST, every slot empty.
+-- H37: Orbs.ITEMS false (a private room's ITEMS OFF, rule 13's vanilla toggle) starts the round with no orb spots.
+Orbs.ITEMS = true
 function Orbs.reset(now: number)
-	state = Rules.new(spots, now)
+	state = Rules.new(if Orbs.ITEMS then spots else {}, now)
 	if remote then remote:FireAllClients(syncPayload()) end
 end
 

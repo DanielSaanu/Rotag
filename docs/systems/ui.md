@@ -25,6 +25,10 @@ words in a child label (`Ui.setText`).
 
 ## 2. The menu (`client/Menu.lua`)
 
+> **H37 (2026-11-18):** the title is no longer where a player lands: it is the pause menu (the MENU pill, M) over
+> the lobby, with BACK TO THE GAME, the locker, the wheel, HOW TO PLAY, and LEAVE THE QUEUE / LEAVE THE MATCH. The
+> lobby's own words are [lobby.md](lobby.md) §7 (`client/Callout`).
+
 - **The title** (where a player lands, over the live map through the spectator camera): ROTAG, the tagline, PLAY,
   LOCKER, SPIN THE WHEEL, HOW TO PLAY, a status line (the lobby's countdown, or the round in progress), and SIT OUT
   AND WATCH while you are in. Enter / gamepad A is PLAY.

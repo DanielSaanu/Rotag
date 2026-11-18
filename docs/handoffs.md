@@ -1,6 +1,6 @@
 # Handoffs — routine → heavy
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-16 (H31 resolved: the match, bots, the menu, coins and cosmetics; H32: bots that pass for people; H33: Danzo's first play, the ice beam; H34: the hub, untested live; H35: ability rolls built and off). 2026-11-11 (H29, H30: the Yard relaid, pads and the haul)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-16 (H31 resolved: the match, bots, the menu, coins and cosmetics; H32: bots that pass for people; H33: Danzo's first play, the ice beam; H34: the hub, untested live; H35: ability rolls built and off). 2026-11-18 (H36 the lobby designed, H37 built: rooms and practice servers untested live). 2026-11-11 (H29, H30: the Yard relaid, pads and the haul)
 
 A routine session appends here the moment an escalation trigger fires (CLAUDE.md, "Model policy and
 escalation"). The heavy agent reads this file first, works the open entries, records its full reasoning in
@@ -27,25 +27,23 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H36 — A walk-in lobby: choose the kind of game by running to a place (Brawlhalla's modes as doors) — 2026-11-18 — OPEN (designed, not built)
-- **Trigger:** 1 (how a player picks a game; private rooms and practice are new), 3 once built (rooms, codes, who is seated where).
-- **Doc:** `docs/qa/lobby-design.md` (the design in words, goals); boards https://claude.ai/artifact/9VdirngqxNgVu1MYpVbZPt; renders `exports/lobby_design/`.
-- **Observed (Danzo, 2026-11-18):** "rather than just buttons you click on the screen it is a physical location in 2D
-  space ... very obvious and clear where to go for what ... private rooms or simple random match".
-- **Session's read (Fable session; design only; QA loop 7 -> 8/10, `docs/qa/lobby-design-summary.md`):** one screen,
-  three colour zones around the spawn: QUICK MATCH (lime, centre), HOST A ROOM / ENTER A CODE (pink, right), LOCKER
-  (gold, left; the wheel inside), PRACTICE (cyan, up left); a door is chosen by standing in it for a second; a queued
-  player keeps running. The rules, one line each: `docs/qa/lobby-design.md` "The rules".
-- **What the build costs (QA round 1; the server cannot do any of this today):** a lobby map and server-decided door
-  zones with new `Menu` ops (a remotes-list change); a ROOM server kind with a host-gated start (a match server
-  counts down by itself today) and per-server `MATCH_ROUNDS` / items instead of `Config` constants; room codes (a
-  MemoryStore map from code to reserved server, expiry, server-side rate limits: 4 digits is 10k guesses, trigger 3);
-  PRACTICE as a solo reserved server with no pay-out; host hand-over. Cut for v1: friends' doors (cross-server
-  friend lookup). Also: a FIXED lobby camera (SideCam follows; the board is one still screen), the near-a-door
-  caption UI, a new home for the title's HOW TO PLAY (a "?" card in the LOCKER), and an open build question: Roblox's
-  "Join friend" lands in the hub, not the friend's room. Cheapest first slice: the lobby map + QUICK MATCH and LOCKER as doors on today's hub queue.
-- **Decision needed:** Danzo's yes or changes on the boards, after the QA loop; then a build handoff (session.md, ui.md).
-- **Blocked routine work:** none.
+*(none)*
+
+## Resolved
+
+### H37 — Build the walk-in lobby: doors, the queue, private rooms, practice, the callouts — 2026-11-18 — RESOLVED (built; the live servers NOT run)
+- **Trigger:** 1 (how a player picks a game; DESIGN §6.4), 2 (`shared/Lobby`, `shared/Session.rounds`, `Config`), 3 (the
+  door requests, rooms, codes), 5-adjacent (MemoryStore, more TeleportService).
+- **Observed (Danzo):** "build it then run the /qa-loop on the actual lobby"; then, watching the first build: bigger,
+  two levels, centred labels, colours that differ; "big flashy words ... for time-sensitive actions".
+- **Resolved 2026-11-18 (Fable session; QA loop in `docs/qa/lobby-summary.md`):** a body on joining, five doors chosen
+  by standing in them, the queue you carry with you, rooms with a code and three settings, practice, every state
+  said in callouts; rooms and practice run in Studio on a stand-in, their reserved servers and MemoryStore are unrun
+  code → `docs/systems/lobby.md` (§6 what is not run, §9 what was seen).
+
+### H36 — A walk-in lobby: choose the kind of game by running to a place (Brawlhalla's modes as doors) — 2026-11-18 — RESOLVED
+- **Resolved 2026-11-18:** designed on three boards, QA loop 7 -> 8/10 → `docs/qa/lobby-design-summary.md`; built as H37
+  with Danzo's changes (two levels, wider, WHEEL inside the LOCKER, the BOTS block back) → `docs/systems/lobby.md`.
 
 ## Resolved
 

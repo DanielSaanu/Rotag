@@ -5,6 +5,11 @@ start, a score, an end and something to earn. The rules are `docs/DESIGN.md` §3
 (the first cosmetic slot), §6.4 (match structure), §6.5 (monetisation), §6.7 (bots: [bots.md](bots.md)). What the
 player sees of all this is [ui.md](ui.md). QA goals: [../qa/showable.md](../qa/showable.md).
 
+> **H37 (2026-11-18): the title screen is gone.** A player lands in the walk-in lobby with a body; "pressed PLAY"
+> below now means "stood in QUICK MATCH"; SIT OUT is leaving the queue or the match; after a podium everybody is put
+> back in the lobby (or their room) and chooses again, so nothing starts by itself. Rooms, practice and the door
+> requests: [lobby.md](lobby.md). The rest of this file stands.
+
 ## 1. The calls (Danzo: "complete the game ... a menu screen ... between-game setup so it's not just endless rounds";
 each is a recorded trial, say if one is wrong)
 
