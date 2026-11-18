@@ -48,6 +48,7 @@ local quickAt: number? = nil -- H37: PRACTICE, or a room's START: the lobby's co
 -- ... and that match is for these players only (QA round 1: on a solo server whoever was quick-queued in the lobby
 -- was swept into a stranger's practice or room match, and it paid). nil: a quick match, for everybody queued.
 local only: { [number]: boolean }? = nil
+local practiceArmed = false
 local useBots, unpaid = Config.BOTS, false -- this match's (a room's BOTS block; a practice match)
 -- H34, a hub only: since when somebody has been queued (the wait's clock), and who has been sent to a match server
 -- and when (they are still here for a few seconds: not queued twice; LAUNCH_STALE later the teleport is taken to
@@ -229,6 +230,11 @@ function Session.step(now: number)
 		waitingFor = nil
 		dirty = true
 	end
+	-- A practice server: a short count from the first frame its player stands there, not the arena lobby's 12 s
+	-- (set here, once it is counted: set at PlayerAdded it was cleared again before the body existed, QA round 2).
+	if Hub.KIND == "practice" and state.match == 0 and state.phase == "lobby" and count > 0 and not practiceArmed then
+		practiceArmed, quickAt = true, now + Config.QUICK_START + 4
+	end
 	local what = Rules.tick(state, now, count)
 	if state.phase == "lobby" then
 		if count == 0 then
@@ -344,8 +350,6 @@ function Session.start(session: RemoteEvent?, menu: RemoteEvent?, context: Conte
 		if Hub.MODE == "match" and not playing[id] then
 			-- H34: a match server's players were sent here to play: in at once, in the arena
 			playing[id] = true
-			-- a practice server: a short count from the arrival, not the arena lobby's LOBBY_TIME (QA round 1)
-			if Hub.KIND == "practice" and quickAt == nil then quickAt = os.clock() + Config.QUICK_START + 4 end
 			Runners.spawn(player, context.spawn)
 			expected = math.max(expected, Hub.groupOf(player))
 			firstAt = firstAt or os.clock()

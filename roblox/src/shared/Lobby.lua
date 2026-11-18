@@ -23,7 +23,8 @@ export type Area = {
 	view: number, viewY: number,        -- the still camera: studs of world top to bottom, and its centre above the floor
 	blocks: { { any } },                -- { name, x0, y0, x1, y1 }: solid parts, as a map's blocks
 	doors: { Door },
-	spawn: { x: number, y: number },
+	spawn: { x: number, y: number },    -- the start mark (its left end, on the floor)
+	spawns: { number },                 -- where bodies appear along the floor (x), one per slot, never in or under anything
 	zones: { { any } },                 -- { label, x0, x1, color, y }: a name plate centred under a group of doors
 	bumps: { { any } },                 -- { id, x0, y0, x1, y1, label }: setting blocks a runner jumps into
 }
@@ -54,11 +55,14 @@ end
 -- The way up is at the two ENDS, by the walls: a wide step (one jump), then the deck (one more), each marked UP.
 -- (QA round 1: the first steps flanked QUICK MATCH; a missed jump landed in its doorway and a kid who paused there
 -- was queued without meaning to be.)
+-- (QA round 2: a floating step is a CEILING to a runner who jumps from under its UP sign. Each step is now a solid
+-- block standing on the floor against the wall: there is no "under", you jump onto it from beside it. And each deck
+-- has 8+ studs of plain landing between its end and its first door: the first decks landed you IN a door.)
 local lobbyBlocks = shell(56, 66)
 table.insert(lobbyBlocks, { "DeckLeft", -44, 17, -15, 18 })
-table.insert(lobbyBlocks, { "DeckRight", 21, 17, 44, 18 })
-table.insert(lobbyBlocks, { "StepLeft", -56, 8, -46, 9 })
-table.insert(lobbyBlocks, { "StepRight", 46, 8, 56, 9 })
+table.insert(lobbyBlocks, { "DeckRight", 15, 17, 44, 18 })
+table.insert(lobbyBlocks, { "StepLeft", -56, 0, -49, 8 })
+table.insert(lobbyBlocks, { "StepRight", 49, 0, 56, 8 })
 
 local lobbyBumps: { { any } } = {}
 local roomBumps: { { any } } = {
@@ -69,28 +73,29 @@ local roomBumps: { { any } } = {
 local AREAS: { [string]: Area } = {
 	lobby = {
 		name = "lobby", x = 600, y = 0, half = 56, view = 64, viewY = 26, blocks = lobbyBlocks,
-		spawn = { x = -24, y = 0 }, bumps = lobbyBumps,
+		spawn = { x = -24, y = 0 }, spawns = { -24, -21.5, -19, -16.5, -14, -11.5 }, bumps = lobbyBumps,
 		-- Only a GROUP gets a name plate (seen in Studio: a plate under PRACTICE's deck ran into the LOCKER's sign, and
 		-- a one-door "group" says nothing its sign does not).
-		zones = { { "PLAY NOW", -4, 12, LIME, 0 }, { "PLAY WITH FRIENDS", 23, 43, PINK, 17 } },
+		zones = { { "PLAY NOW", -4, 12, LIME, 0 }, { "PLAY WITH FRIENDS", 16, 36, PINK, 17 } },
 		doors = {
 			{ id = "locker", x0 = -42, y0 = 0, x1 = -32, y1 = 9, name = "LOCKER", inside = "SKINS", color = GOLD,
 				line = "Dress your runner. Spin the wheel." },
 			{ id = "quick", x0 = -4, y0 = 0, x1 = 12, y1 = 12.5, name = "QUICK MATCH", inside = "PLAY", color = LIME, big = true,
 				line = "Play now with other runners." },
-			{ id = "practice", x0 = -40, y0 = 18, x1 = -28, y1 = 27, name = "PRACTICE", inside = "SOLO", color = CYAN,
+			{ id = "practice", x0 = -30, y0 = 18, x1 = -18, y1 = 27, name = "PRACTICE", inside = "SOLO", color = CYAN,
 				line = "Just you and bots. Nothing counts." },
-			{ id = "host", x0 = 23, y0 = 18, x1 = 32, y1 = 27, name = "HOST A ROOM", inside = "+ ROOM", color = PINK,
+			{ id = "host", x0 = 16, y0 = 18, x1 = 25, y1 = 27, name = "HOST A ROOM", inside = "+ ROOM", color = PINK,
 				line = "Make a room. Friends join with your code." },
 			-- ("# CODE", not "1 2 3 4": the first doorway's digits read as a code to type, and the reviewer typed them)
-			{ id = "code", x0 = 34, y0 = 18, x1 = 43, y1 = 27, name = "ENTER A CODE", inside = "# CODE", color = PINK,
+			{ id = "code", x0 = 27, y0 = 18, x1 = 36, y1 = 27, name = "ENTER A CODE", inside = "# CODE", color = PINK,
 				line = "Join a friend's room with their code." },
 		},
 	},
 	room = {
 		-- Seen from as far back as the lobby (seen in Studio at a round's zoom: the callouts sat on the wall's code).
 		name = "room", x = 800, y = 0, half = 40, view = 64, viewY = 26, blocks = shell(40, 66),
-		spawn = { x = -18, y = 0 }, zones = {}, bumps = roomBumps,
+		-- between the blocks, never under one (QA round 2: every seat was, and a first happy jump changed a setting)
+		spawn = { x = -8.5, y = 0 }, spawns = { -8.5, 8.5, -25.5, 24.5 }, zones = {}, bumps = roomBumps,
 		doors = {
 			{ id = "leave", x0 = -38, y0 = 0, x1 = -28, y1 = 9, name = "LOBBY", inside = "EXIT", color = WHITE,
 				line = "Leave the room. Back to the lobby." },
@@ -114,8 +119,8 @@ end
 -- Where a body spawns in `area` (its centre, world): on the start mark, `slot` (0-based) steps along it.
 function Lobby.spawnAt(area: string, slot: number?): (number, number)
 	local a = Lobby.AREAS[area]
-	local step = ((slot or 0) % 6) * 2.5
-	return a.x + a.spawn.x + step, a.y + a.spawn.y + Config.RUNNER_HEIGHT / 2 + 0.05
+	local x = a.spawns[(slot or 0) % #a.spawns + 1]
+	return a.x + x, a.y + a.spawn.y + Config.RUNNER_HEIGHT / 2 + 0.05
 end
 
 function Lobby.door(area: string, id: string): Door?

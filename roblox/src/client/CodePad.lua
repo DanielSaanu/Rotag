@@ -40,6 +40,10 @@ end
 local function press(key: string)
 	if not CodePad.isOpen() then return end
 	if key == "del" then
+		if typed == "" then -- nothing left to delete: Backspace closes the pad (Escape is Roblox's own menu key)
+			CodePad.close()
+			return
+		end
 		typed = string.sub(typed, 1, -2)
 	elseif key == "go" then
 		local code = Rules.code(typed)
@@ -108,7 +112,8 @@ function CodePad.start(player: Player)
 	end
 	UserInputService.InputBegan:Connect(function(input)
 		if not CodePad.isOpen() then return end
-		if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.ButtonB then
+		-- (not Escape: QA round 2: it also opened Roblox's menu, and the runner then ignored A / D)
+		if input.KeyCode == Enum.KeyCode.ButtonB then
 			CodePad.close()
 			return
 		end

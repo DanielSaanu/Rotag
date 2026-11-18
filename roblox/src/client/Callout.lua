@@ -167,7 +167,7 @@ function Callout.start(player: Player)
 	local y = top + (if cmp then 44 else 52)
 	pillSub = line(root, y, if cmp then 18 else 21, C.text, Ui.BODY)
 	y += if cmp then 24 else 28
-	pillHint = line(root, y, if cmp then 15 else 16, C.dim, Ui.BODY)
+	pillHint = line(root, y, if cmp then 17 else 19, C.text, Ui.BODY) -- (was 15, dim: the smallest words on screen, QA round 2)
 	y += if cmp then 24 else 30
 	captionSize = if cmp then 18 else 21
 	caption = line(root, y, captionSize, C.text, Ui.BODY, captionSize * 1.35 + 10)

@@ -20,7 +20,8 @@ A player lands **in the lobby with a body**, not on a title screen. Every choice
 | **HOST A ROOM** | upstairs, right deck | pink | a private room with a 4-digit code; you are its host |
 | **ENTER A CODE** | upstairs, right deck | pink | a number pad; the code of a friend's room takes you there |
 
-Upstairs is two jumps, at either END of the lobby: a wide step under an UP sign, then the deck (never beside
+Upstairs is two jumps, at either END of the lobby: a solid step against the wall under an UP sign (jump onto it
+from beside it), then the deck, which has 8 studs of plain landing before its first door (never beside
 QUICK MATCH: QA round 1). The lobby is 112 studs of floor on two levels, seen
 from further back than a round (64 studs top to bottom, not 48), so the whole of it is on one still screen; a narrow
 screen slides with the runner. The pieces: `shared/Lobby` (the data and rules), `server/LobbyMap` (the parts),

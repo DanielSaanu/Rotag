@@ -20,6 +20,9 @@ do -- the areas: far from the arena and from each other, inside the snapshot's r
 	for slot = 0, 11 do
 		local x, y = Lobby.spawnAt("room", slot)
 		assert(Lobby.doorAt("room", x, y) == nil and Lobby.bumpAt("room", x, y) == nil, "nor in the room")
+		for _, b in R.bumps do -- nor UNDER a setting block: a first jump must not change the room (QA round 2)
+			assert(x - R.x < b[2] - 1 or x - R.x > b[4] + 1, "a room arrival is not under " .. b[1])
+		end
 		x, y = Lobby.spawnAt("lobby", slot)
 		assert(Lobby.doorAt("lobby", x, y) == nil, "nobody spawns in a lobby door")
 	end
@@ -67,13 +70,17 @@ do -- the doors: on the floor, inside the walls, apart from each other; QUICK MA
 	assert(quick.y0 == 0 and (Lobby.door("lobby", "locker") :: any).y0 == 0, "PLAY and the LOCKER are downstairs")
 	for _, id in { "practice", "host", "code" } do assert((Lobby.door("lobby", id) :: any).y0 > 12, id .. " is upstairs") end
 	-- upstairs is not downstairs: a runner under a deck is not in the door on it, nor the other way round
-	assert(Lobby.doorAt("lobby", L.x - 34, L.y + FEET) == Lobby.door("lobby", "locker"), "under PRACTICE: the LOCKER")
-	assert(Lobby.doorAt("lobby", L.x + 28, L.y + FEET) == nil, "under HOST A ROOM: open floor")
+	assert(Lobby.doorAt("lobby", L.x - 34, L.y + FEET) == Lobby.door("lobby", "locker"), "under the left deck: the LOCKER")
+	assert(Lobby.doorAt("lobby", L.x + 20, L.y + FEET) == nil, "under HOST A ROOM: open floor")
 	-- the way up is nowhere near QUICK MATCH (QA round 1: a missed jump beside it queued the reviewer)
 	for _, b in L.blocks do
 		if string.sub(b[1], 1, 4) == "Step" then
 			assert(b[2] >= quick.x1 + 20 or b[4] <= quick.x0 - 20, b[1] .. " is far from QUICK MATCH")
-			assert(b[4] - b[2] >= 10, b[1] .. " is wide enough to land on")
+			assert(b[4] - b[2] >= 6, b[1] .. " is wide enough to land on")
+			assert(b[3] == 0, b[1] .. " stands on the floor: nothing to bonk a head on under its UP sign (QA round 2)")
+			for _, d in L.doors do -- room to stand beside it, outside every door, to jump from
+				if d.y0 == 0 then assert(d.x0 >= b[4] + 6 or d.x1 <= b[2] - 6, d.id .. " is too near " .. b[1]) end
+			end
 		end
 	end
 	-- open floor to stand on (Danzo: "you can't stand anywhere"): downstairs, outside every door
@@ -83,6 +90,18 @@ do -- the doors: on the floor, inside the walls, apart from each other; QUICK MA
 	-- the way up: a step one full jump high, then the deck one more; neither step is under a deck (no head bump)
 	local full = Config.JUMP_SPEED ^ 2 / (2 * Config.GRAVITY) -- a tapped jump; a held one is far more (movement.md)
 	assert(full > 0, "jump")
+	-- a deck's landing end (the one by its step) has 8 studs of plain deck before the first door (QA round 2:
+	-- landing put the runner IN a door, and PRACTICE counted down unchosen)
+	for _, k in L.blocks do
+		if string.sub(k[1], 1, 4) == "Deck" then
+			local landing = if k[2] < 0 then k[2] else k[4]
+			for _, d in L.doors do
+				if d.y0 == k[5] then
+					assert(math.min(math.abs(d.x0 - landing), math.abs(d.x1 - landing)) >= 8, d.id .. " is at the landing of " .. k[1])
+				end
+			end
+		end
+	end
 	for _, b in L.blocks do
 		if string.sub(b[1], 1, 4) == "Step" then
 			assert(b[5] <= 14 and 18 - b[5] <= 14, b[1] .. " is a held jump from the floor and from the deck")

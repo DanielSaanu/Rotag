@@ -138,12 +138,14 @@ local function furnish(m: Model, a: Lobby.Area)
 	-- Below the top half of the screen (the callouts' place: seen in Studio, the 3-2-1 sat on the code), above the blocks.
 	-- On the LEFT of the wall (QA round 1: centred, the 3-2-1 and the big line sat on it, and its help line ran into
 	-- START's sign): the middle of the screen is the callouts'.
-	local wx = ox - 24
-	paint(m, "CodeTitle", wx, oy + 31.6, Z_SIGN, 30, 2.8, "ROOM CODE", pink, HEAD)
+	-- (QA round 2: lower and further left still: the title shared a row with the big line's second line and the
+	-- two read as one sentence, "ROOM CODE wait for a friend".)
+	local wx = ox - 26
+	paint(m, "CodeTitle", wx, oy + 28.2, Z_SIGN, 26, 2.6, "ROOM CODE", pink, HEAD)
 	for i = 1, Lobby.CODE_LEN do
-		sign(m, "Code" .. i, wx + (i - 2.5) * 8, oy + 25.4, 7, 8.4, pink, "-", "code" .. i)
+		sign(m, "Code" .. i, wx + (i - 2.5) * 7, oy + 22.2, 6.2, 8, pink, "-", "code" .. i)
 	end
-	paint(m, "CodeHelp", wx, oy + 18.8, Z_SIGN, 34, 2.4, "FRIENDS USE:  ENTER A CODE", TEXT, BODY)
+	paint(m, "CodeHelp", wx, oy + 16, Z_SIGN, 28, 2.2, "FRIENDS USE:  ENTER A CODE", TEXT, BODY)
 	paint(m, "BumpHelp", ox, oy + 11.6, Z_SIGN, 70, 2.3, "HOST: JUMP INTO A BLOCK TO CHANGE IT", TEXT, HEAD, "bumphelp")
 	for _, b in a.bumps do
 		local w, h = b[4] - b[2], b[5] - b[3]
