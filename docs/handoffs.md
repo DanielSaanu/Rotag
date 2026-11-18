@@ -27,7 +27,22 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-*(none)*
+### H36 — A walk-in lobby: choose the kind of game by running to a place (Brawlhalla's modes as doors) — 2026-11-18 — OPEN (designed, not built)
+- **Trigger:** 1 (how a player picks a game; private rooms and practice are new), 3 once built (rooms, codes, who is seated where).
+- **Doc:** `docs/qa/lobby-design.md` (the design in words, goals); boards https://claude.ai/artifact/9VdirngqxNgVu1MYpVbZPt; renders `exports/lobby_design/`.
+- **Observed (Danzo, 2026-11-18):** "rather than just buttons you click on the screen it is a physical location in 2D
+  space ... very obvious and clear where to go for what ... private rooms or simple random match".
+- **Session's read (Fable session; design only):** one screen, three colour zones around the spawn: QUICK MATCH (lime,
+  centre), HOST A ROOM / ENTER A CODE / FRIENDS' ROOMS (pink, right), LOCKER / WHEEL (gold, left), PRACTICE (cyan, up
+  left); a door is chosen by standing in it for a second.
+- **What the build costs (QA round 1; the server cannot do any of this today):** a lobby map and server-decided door
+  zones with new `Menu` ops (a remotes-list change); a ROOM server kind with a host-gated start (a match server
+  counts down by itself today) and per-server `MATCH_ROUNDS` / items instead of `Config` constants; room codes (a
+  MemoryStore map from code to reserved server, expiry, server-side rate limits: 4 digits is 10k guesses, trigger 3);
+  PRACTICE as a solo reserved server with no pay-out; host hand-over. Cut for v1: friends' doors (cross-server
+  friend lookup). Cheapest first slice: the lobby map + QUICK MATCH and LOCKER as doors on today's hub queue.
+- **Decision needed:** Danzo's yes or changes on the boards, after the QA loop; then a build handoff (session.md, ui.md).
+- **Blocked routine work:** none.
 
 ## Resolved
 

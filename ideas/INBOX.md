@@ -53,6 +53,13 @@
 - [x] **Danzo (2026-11-16, playing): hard to see walls and items; ghost mode broken; traps, pickups, a bigger ice
       beam.** All done (H33): the ghost bug was one crash; the stage is relit and outlined; the beam is body-sized,
       shoots out and rides with you; traps glow; a pickup tells you what you got. `docs/systems/items.md`, `ui.md` §8.
+- [ ] **Danzo (2026-11-18, first real match with a friend): tagging is too hard.** "It takes a decent amount of
+      skill to actually tag anyone; maybe it's all too small or too fast, or the way we built it." Not looked into
+      yet. Facts: "it" runs at the same 45 as everyone (no chase edge), the hand reaches 0.5 studs past touching
+      (`TAG_REACH`), and this was the first two-device match (netcode.md: nothing measured before it was the real
+      game). His answer: "probably 3" (got close, kept just missing). **His rule:** "as tagger, dashing into or
+      through you should count as a tag, unless you are also dashing, or you are the one dashing through the
+      tagger." Not built: it changes rule 6 / `shared/Tag` (triggers 1, 2, 3).
 - [ ] **Danzo: test the hub on the PUBLISHED game before the Discord link (H34, 2026-11-16).** You picked "hub with
       match servers"; it is built and has never run (Studio cannot teleport). With two accounts or devices:
       (1) both join: you land on the title in the hub; (2) both press PLAY: "FINDING A MATCH 2 / 4", and within 12 s
