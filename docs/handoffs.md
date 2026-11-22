@@ -49,6 +49,27 @@ Resolution (added by the heavy agent under the same entry):
 - **Blocked routine work:** none. Standing go-ahead from Danzo (2026-11-22): work autonomously, commit and push, no
   deleting files. No Fable this week: Opus only.
 
+### H41 — A tutorial that teaches by doing (movement, the grapple, being IT) — 2026-11-22 15:00 — OPEN
+- **Trigger:** 1 (a new mode or lobby door, the first-join flow; DESIGN §3/§6), 2 (a course needs map data in
+  `shared/`: `Maps`, `BoxWorld`, possibly `Lobby`)
+- **Doc:** `docs/systems/lobby.md` (practice), `docs/systems/grapple.md`, `docs/systems/ui.md`; goals 5-6 of
+  `docs/qa/playtest-fixes.md`; research `docs/research/movement-tutorials.md` (on `origin/claude/stoic-euler-231upu`)
+- **Observed:** playtest #10775: "the game would benefit a lot from an actual tutorial to teach the player the movement
+  and what to do as it"; "bots getting to places that i couldnt get to (ex. jumping twice and getting to a platform ...
+  each time i tried i slid off)"; "a step by step tutorial for the wall climbing, grapple, and other mechanics";
+  "the grapple button doesn't seem to work?". Today: HOW TO PLAY is static cards; PRACTICE is a bots-only match.
+- **Evidence:** goal 6's 10: "a short, skippable, guided run (practice room or first join): run, jump, double jump
+  onto a ledge, wall jump, dash, grapple, then 'you are IT: tag the bot'. One verb at a time, under ~2 minutes, never
+  a wall of text. Phone and keyboard prompts." Research: one verb per room, instant respawn at the room start, a
+  ghost demo before each try, end on a timed lap with a best time; contextual first-use hints; funnel events.
+- **Routine session's read (guess):** a TUTORIAL door in the lobby plus an automatic offer on a player's first join,
+  on its own small course built from BoxWorld blocks, solo, on the same server (no reserved server needed).
+- **Decision needed:** where it lives and how a new player reaches it; the course layout; how each step is detected
+  and prompted (keyboard / pad / touch wording from `Controls`); skipping; the "tag the bot" finale; whether "done"
+  is remembered (saved data is trigger 9: if so, keep it session-only or record the save-format decision). Build it,
+  with tests for any shared maths.
+- **Blocked routine work:** none. Standing go-ahead (Danzo, 2026-11-22). H40's agent owns Studio until it reports.
+
 ## Resolved
 
 ### H39 — A roof on every map (bots left over the end walls to dodge the tagger) — 2026-11-18 — RESOLVED
