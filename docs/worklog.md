@@ -169,3 +169,4 @@ paid for. The detail belongs in commits and the docs; this is the timeline.
 - 2026-11-18 · `claude/friendly-hawking-74891i`: **H39: a roof on every map** (Danzo: bots jump off the map to avoid the tagger): `Roof` blocks on `MapYard` and `MapTest`, a `maps.test` block that holds every map to a sealed top with 8 tiles of air under it; seen built in Studio. → `docs/systems/maps.md`.
 - 2026-11-22 (cloud): triaged QA Central playtest #10775 into docs/qa/playtest-2026-11-20.md (10 items; tag misses + IT speed + wall-grace exploit flagged as heavy).
 - 2026-11-22 (cloud): research for the playtest fixes in docs/research/ (tag netcode, chaser speed, movement tutorials); QA goals + four-persona round brief in docs/qa/.
+- 2026-11-22 (cloud): playtest-fixes loop closed 7->5->7 (local built H40-H44); drafted docs/qa/two-device-test.md for Danzo; flagged the NaN-position exploit (fixed as H44).
