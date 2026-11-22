@@ -95,9 +95,10 @@ function TouchPad.build(gui: ScreenGui)
 	apply()
 end
 
--- -1..1 while ARROWS is on; nil means "use the stick" (Controls falls back to it).
+-- -1..1 while ARROWS is on and one is held; nil means "use the stick" (Controls falls back to it, and so to the keys
+-- of a keyboard on a tablet: the hidden stick reads 0).
 function TouchPad.x(): number?
-	if not on then return nil end
+	if not on or not (held.left or held.right) then return nil end
 	return (if held.right then 1 else 0) - (if held.left then 1 else 0)
 end
 
