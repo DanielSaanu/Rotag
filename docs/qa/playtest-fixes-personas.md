@@ -45,8 +45,39 @@ it for just one round of testing i want to see how effective it is"
 | 3 | **"The end of the round made no sense"**: confused by "2 players left" while ghosts ran about, and dodged the walls by stepping in and out | goals 3, 4 | Tries the in-out wall trick in the final phase. Says at each moment who it thinks is alive and whether the banner agrees. | 3, 4 |
 | 4 | **"First time here, the grapple did nothing"**: a new player who skips reading, on a phone-sized screen | goals 5, 6, 7 | Starts with the tutorial (or skips it and comes back). Presses GRAPPLE without an anchor. Tries the double jump onto a ledge. Uses the arrow-buttons option if it can. | 5, 6, 7 |
 
+## The match is planned ahead (Danzo, 2026-11-22)
+
+"have them plan a match ahead of time maybe set one of the reviewers to orchestrate it such that each player would
+encounter their problem staggered with multiple chances for it so they can reflect on the experience"
+
+- **Reviewer 2 doubles as director.** Before Play, it writes the run sheet below into
+  `docs/qa/playtest-fixes-personas-plan.md` and sends it to the other three. During the match it calls each scene
+  ("scene 3 starts: P1 is IT, P2 runs the dash spam").
+- **The director may set the stage, never the outcome.** It may use the SERVER window's `execute_luau` only to put
+  players in place: who is IT, a respawn point, skip to the end phase, give an item. It never forces a tag, a miss or
+  an elimination. Every setup call is logged in the plan file, with the time it was made.
+- **Staggered, with repeats.** Each persona's problem comes up **2-3 times**, spread through the match, never twice
+  in a row. That way a reviewer meets it again after it has reflected, not in one burst.
+- **A one-line note after every scene.** Each reviewer writes "what I tried, what happened, how it felt as my
+  persona" into its own notes before the next scene starts. The final review is built from those notes.
+
+Example run sheet (the director adapts it to the build and the maps):
+
+| Scene | Round | Set-up | Spotlight | Others |
+|---|---|---|---|---|
+| 1 | warm-up | P4 runs the tutorial from the practice door | P4: tutorial, grapple, double jump | P1-P3 wait in the lobby, note the lobby |
+| 2 | 1 | P1 is IT | P1: close touches, body-on-body, mid-dash | P2-P4 run normally |
+| 3 | 1 | P1 still IT, P2 starts the dash spam | P2: dash-spam escape, timed | P1 chases P2 only |
+| 4 | 1 end | let the end phase come | P3: wall in-out, the banner vs who's alive | others play it straight |
+| 5 | 2 | P2 is IT | P2: catch a dash-spammer (P1 runs it) | P4: GRAPPLE with and without an anchor |
+| 6 | 2 | P1 tagged early, becomes IT again | P1: touches, second chance | P3 watches the ghosts |
+| 7 | 2 end | end phase | P3: wall trick again; P4: arrow-buttons option | |
+| 8 | 3 | P3 is IT | P1: as a runner, does a tag on ME register when it should? | P2: dash spam, third time |
+| 9 | 3 end | end phase, to the podium | P3: third wall check; everyone: "queue again?" | |
+
 ## What each review contains (same shape for all four)
 
+0. The scene notes, verbatim (one line per scene).
 1. Score 0-10 from this persona's point of view, and one line: "would I play again with friends?"
 2. **Was my frustration fixed?** Yes / partly / no, with the moments (timestamp or round) that show it.
 3. What else bothered me (anything, not just my point).
