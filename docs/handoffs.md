@@ -27,25 +27,16 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H42 — A second jump beside a wall: double jump or wall kick? Plus a dash-spam escape test — 2026-11-22 16:30 — OPEN
-- **Trigger:** 2 (`shared/Movement`), 1 (rule on which jump a press gives), 6 (the movement loop)
-- **Doc:** `docs/systems/tutorial.md` §3 and §8; `docs/systems/movement.md`; QA round 1 of `docs/qa/playtest-fixes.md`
-- **Observed:** H41 measured, through the real Movement, that a second jump pressed beside a wall is a wall kick, not
-  a double jump. That very likely explains the tester's "jumping twice and getting to a platform and each time i tried
-  i slid off". The tutorial works around it with a gold take-off line, but every map ledge in a match still has it.
-  QA round 1 (7/10) FIX: "prefer the double jump while rising, unless the stick points away from the wall". QA
-  CONSIDER: no measurement of a runner who spams dashes and hops escaping IT at x1.1 -> x1.265 for a whole round
-  (goal 2's below-7 case).
-- **Evidence:** tutorial.md §3/§8; `test/luau/tutorial.test.luau` (35/35 from the line); `test/luau/chase_sim.luau`.
-- **Routine session's read (guess):** while rising with a double jump left and the stick not pointing away from the
-  wall, a press is the double jump; a wall kick still comes from falling or sliding on the wall, or from pushing away.
-  Check that the wall climb (kick-kick up a shaft) and the tutorial's wall room still work.
-- **Decision needed:** (1) the rule, built in shared/Movement, with tests (including the tower climb); (2) a chase_sim
-  scenario: a runner dashing on cooldown and hopping side to side vs IT at the H40 speeds, time to catch over 60 s;
-  if it escapes forever, say what tunes it. Danzo judges the feel by hand afterwards.
-- **Blocked routine work:** none. Standing go-ahead (Danzo, 2026-11-22). Danzo is gaming: no keyboard/mouse input to Studio.
+_None._
 
 ## Resolved
+
+### H42 — A second jump beside a wall: double jump or wall kick? Plus a dash-spam escape test — 2026-11-22 — RESOLVED (not yet played by hand)
+- **Resolved 2026-11-22 (heavy, Opus; triggers 1, 2, 6):** a press RISING beside a wall is the double jump unless the
+  stick pushes away or the wall was used since the floor (`State.wallUsed`: a kick or a double jump beside one); rule
+  15 untouched; bots' times identical. Ledge from a run-up 45/63 land (was 29), tutorial ledge past its line 102/102
+  (was 24). Dash-hop spam never escapes 60 s on a bounded map (worst 16 s vs a running "it") →
+  `docs/systems/movement.md` §3, `docs/systems/dash-tag.md` §8; S24.
 
 ### H41 — A tutorial that teaches by doing (movement, the grapple, being IT) — 2026-11-22 — RESOLVED (not yet played by hand)
 - **Resolved 2026-11-22 (heavy, Opus; triggers 1, 2):** a seven-room course at x 1100 (run, jump, double jump, wall

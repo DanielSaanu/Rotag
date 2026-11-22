@@ -82,6 +82,22 @@ do -- DOUBLE JUMP: a single jump never lands on the ledge (14.25 < 20); a jump a
 	end
 	print(("    double: %d of %d jump + double jump timings from the take-off line land on the ledge"):format(wins, tries))
 	assert(wins == tries, "double: from the line, a jump and a quick second jump always land on the ledge")
+	-- H42: closer than the line, up to the face, the second press rising beside it is the double jump, not a kick off it
+	local near, nearTries, kicks = 0, 0, 0
+	for jx = Tut.TAKEOFF[2] + 1, 99 do
+		for second = 8, 18, 2 do
+			nearTries += 1
+			local on = run(r.start, 0, function(i, s, _, inp, st)
+				inp.moveX, inp.jumpHeld = 1, true
+				if not st.j and s.grounded and s.x - X >= jx then inp.jumpPressed, st.j = true, i end
+				if st.j and i == st.j + second then inp.jumpPressed = true end
+			end, function(s, ev, i) if ev.jump == "wall" then kicks += 1 return false end if inGoal(r, s) then return true end
+				if i > 300 then return false end end, 360)
+			if on then near += 1 else print(("    double: from x %d (past the line), second jump %d frames later, missed"):format(jx, second)) end
+		end
+	end
+	print(("    double: %d of %d timings from past the line, up to the face, land on the ledge (%d kicks)"):format(near, nearTries, kicks))
+	assert(kicks == 0 and near == nearTries, "double: from anywhere up to the face, a jump and a second press land on it")
 end
 
 do -- WALL JUMP: the tower is over a double jump; kicking up the shaft gets on it; jumps alone never do

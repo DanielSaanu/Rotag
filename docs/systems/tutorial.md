@@ -50,8 +50,9 @@ Every number was driven through the real `Movement` (and `Grapple`) in the cours
   checks the wall first). A beginner who jumps close to a tall ledge and presses again is thrown off it: this is
   very likely the playtester's "each time i tried i slid off the platform". The ledge is solid (a thin deck was
   worse: a jump from under it bonks) and a gold line 18-24 studs back marks where to take off: from the line, a
-  jump and a second press 0.1-0.3 s later land on top 35 times out of 35. Whether the kick should yield to the
-  double jump while rising is a movement question for Danzo (§8), not this room's.
+  jump and a second press 0.1-0.3 s later land on top 35 times out of 35. **H42 changed Movement:** a press rising
+  beside a wall is now the double jump (unless pushed away, or the wall was used: movement.md §3), so from past the
+  line up to the face it lands 102 of 102 (was 24, with 78 kicks). The line stays as the easy spot.
 - **Wall jump.** The tower (40) is over a double jump; kicking up the 12-stud shaft gets on it whether the press
   comes while rising, at the top, or sliding down. No jump and double jump timing reaches it.
 - **Dash.** No room can NEED the dash outright: under a 2-tile roof a jump bonks, but a jump and a double jump
@@ -118,8 +119,8 @@ again on their next visit (one SKIP press). A saved `tutorial` flag would fix th
 ## 8. Open, for Danzo
 
 - **Feel, by hand:** each room on a keyboard and a phone, and whether a minute is right.
-- **The double jump beside a wall** (§3): should a second press while RISING beside a wall be a double jump, not a
-  kick? That is a `shared/Movement` change (rules 14-15): its own handoff if wanted.
+- **The double jump beside a wall** (§3): done in H42 (movement.md §3). Feel it by hand: the ledge from close up, and
+  the tower's shaft (the first press rising beside the tower is now a double jump; kicks follow).
 - **Save "finished"** (a `tutorial` field in the profile: trigger 9) so a returning player who skipped is never
   started on it again. Today: session-only.
 - **Funnel events** (research rec. 5): `AnalyticsService` onboarding steps per room would show where new players

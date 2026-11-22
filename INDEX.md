@@ -88,7 +88,7 @@ to (`roblox/default.project.json`).
 - `sprites/`: pixel-text sprites (`.txt`, format in `src/pixels.js`). Drawing art.
 - `scenes/`: scene JSON (format in `src/scene.js`). The file name is the Roblox sprite name.
 - `library/`: borrowed assets and `index.json` licences. Keep CC-BY credits when shipping.
-- `test/`: node tests (`core` = renderer and packer, `structure` = line ceiling and shared/ purity) and `test/luau/*.test.luau`. `test/luau/sim.js <harness>.luau` runs a measurement harness (not a test), e.g. `chase_sim.luau` (H40: tag claims through two simulated links).
+- `test/`: node tests (`core` = renderer and packer, `structure` = line ceiling and shared/ purity) and `test/luau/*.test.luau`. `test/luau/sim.js <harness>.luau` runs a measurement harness (not a test), e.g. `chase_sim.luau` (H40: tag claims through two simulated links), `escape_sim.luau` (H42: a dash-hopping runner against "it").
   A Luau test may start with `--!include <file>` to inline a helper file beside it (`movement_world.luau`).
 - `tools/luau-check.js`: Luau lint. `tools/luau/` holds the gitignored binaries. `tools/runner-rig.js`: the runner's poses as
   joints; writes `sprites/runner_*.svg`. Edit it, not the SVGs. `tools/studio-standin.luau`: a second runner for solo

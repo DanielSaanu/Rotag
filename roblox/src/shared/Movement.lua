@@ -27,7 +27,7 @@ export type State = {
 	coyote: number, jumpBuffer: number, jumpHold: number, holdSpeed: number,
 	airJumps: number, dashes: number, dashTime: number, dashDir: number, dashCooldown: number, dashFloor: boolean,
 	wallForce: number, wallForceDir: number, runDistance: number, runFrom: number, stillTime: number,
-	sliding: boolean, events: Events,
+	sliding: boolean, wallUsed: boolean, events: Events, -- H42: a kick or a double jump beside a wall since the floor
 	-- H21, for the sprite pick only: the hold in force (input.hold as last stepped), seconds since it landed, and the
 	-- frame a freeze keeps (the one showing when it landed).
 	hold: string?, holdTime: number, holdSprite: string,
@@ -62,7 +62,7 @@ function Movement.new(x: number, y: number): State
 		x = x, y = y, vx = 0, vy = 0, facing = 1, grounded = false,
 		coyote = 0, jumpBuffer = 0, jumpHold = 0, holdSpeed = 0,
 		airJumps = Config.AIR_JUMPS, dashes = 1, dashTime = 0, dashDir = 1, dashCooldown = 0, dashFloor = false,
-		wallForce = 0, wallForceDir = 0, runDistance = 0, runFrom = 0, stillTime = 0, sliding = false,
+		wallForce = 0, wallForceDir = 0, runDistance = 0, runFrom = 0, stillTime = 0, sliding = false, wallUsed = false,
 		events = {}, hold = nil, holdTime = 0, holdSprite = "runner_idle",
 		rope = nil, grappleCooldown = 0, grappleBuffer = 0, grappleArmed = false,
 		padDir = 1, padFrom = 0, padPeak = 0, padRamp = 0, padGlide = 0,
@@ -114,12 +114,9 @@ local function landingSoon(s: State, c: Contacts): boolean
 end
 
 local function jump(s: State, kind: string, moveX: number, awayDir: number)
-	s.vy = Config.JUMP_SPEED
-	s.holdSpeed = Config.JUMP_SPEED
+	s.vy, s.holdSpeed = Config.JUMP_SPEED, Config.JUMP_SPEED
 	s.jumpHold = Config.JUMP_HOLD_WINDOW
-	s.jumpBuffer = 0
-	s.coyote = 0
-	s.grounded = false
+	s.jumpBuffer, s.coyote, s.grounded = 0, 0, false
 	s.dashTime = 0 -- a jump ends a dash and KEEPS its speed (rule 16): vx is not touched below except to add
 	if kind == "ground" then
 		s.vx += moveX * Config.JUMP_H_BOOST
@@ -127,7 +124,7 @@ local function jump(s: State, kind: string, moveX: number, awayDir: number)
 		-- The kick banks any speed you brought in (DESIGN §2: "wall-kick banks it"), never less than the base kick.
 		s.vx = awayDir * math.max(Config.WALL_JUMP_H_SPEED, math.abs(s.vx))
 		s.wallForce = Config.WALL_JUMP_FORCE_TIME
-		s.wallForceDir = awayDir
+		s.wallForceDir, s.wallUsed = awayDir, true
 		refresh(s)
 	else
 		s.airJumps -= 1
@@ -169,7 +166,7 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		s.y -= ground
 		if not wasGrounded then ev.landed = -s.vy end
 		s.vy = 0
-		s.coyote = Config.COYOTE_TIME * scale
+		s.coyote, s.wallUsed = Config.COYOTE_TIME * scale, false
 		refresh(s)
 	else
 		s.grounded = false
@@ -205,7 +202,9 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		ev.dash = true
 	end
 
-	-- 4. Jump, in priority order: ground (or coyote), wall, double.
+	-- 4. Jump, in priority order: ground (or coyote), wall, double. H42 (movement.md §3): RISING beside a wall with the
+	-- double jump in hand, the stick as held not pushed away and the wall unused since the floor (no kick, no double
+	-- jump beside one: so never two in a row up a wall), the press is the double jump.
 	if s.rope then
 		-- H25: on the rope a jump lets go with the boost and at least a full jump up (vy above it is kept, not held).
 		if s.jumpBuffer > 0 then
@@ -218,16 +217,17 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		local reach = Movement.wallReach()
 		local nearL = wl ~= nil and wl <= reach
 		local nearR = wr ~= nil and wr <= reach
+		local away = if nearL and (not nearR or (wl :: number) <= (wr :: number)) then 1 else -1
 		if s.grounded or s.coyote > 0 then
 			jump(s, "ground", moveX, 0)
 			ev.jump = "ground"
-		elseif nearL or nearR then
-			local away = if nearL and (not nearR or (wl :: number) <= (wr :: number)) then 1 else -1
+		elseif (nearL or nearR) and not (s.vy > 0 and s.airJumps > 0 and not s.wallUsed
+			and Movement.axis(input.moveX) ~= away) then
 			jump(s, "wall", moveX, away)
 			ev.jump = "wall"
 		elseif s.airJumps > 0 and not landingSoon(s, c) then
 			jump(s, "double", moveX, 0)
-			ev.jump = "double"
+			ev.jump, s.wallUsed = "double", s.wallUsed or nearL or nearR
 		end
 	end
 

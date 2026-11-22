@@ -128,3 +128,12 @@ kick, so a tall solid ledge throws a beginner off it unless they take off far en
 the real Movement with a sweep of beginner timings (jump spot x second press), count the ways through without the
 move, and when geometry cannot force a move, check the move itself (a hook and a let-go), not a crossing.
 *(2026-11-22, handoff H41, `test/luau/tutorial.test.luau`, docs/systems/tutorial.md §3.)*
+
+**S24 — A new way to spend a resource at a contact that refunds it is a loop: guard the new choice, not the
+refund.** Rule 15 gives the double jump back on a wall touch; H42 made a press rising beside a wall a double jump.
+Together, a held stick and a mashed button went straight up any wall (the chimney test: 0 kicks). Gating the refund
+(no double back while rising) also stopped it, but changed an adopted rule and quietly took a route the bots used.
+A "used since the floor" flag on the new choice closed the loop and left every old measurement identical. When a
+rule spends something at a contact, drive the mashed-button case through the real step(), and compare the
+neighbours' numbers (bots, routes) per case, not one summary line: a shared random sequence moves them all.
+*(2026-11-22, handoff H42, `test/luau/wall_double.test.luau`, docs/systems/movement.md §3.)*

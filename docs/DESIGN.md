@@ -136,7 +136,7 @@ Moves should hand speed off to each other:
 
 ### Mobile and controls (about 80% of Roblox players are on mobile)
 22. **4 action buttons at most.**
-    - Wall-jump and double jump share the jump button.
+    - Wall-jump and double jump share the jump button. *H42:* rising beside a wall, it is the double jump unless the stick pushes away or the wall was already used since the floor ([movement.md](systems/movement.md) §3).
     - Dash and grapple are single taps, or grapple is contextual.
 23. Keep the lower-middle screen clear. Buttons at least 44 px. Make timing windows slightly wider on mobile.
 24. Make sure movement scripts read the mobile joystick, not just the keyboard. Test on a phone early.

@@ -130,6 +130,27 @@ received / dropped` lines are unchanged. Together they tell "never sent" from "r
 x1.1 (try 1.05) or still too slow; does a dash away still feel like a fair escape when it works (it still buys 18
 studs); does a runner outside the walls understand why the count came back lower.
 
+## 8. H42: can a runner who spams dashes and hops escape "it"? (measured 2026-11-22)
+
+QA round 1 of `docs/qa/playtest-fixes.md` (goal 2's below-7 case). `test/luau/escape_sim.luau` (a harness: `node
+test/luau/sim.js escape_sim.luau [ARENA=320] [RUNS=20]`): both bodies on the REAL Movement in a BoxWorld, a flat floor
+between end walls, "it" on `Tag.speedMult` (x1.1, ramping to x1.265), a tag = `Tag.overlaps`/`sweeps` with NO slack
+(the runner's best case: the server adds `TAG_GRACE`). The runner dashes on every cooldown, jumps out of each dash
+(rule 16 keeps the 120) and hops on landing; cornered, it turns, hops over "it" and dashes on past ("side to side").
+
+- **Open floor, 10 s:** a run 44.8 studs/s, the dash-hop chain **85.3**. "It" running: 49.3 (x1.1), 56.6 (x1.265);
+  "it" chaining too: 86.0, 87.5. The chain is mostly dash and the dash is never scaled (rule 51, the speed check), so
+  the ramp barely helps a chaser who chains: +0.7 to +2.2 studs/s.
+- **Yard-wide arena (320 studs), 20 chases each, 60 s cap:** the dash-hopper vs "it" that only runs: tagged 20/20,
+  median 5.7 s, worst 16.0 s; vs "it" that chains too and jumps to meet the hop: 20/20, median 1.4 s, worst 9.2 s.
+  A plain runner: worst 6.7 s. 640 studs: worst 29.1 s. The final 48-stud box: worst 1.8 s. **No escape for 60 s.**
+- **Why not:** on a straight line it escapes forever (85 > 57), but every map ends and the closing walls shrink it;
+  each turn-back over "it" is a gamble that loses within a few tries.
+- **If play shows it escaping anyway** (a long map, a loop with no ends): the knobs, in order of how little else they
+  touch: `DASH_COOLDOWN` (the chain's rate), letting the holder's dash scale with its `speedMult` (needs
+  `Tag.topSpeedMult` and the move check's budget to follow), or the speed a jump keeps out of a dash (rule 16, §3:
+  Danzo's call). Nothing is changed now.
+
 ## Expansion: deficits at scale
 
 - **The dash is now the main way to tag and the main way to dodge.** If chases turn into two players trading

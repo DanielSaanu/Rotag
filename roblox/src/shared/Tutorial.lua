@@ -30,9 +30,9 @@ local blocks: { { any } } = {
 	{ "WallStart", -8, -8, -4, TOP },
 	{ "Floor", -8, -8, 220, 0 },                 -- RUN, JUMP, DOUBLE JUMP, WALL JUMP, the dash's run-up
 	{ "Hurdle", 56, 0, 64, 8 },                  -- JUMP: 2 tiles; one jump clears 14
-	-- DOUBLE JUMP: 4.5 tiles (one jump 14.25, two 28.5), 8 wide and solid. A second press BESIDE its face is a wall
-	-- kick, not a double jump (Movement: the wall comes first): the take-off line 24-18 studs back says where to
-	-- jump from so the second press comes before the face (tutorial.md §3; measured in tutorial.test)
+	-- DOUBLE JUMP: 4.5 tiles (one jump 14.25, two 28.5), 8 wide and solid. Since H42 a second press RISING beside its
+	-- face is the double jump too (Movement), so it lands from anywhere up to the face; the take-off line 24-18 studs
+	-- back stays as the easy spot (tutorial.md §3; measured in tutorial.test)
 	{ "Ledge", 100, 0, 132, 18 },
 	{ "Pillar", 144, 6, 148, 64 },               -- WALL JUMP: walked under; the shaft is 3 tiles (148..160)
 	{ "Tower", 160, 0, 188, 40 },                -- ... 10 tiles: over a double jump, so the walls are the way up

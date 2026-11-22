@@ -103,7 +103,17 @@ Celeste's numbers, mapped at **0.5 studs per Celeste pixel** (its 8 px tile = ou
 at 0.35 s, 0.68 s in the air; a full jump then a full double jump about 28 studs (7 tiles). The test map's heights
 are set against these.
 
-**Jump priority:** ground (or coyote) > wall (either wall within reach, the nearer one) > double.
+**Jump priority:** ground (or coyote) > wall (either wall within reach, the nearer one) > double. **H42 (2026-11-22,
+heavy, standing go-ahead):** a press RISING beside a wall, with the double jump in hand, the stick (as held) not pushed
+away from the wall and the wall unused since the floor, is the double jump; falling or sliding, pushing away, or a used
+wall, the kick. `State.wallUsed` is set by a kick or a double jump beside a wall and cleared on landing: rule 15's
+touch still gives the double back, so without it a held stick and a mashed button go straight up any wall; with it a
+chimney stays kick-kick after the first kick. Why: the tester's "slid off" (tutorial.md §3). Measured
+(`wall_double.test.luau`): a run-up into a 20-stud ledge, 45/63 timings land (every miss a press under 0.1 s, too
+low), was 29/63 with 16 kicked off; the tutorial ledge from past its line 102/102, was 24/102. Bots unchanged (same
+times). Rejected: QA's plain "rising unless pushing away" (with rule 15's touch refresh it double-jumps straight up
+any wall: the chimney test got 0 kicks), and that plus rule 15 only on falling touches (bots: the Mast 2.6 -> 8.2 s,
+its double-double route gone; and an arrival press in a chimney is a double jump, not the kick).
 
 **Refresh on contact (rule 15):** landing and touching a wall give back the double jump and the dash. A wall jump
 counts as a wall touch. A dash in progress keeps its charge spent. (H9's "a floor dash recharges only after air" was
