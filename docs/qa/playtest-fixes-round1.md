@@ -2,6 +2,7 @@
 
 Reviewer: Opus subagent, 2026-11-22. Branch `claude/friendly-hawking-74891i` @ 0c373d0. Studio: one Play session
 driven through execute_luau only (Danzo was gaming: no keyboard or mouse input; no 3D drawn out of focus).
+Ran on the goals file before "Limits of this loop" (the cloud session's adc6543 arrived after the round).
 
 ## Report (verbatim)
 

@@ -41,6 +41,17 @@ runner, understand the final phase and the ghosts, and learn every move in under
 **Order (Danzo, 2026-11-22):** the normal `/qa-loop` on this file. The four-persona round is parked (he's gaming
 on the PC, which was low on memory): `playtest-fixes-personas.md`.
 
+## Limits of this loop (2026-11-22, Danzo is gaming on the PC)
+
+- **No on-screen visuals unless Studio has focus.** Studio draws no 3D out of focus, and nobody takes focus from
+  Danzo's game. The reviewer works from logs, state (`execute_luau`), code and tests, plus captures only when Studio
+  happens to have focus. Each round file says which goals were judged blind.
+- **Blind scores are provisional.** Goals that need eyes (4 ghosts, 5 anchors, 6 the tutorial rooms, 7 arrows) may
+  score at most **8** blind. A 9-10 needs a capture or Danzo's look.
+- **Goal 1 is capped at 8** until two real people play a match (H40 measured a model and solo Play with the network
+  simulator, not two devices). Also check the tag-back swap: TAG_FREEZE 1.5 s with the wider reach.
+- One Play client at a time. No multi-client test unless it's short, and stop it straight away after.
+
 ## Evidence the builder supplies each round
 
 - A short video (or screenshot sequence) per goal, Danzo first (`references/review-loop.md`).
