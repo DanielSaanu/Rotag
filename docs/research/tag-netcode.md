@@ -1,5 +1,9 @@
 # Research: confirming tags under latency
 
+> **Corrected by H40 (2026-11-22, measured):** the lag theory below did not hold. The server rewinds the target, so
+> "0.5 + 1.5 covers ~44 ms" was wrong: 0 refused claims from LAN to 3G. The misses were claims never SENT (sprites
+> touch at 3.3-3.6 studs, a claim needed < 2.5) plus the H38 dodge. See `docs/systems/dash-tag.md` §6-7.
+
 _22 Nov 2026. Desk research for the "tags don't register" report in
 [`../qa/playtest-2026-11-20.md`](../qa/playtest-2026-11-20.md) #1. Read with [`../systems/tag.md`](../systems/tag.md) §2
 and [`../systems/netcode.md`](../systems/netcode.md). Research only: changing the tag check is escalation trigger 3._
