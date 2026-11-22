@@ -115,3 +115,11 @@ hand-driven frames passed, because no fuse in them ever dropped under 10 s. So: 
 name before adding a method (`self%.name =`); drive a smoke test through the states that matter (ignite, freeze,
 ghost, the end phase), not just many frames; keep cosmetics LAST in a frame and under `pcall`, so a slip in polish
 cannot stop the game. *(2026-11-16, handoffs H31 and H33, `client/Look`, `client/Present`.)*
+
+**T19 — Before trusting a Studio Play run, prove the Play copy holds your edit.** The Rojo plugin can drop silently
+(seen in H40: `[Rojo-Warn] Disconnected ... Http requests can only be executed by game server` during a Play), and
+every later Play then runs the OLD code while `rojo serve` still looks healthy. One `execute_luau` in the Server or
+Client datamodel, `Source:find("<a marker from your change>")`, settles it. If it is missing and nobody can click
+Connect, apply the same diff to the Edit datamodel's `Source` with an exact find-and-replace (the plugin overwrites it
+with the file on reconnect, so the two never fork). Also from H40: in a fresh Play the MCP's first key press may only
+focus the window; send a throwaway key before the one that matters. *(2026-11-22, handoff H40.)*

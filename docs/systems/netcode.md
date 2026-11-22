@@ -144,6 +144,14 @@ three hold; events arrive once each; a teleport snaps; late and duplicate packet
 not near 0); `<name> has no stream` means that client is not sending (an old `rojo serve`). The server's `body:` and
 `claim` lines are unchanged.
 
+## 9. Measured (H40, 2026-11-22): the confirm holds under latency
+
+Studio's network simulator (4G 45/55 ms + jitter, 3G 150/180 ms + jitter), solo Play against held bots: 9 claims, 9
+confirmed; `Player:GetNetworkPing()` is the round trip (0.126 s against the client's 117-124 ms NetworkPing). A
+two-client model through this stream and `Tag` (`test/luau/chase_sim.luau`): 0 refusals at any link pair. Tags that
+"did not go through" were never sent (the hand was shorter than the sprite) or dodged on purpose: [dash-tag.md](dash-tag.md)
+§6. Nothing in this doc's stream or the server's check changed.
+
 ## Sources
 
 - devforum "Low framerate in switching windows in testing mode" (3743044); "How to disable FPS drop when window is

@@ -48,3 +48,9 @@ background also multiplies its own text by the same colours: light words on a da
 the words in a child `TextLabel` (`Ui.button`, `Ui.setText`); put a gradient on a text object only when the gradient
 is meant for the letters (the logo). Found by reading, not by looking: the PC was locked and nothing was drawn
 (→ T17), which is exactly when a rule like this has to be known. *(2026-11-16, handoff H31, `client/Ui.lua`.)*
+
+**A9 — A hitbox is judged against the drawn sprite, not against the collider.** Players say "I touched them" when the
+pictures touch. When the art is wider than the box (a 4-stud runner whose run poses reach 1.4-2 studs past the centre
+over a 2-stud collider), a reach tuned on the box leaves a stud where the touch is plain on screen and nothing
+happens. Measure the art's opaque extent per pose and set the reach from it, axis by axis (across and up can differ).
+*(2026-11-22, handoff H40, `Config.TAG_REACH`, scene `preview_tag_reach`.)*

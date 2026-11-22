@@ -91,7 +91,8 @@ do -- the follow: toward the living mean at WALL_FOLLOW at most, never a snap; a
 	assert(hi - lo < 10, ("a +-13 stud sway moves the walls %.1f studs end to end, under 10"):format(hi - lo))
 end
 
-do -- the grace: starts full when the whole body is past a wall, runs down, resets the moment the runner is back in
+do -- the grace: starts full when the whole body is past a wall, runs down, and (H40) is KEPT once the runner is back
+	-- in, refilling at WALL_REFILL: it no longer resets to full
 	local r = Tag.newRound({ A, B, C }, A, 0)
 	local xs = { [A] = 0, [B] = 0, [C] = 0 }
 	local w = Walls.open(r, 0, record(xs)) :: any
@@ -106,12 +107,41 @@ do -- the grace: starts full when the whole body is past a wall, runs down, rese
 	assert(near(w.left[C], Config.WALL_GRACE - 1 - DT, 1e-3), "1 s outside: a second gone")
 	xs[C] = 0
 	_, ch = Walls.step(w, r, 1.1, DT, record(xs))
-	assert(ch and w.left[C] == nil, "back in: cleared at once")
+	assert(ch and w.left[C] == nil, "back in: no longer outside, at once")
+	local kept = w.pool[C]
+	assert(kept and near(kept, Config.WALL_GRACE - 1 - DT + Config.WALL_REFILL * DT, 1e-3), "what was left is kept")
 	xs[C] = 500
 	Walls.step(w, r, 1.2, DT, record(xs))
-	assert(near(w.left[C], Config.WALL_GRACE - DT), "out again: a FULL grace, not what was left")
+	assert(near(w.left[C], kept - DT, 1e-3),
+		"out again: what was left, NOT a full grace (H40)")
 	local _, rows = Walls.rows(w, 1.2)
 	assert(#rows == 1 and rows[1].id == C and rows[1].left > 0, "the row MatchState carries")
+	-- back in for long enough, the pool refills to full and is dropped (absent = full)
+	xs[C] = 0
+	run(w, r, 1.2, Config.WALL_GRACE / Config.WALL_REFILL + 0.1, record(xs))
+	assert(w.left[C] == nil and w.pool[C] == nil, "a long spell inside: full again")
+end
+
+do -- H40, the QA Central exploit: "run into them for a few seconds and run back out and repeat". Dipping out 3 s and
+	-- in 2 s now spends 3 - 2 x WALL_REFILL a cycle: the runner dies within a few cycles, not never
+	local r = Tag.newRound({ A, B, C }, A, 0)
+	local xs = { [A] = 0, [B] = 0, [C] = 0 }
+	local w = Walls.open(r, 0, record(xs)) :: any
+	local t, dead = 0, nil
+	for cycle = 1, 10 do
+		xs[C] = 500
+		local gone
+		gone, t = run(w, r, t, 3, record(xs))
+		if #gone > 0 then dead = cycle break end
+		xs[C] = 0
+		gone, t = run(w, r, t, 2, record(xs))
+		if #gone > 0 then dead = cycle break end
+	end
+	local spend = 3 - 2 * Config.WALL_REFILL
+	assert(dead and dead <= math.ceil(Config.WALL_GRACE / spend) + 1, ("the dipper dies in cycle %s"):format(tostring(dead)))
+	assert(not r.alive[C], "out of the round")
+	assert(Config.WALL_REFILL > 0 and Config.WALL_GRACE / Config.WALL_REFILL >= Config.WALL_CLOSE_TIME,
+		"a slow refill: empty to full takes at least the whole close")
 end
 
 do -- expiry: alive just before WALL_GRACE outside, eliminated at it; a non-holder's death leaves the fuse alone

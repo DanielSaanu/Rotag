@@ -13,7 +13,10 @@ Config.FUSE_SHRINK = 10           -- each elimination: the next fresh fuse is th
 Config.FUSE_MIN = 15              -- a fresh fuse never starts below this
 Config.START_FREEZE = 1           -- the first "it" waits this long at round start while the others scatter (H6: was 3;
                                   -- the HUD counts it down to GO). Danzo's to tune
-Config.TAG_REACH = 0.5            -- studs past touching boxes that still count as a tag (the hand)
+Config.TAG_REACH = 1.25           -- studs ACROSS past touching boxes that still count as a tag (the hand). H40: was 0.5;
+                                  -- the drawn run poses reach 1.4-2 studs past the centre, the box 1, so two sprites
+                                  -- touched on screen up to ~3.5 studs apart and no claim went out before 2.5 (dash-tag.md §6)
+Config.TAG_REACH_Y = 0.5          -- H40: the same, up and down: the drawn height matches the 3.5-stud box, so no wider
 Config.TAG_GRACE = 1.5            -- extra studs the SERVER allows on top of TAG_REACH (lag, interpolation)
 Config.TAG_DASH_REACH = 1         -- H38 (Danzo: "dashing into or through you should count as a tag"): extra studs of
                                   -- reach while "it" dashes, and its whole dash path counts, not only where it stops
@@ -22,9 +25,11 @@ Config.TAG_VIEW_DELAY = 0.4      -- seconds, on top of ping, the target may be o
 Config.TAG_REWIND_MAX = 0.5       -- that allowance at most, whatever the ping: lagging buys no more (rule 6; H6: was 0.3)
 Config.TAG_CONFIRM_WAIT = 0.35    -- seconds the server keeps a claim open for the claimant's body to catch up (H6)
 Config.TAG_CLAIM_GAP = 0.1        -- a client's claims closer together than this are dropped unread
-Config.RAMP_DELAY = 5             -- rule 4: seconds into a chase before "it" starts to speed up
+Config.IT_SPEED = 1.1             -- H40 (rule 4): "it" always runs this x faster, from the first step of a chase; the
+                                  -- ramp multiplies it (testers: "make the IT ~20% faster"; dash-tag.md §7)
+Config.RAMP_DELAY = 2             -- rule 4: seconds into a chase before "it" starts to speed up (H40: was 5)
 Config.RAMP_TIME = 15             -- seconds from no boost to the full boost
-Config.RAMP_MAX = 0.15            -- the full boost: +15% run speed; resets on every tag
+Config.RAMP_MAX = 0.15            -- the full boost: +15% on top of IT_SPEED (1.1 x 1.15 = 1.265); resets on every tag
 Config.HIT_STOP = 0.08            -- rule 21: seconds both runners hold still when a tag lands (client only)
 Config.BOT_TAGS = true            -- false: a bot holder never tags (it still chases), so solo Play can test items without
                                   -- being "it" or tag-frozen (was STUDIO_DUMMY_TAGS before H31 made the dummies bots)
@@ -100,10 +105,13 @@ Config.WALL_LEAN = 0.25           -- share of the way from the living mean to th
 Config.WALL_DRIFT = 20            -- studs: the wander's reach in the target (two sines); after the ease the box sways
                                   -- ~24 studs end to end at up to ~7.9 studs/s. Fades in with the close (0 at the start)
 Config.WALL_DRIFT_PERIOD = 8      -- seconds: the wander's main period; the second sine runs 1.618x slower (never repeats)
-Config.WALL_GRACE = 6             -- seconds a living runner may be past a wall; reset once it is back inside (below).
+Config.WALL_GRACE = 6             -- seconds a living runner may be past a wall IN ALL. H40: no longer reset once back in;
+                                  -- it refills at WALL_REFILL (QA Central: "run into them for a few seconds and back
+                                  -- out, repeat"). The old reset needed the whole body back inside (WALL_BACK_IN).
                                   -- 3 s for the still box (H24); 6 s once the box moved on its own (Danzo, 2026-11-07):
                                   -- under a third of the close, too short to hide outside and dip back in for a reset
-Config.WALL_BACK_IN = 2           -- studs: out once the whole body is past a wall, back IN (grace reset) only this much
+Config.WALL_REFILL = 0.25         -- H40: seconds of wall grace won back per second inside (24 s from empty to full)
+Config.WALL_BACK_IN = 2           -- studs: out once the whole body is past a wall, back IN (the grace refills) only this much
                                   -- further in: 2 = RUNNER_WIDTH, the whole body back inside. Stops a runner at a
                                   -- swaying wall flapping out/in every frame (H26 follow-up, endgame.md §7.4)
 Config.ROUND_GAP = 6             -- seconds between one round ending and the next starting (H31: 4 -> 6, the results card)

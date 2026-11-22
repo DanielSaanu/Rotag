@@ -87,10 +87,11 @@ function Tag.aliveCount(r: Round): number
 	return n
 end
 
--- Two runner boxes (centre x, y) touch within `slack` studs of reach on each axis.
+-- Two runner boxes (centre x, y) touch within the reach (TAG_REACH across, TAG_REACH_Y up and down; H40: the hand
+-- reaches across, as far as the drawn sprite does) plus `slack` studs on each axis.
 function Tag.overlaps(ax: number, ay: number, bx: number, by: number, slack: number): boolean
-	local reach = Config.TAG_REACH + slack
-	return math.abs(ax - bx) <= Config.RUNNER_WIDTH + reach and math.abs(ay - by) <= Config.RUNNER_HEIGHT + reach
+	return math.abs(ax - bx) <= Config.RUNNER_WIDTH + Config.TAG_REACH + slack
+		and math.abs(ay - by) <= Config.RUNNER_HEIGHT + Config.TAG_REACH_Y + slack
 end
 
 -- H38: does a runner box moving in a straight line from (ax0, ay0) to (ax1, ay1) touch the box at (bx, by) at any
@@ -98,7 +99,7 @@ end
 -- box, the slab test.) A dash covers 2-4 studs between two frames and a body is 2 wide: without this a dash straight
 -- through a runner could land on no frame at all.
 function Tag.sweeps(ax0: number, ay0: number, ax1: number, ay1: number, bx: number, by: number, slack: number): boolean
-	local hx, hy = Config.RUNNER_WIDTH + Config.TAG_REACH + slack, Config.RUNNER_HEIGHT + Config.TAG_REACH + slack
+	local hx, hy = Config.RUNNER_WIDTH + Config.TAG_REACH + slack, Config.RUNNER_HEIGHT + Config.TAG_REACH_Y + slack
 	local t0, t1 = 0, 1
 	for _, axis in { { ax0 - bx, ax1 - ax0, hx }, { ay0 - by, ay1 - ay0, hy } } do
 		local p, d, h = axis[1], axis[2], axis[3]
@@ -139,10 +140,30 @@ end
 -- unless you are also dashing or are the one dashing through the tagger"):
 --   a DASHING TAGGER sweeps: the whole path between two of its samples counts (Tag.sweeps), with TAG_DASH_REACH more
 --   reach, so a dash through a runner tags even when no single frame has the two boxes touching;
---   a DASHING TARGET cannot be tagged: a target sample inside its i-frames never pairs, with a dash or without.
+--   a DASHING TARGET cannot be tagged by a dashing tagger, nor while its own dash goes at or through the tagger (H40:
+--   Tag.dodges; a dash AWAY is taggable).
 -- The target's dash is judged at the moment the tagger SAW it (the older target sample), like everything else here.
+-- H40 (dash-tag.md §7) narrows the dodge to Danzo's own words: a target inside its i-frames dodges only when the
+-- tagger is dashing too, or when its dash is aimed AT the tagger (through it). A runner dashing AWAY from a tagger
+-- that touches it is tagged: the dash buys distance, never invulnerability (QA Central: "I can just spam ... dashing").
 export type Sample = { t: number, x: number, y: number, untrusted: boolean?, iframe: boolean? }
 local SWEEP_GAP = 0.1 -- two claimant samples further apart than this are not one motion (a stall, a rebuilt body)
+
+-- Does target sample b[j] dodge a touch by claimant sample `sa` (rule 45 as H38 and H40 shaped it)? Only inside the
+-- target's i-frames, and then: the claimant dashing too, or the claimant lying ahead along the target's dash from the
+-- spot the dash left (the last sample before its i-frames). A dash the history cannot place (no motion yet) dodges,
+-- as before H40.
+function Tag.dodges(b: { Sample }, j: number, sa: Sample): boolean
+	local sb = b[j]
+	if not sb.iframe then return false end
+	if sa.iframe then return true end
+	local k = j
+	while k > 1 and b[k].iframe and sb.t - b[k - 1].t <= Config.DASH_IFRAMES + SWEEP_GAP do k -= 1 end
+	local dir = sb.x - b[k].x
+	if dir == 0 then return true end
+	return (sa.x - b[k].x) * dir > 0
+end
+
 function Tag.touchedBetween(a: { Sample }, b: { Sample }, from: number, to: number, lag: number): boolean
 	for i = #a, 1, -1 do
 		local sa = a[i]
@@ -153,7 +174,7 @@ function Tag.touchedBetween(a: { Sample }, b: { Sample }, from: number, to: numb
 			for j = #b, 1, -1 do
 				local sb = b[j]
 				if sb.t < from or sb.t < sa.t - lag then break end
-				if sb.t <= sa.t and not sb.iframe then
+				if sb.t <= sa.t and not Tag.dodges(b, j, sa) then
 					if Tag.overlaps(sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE) then return true end
 					if dash and prev and Tag.sweeps(prev.x, prev.y, sa.x, sa.y, sb.x, sb.y, Config.TAG_GRACE + Config.TAG_DASH_REACH) then
 						return true
@@ -256,15 +277,23 @@ function Tag.leave(r: Round, id: number, now: number)
 	end
 end
 
--- Rule 4: "it" speeds up the longer a chase lasts, and the boost resets on a tag. Multiplier on the run speed.
+-- Rule 4: "it" runs IT_SPEED x faster from the first step (H40), and speeds up further the longer a chase lasts; the
+-- ramp resets on a tag. Multiplier on the run speed.
 function Tag.chaserBoost(chaseTime: number): number
 	local t = chaseTime - Config.RAMP_DELAY
-	if t <= 0 then return 1 end
-	return 1 + Config.RAMP_MAX * math.min(1, t / Config.RAMP_TIME)
+	if t <= 0 then return Config.IT_SPEED end
+	return Config.IT_SPEED * (1 + Config.RAMP_MAX * math.min(1, t / Config.RAMP_TIME))
+end
+
+-- The fastest run-speed multiplier any runner can have (the holder at the top of its ramp, or a grant, in the end
+-- phase): the speed check's x rate must stay above RUN_SPEED x this (config.test, move_check.test).
+function Tag.topSpeedMult(): number
+	return math.max(Config.IT_SPEED * (1 + Config.RAMP_MAX), 1 + Config.GRANT_BOOST) * Config.END_PHASE_SPEED
 end
 
 -- A runner's run-speed multiplier (rules 4, 46; H22): the holder's ramp, a ghost's boost grant, never both stacked:
--- boost = max(ramp, grant). The grant equals the ramp's top, so a granted holder reaches the top sooner, never above.
+-- boost = max(ramp, grant). The grant equals the ramp's bonus (+15%); since H40 "it" starts at IT_SPEED, so a granted
+-- holder gains only while its ramp is under the grant, and is never above the ramp's top.
 -- H23, rule 51: in the end phase every LIVING runner's multiplier is that x END_PHASE_SPEED (the caller passes
 -- endPhase only for the living); the dash is never scaled (Movement), so the speed check's budget still holds.
 function Tag.speedMult(isIt: boolean, chaseTime: number, granted: boolean, endPhase: boolean?): number

@@ -185,7 +185,9 @@ local function stepBot(b: any, r: Tag.Round?, dt: number, now: number, history: 
 	else
 		b.hold, input.hold, input.holdDir, input.holdLeft = nil, nil, nil, nil
 	end
-	if frozen then -- the tag freeze (rule 1): no input, no run speed, still falls (as client/Client does)
+	-- H40, Studio only: workspace attribute RotagBotsHold = true stands every bot still (a target to run and dash
+	-- into under the network simulator; dash-tag.md §6). Set it from the Server command bar during Play.
+	if frozen or (studio and workspace:GetAttribute("RotagBotsHold") == true) then -- the tag freeze (rule 1): no input, no run speed, still falls (as client/Client does)
 		input.moveX, input.jumpPressed, input.jumpHeld, input.dashPressed = 0, false, false, false
 		s.vx, s.dashTime = 0, 0
 	end
@@ -296,7 +298,7 @@ function Bots.tags(r: Tag.Round?, now: number, history: { [number]: { Tag.Sample
 				behind = math.min(BOT_SEEN_MAX, Config.SNAPSHOT_DELAY + BOT_SEEN + (if ok and type(ping) == "number" then ping / 2 else 0))
 			end
 			local seen = sampleAt(ha, now - behind)
-			if sb and seen and not sb.iframe -- H38: a dash dodges a bot's tag as it does a person's
+			if sb and seen and not Tag.dodges(hb, #hb, here) -- H38, H40: a dash dodges a bot's tag as it does a person's
 				and Tag.overlaps(seen.x, seen.y, sb.x, sb.y, 0)
 				and Tag.overlaps(here.x, here.y, sb.x, sb.y, Config.TAG_GRACE) then
 				pass(r, it, id, now)

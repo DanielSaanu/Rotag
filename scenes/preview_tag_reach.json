@@ -1,0 +1,92 @@
+{
+  "name": "preview_tag_reach",
+  "width": 820,
+  "height": 430,
+  "background": "#2a2d3e",
+  "pixelated": false,
+  "export": false,
+  "notes": "H40 mockup only (export: false): a chaser (run_0) behind a runner (run_4), both facing right, at centre distances 2.5 (the old claim edge), 3.25 (the new one) and 3.6 studs; 32 px = 1 stud, the 4-stud sprite is 128 px. docs/systems/dash-tag.md §6.",
+  "layers": [
+    {
+      "id": "t2.5",
+      "name": "tagger 2.5",
+      "type": "scene",
+      "src": "scenes/runner_run_0.json",
+      "x": 40,
+      "y": 10
+    },
+    {
+      "id": "r2.5",
+      "name": "runner 2.5",
+      "type": "scene",
+      "src": "scenes/runner_run_4.json",
+      "x": 120,
+      "y": 10
+    },
+    {
+      "id": "l2.5",
+      "name": "label 2.5",
+      "type": "text",
+      "text": "2.5 studs: H38 claim edge (reach 0.5)",
+      "font": "Press Start 2P",
+      "size": 10,
+      "color": "#ffffff",
+      "x": 330,
+      "y": 70
+    },
+    {
+      "id": "t3.25",
+      "name": "tagger 3.25",
+      "type": "scene",
+      "src": "scenes/runner_run_0.json",
+      "x": 40,
+      "y": 150
+    },
+    {
+      "id": "r3.25",
+      "name": "runner 3.25",
+      "type": "scene",
+      "src": "scenes/runner_run_4.json",
+      "x": 144,
+      "y": 150
+    },
+    {
+      "id": "l3.25",
+      "name": "label 3.25",
+      "type": "text",
+      "text": "3.25 studs: H40 claim edge (reach 1.25)",
+      "font": "Press Start 2P",
+      "size": 10,
+      "color": "#ffffff",
+      "x": 330,
+      "y": 210
+    },
+    {
+      "id": "t3.6",
+      "name": "tagger 3.6",
+      "type": "scene",
+      "src": "scenes/runner_run_0.json",
+      "x": 40,
+      "y": 290
+    },
+    {
+      "id": "r3.6",
+      "name": "runner 3.6",
+      "type": "scene",
+      "src": "scenes/runner_run_4.json",
+      "x": 155,
+      "y": 290
+    },
+    {
+      "id": "l3.6",
+      "name": "label 3.6",
+      "type": "text",
+      "text": "3.6 studs: out of reach",
+      "font": "Press Start 2P",
+      "size": 10,
+      "color": "#ffffff",
+      "x": 330,
+      "y": 350
+    }
+  ]
+}

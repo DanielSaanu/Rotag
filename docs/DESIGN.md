@@ -79,8 +79,15 @@ Moves should hand speed off to each other:
 3. **Force an ending.** At the final 2 players, shrink the map or speed up the fuse (Bomberman "Hurry Up", TNT Tag deathmatch). Otherwise the final duel drags.
    *Built (H24, 2026-11-01): the map shrink is the closing walls of rule 51 ([endgame.md](systems/endgame.md) §7).*
 4. **Ramp the chaser.** "It" gets faster the longer a chase lasts, and the boost resets on a tag. Dead by Daylight's Bloodlust works this way. It stops infinite looping.
+   *H40 (2026-11-22, QA Central #10775: "make the IT ~20% faster"): "it" also runs `IT_SPEED` x1.1 from the first step
+   (DbD's killers run 110-115% before any Bloodlust), and the ramp starts at 2 s, not 5: x1.1 at once, x1.265 at 17 s.
+   Trial numbers, Danzo's to judge by hand ([dash-tag.md](systems/dash-tag.md) §7).*
 5. **Pick the starting holder fairly**, by rotation or by the previous round's leader. Never by pure random.
 6. **Lag-fair tagging.** Check overlap on the client, confirm it on the server, then play a catch-up animation so it looks fair on both screens. Don't rely on Roblox `Touched` alone.
+   *H40 (2026-11-22): measured, the server's rewind refused no claim at 4G or 3G latency (9 of 9 in Studio, 0 refusals
+   in a two-client model); the misses were claims never sent: the hand (`TAG_REACH`) was a stud shorter than the
+   drawn sprite. The hand now reaches across as far as the run poses do (1.25 studs; up and down stays 0.5). The server
+   check is unchanged ([dash-tag.md](systems/dash-tag.md) §6).*
 
 ### Ghosts
 7. **Ghosts need real power and a way back.**
@@ -182,6 +189,10 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
     friend: "it takes a decent amount of skill to actually tag anyone"): "as tagger, dashing into or through you
     should count as a tag, unless you are also dashing or are the one dashing through the tagger."** A dashing
     tagger's whole path tags; a dashing runner cannot be tagged ([tag.md](systems/tag.md) §11). *(Was: "never a tag".)*
+    **H40 (2026-11-22) holds the dodge to those words:** a runner's dash dodges the tag only when the tagger is dashing
+    too, or when the dash is aimed at (through) the tagger. A runner dashing AWAY from a tagger that touches it is
+    tagged: the dash buys distance, not invulnerability (testers: "I can just spam jumping side to side and dashing to
+    avoid IT"). The aimed-ability dodge above is unchanged ([dash-tag.md](systems/dash-tag.md) §7).
 46. **The boost grant** (+15% run speed, 5 s) never stacks with the chaser ramp: on the holder, boost = max(ramp, grant).
 47. **Placement:** ghost parts go where the ghost stands, rotated on the grapple input, in empty space, on its
     screen, at least 1 tile from any living runner, never in a keep-clear zone; at most 3 live fixtures per ghost.
@@ -198,8 +209,10 @@ ignition and end-phase speed. Trial numbers, tuned by hand. Spec and build order
     **The map shrink (H24, SpeedRunners' closing screen in world space):** when the end phase starts, two walls appear
     just outside the living pack and close over `WALL_CLOSE_TIME` (trial 20 s) to a 48-stud box, their centre loosely
     following the living (H26: their mean, leaned toward "it", plus a slow wander that never repeats, never faster
-    than `WALL_FOLLOW`, inside the map's window bounds), so the box keeps moving. They are not solid: a living runner past one has `WALL_GRACE` (6 s since 2026-11-07, 3 s before; paused while held) to
-    get back in, reset the moment its whole body is (H26 follow-up: no flapping at a swaying wall), and is eliminated like a burn-out at 0. The server decides on its own position
+    than `WALL_FOLLOW`, inside the map's window bounds), so the box keeps moving. They are not solid: a living runner past one has `WALL_GRACE` (6 s since 2026-11-07, 3 s before; paused while held)
+    outside in all, and is eliminated like a burn-out at 0. **H40 (2026-11-22):** back inside (the whole body: H26, no
+    flapping at a swaying wall) the grace is kept and refills at `WALL_REFILL` 0.25 s a second, no longer reset to full
+    (testers dipped out for a few seconds and back in, forever). The server decides on its own position
     record; every player keeps their own camera (§2). Detail and numbers: [endgame.md](systems/endgame.md) §7.
 
 ---

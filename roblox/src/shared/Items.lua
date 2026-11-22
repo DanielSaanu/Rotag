@@ -241,7 +241,7 @@ function Items.grants(st: State, givers: { Giver }, victims: { Victim }, now: nu
 	for _, g in givers do
 		for _, v in victims do
 			if v.id ~= g.id and Items.swept(v.x, v.y, Config.RUNNER_WIDTH + Config.TAG_REACH,
-				Config.RUNNER_HEIGHT + Config.TAG_REACH, g.x, g.y, g.px, g.py) then
+				Config.RUNNER_HEIGHT + Config.TAG_REACH_Y, g.x, g.y, g.px, g.py) then
 				st.grants[v.id] = now + Config.GRANT_TIME
 				table.insert(ev, { kind = "grant", id = v.id, time = Config.GRANT_TIME, by = g.id })
 				break

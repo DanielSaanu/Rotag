@@ -32,8 +32,10 @@ assert(Config.PAD_RAMP >= 0 and Config.PAD_GLIDE >= 0 and Config.GRAPPLE_GIVE >=
 -- DESIGN §3 rules 50-51 (H16 spec, built H23; trial numbers, endgame.md §5). Change the rule text and these together.
 assert(Config.IGNITE_AT == 10 and Config.IGNITE_AT < Config.FUSE_MIN, "ignite at 10 s left, inside every fuse")
 assert(Config.END_PHASE_SPEED == 1.1, "end phase: x1.1 top speed")
-assert(Config.END_PHASE_SPEED >= 1 and Config.RUN_SPEED * (1 + math.max(Config.RAMP_MAX, Config.GRANT_BOOST))
-	* Config.END_PHASE_SPEED < Config.DASH_SPEED, "the fastest end-phase run stays under the dash (the check's x rate)")
+assert(Config.END_PHASE_SPEED >= 1 and Config.RUN_SPEED * __require("Tag").topSpeedMult() < Config.DASH_SPEED,
+	"the fastest end-phase run (H40: \"it\" at the top of its ramp) stays under the dash (the check's x rate)")
+-- H40 (rule 4): the chase edge, trial numbers (dash-tag.md §7). Change the rule text and these together.
+assert(Config.IT_SPEED == 1.1 and Config.RAMP_DELAY == 2 and Config.RAMP_MAX == 0.15, "\"it\" x1.1, ramp +15% from 2 s")
 -- H23's pick for the one open number (DESIGN §6): after the proposal's ~1:40 final two, inside the 2-3 minute pillar
 assert(Config.END_PHASE_AFTER == 120 and Config.END_PHASE_AFTER > Config.FUSE_START + Config.FUSE_START - Config.FUSE_SHRINK,
 	"the time cap never bites before two whole unpassed lives (45 + 35) have burnt")

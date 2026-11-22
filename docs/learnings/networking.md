@@ -131,3 +131,12 @@ reverse), silently. The load takes a lock inside the same `UpdateAsync` that rea
 out: that server is still saving); every save is an `UpdateAsync` that refuses when the store holds a newer
 revision or another server's lock, and the loser stops saving and TELLS the player. Found by the reviewer reading
 the code, not by a lost save: this bug only shows in production. *(2026-11-16, QA round 1 on H31, `server/Data`.)*
+
+**N19 — "My hit didn't count" has three causes; log both ends before touching the server's tolerance.** The
+client never sent a claim, the server refused it, or a rule refused it on purpose: to a player all three look the
+same. Log every close pass on the attacker's client (closest gap, claimed or not) beside the server's claim and
+verdict lines, and model the latency through the real shared code before widening anything. In H40 the server,
+with its rewind, refused 0 of 9 claims at 4G and 3G latency and 0 in a two-client model; every miss was a claim
+never sent (the hand was a stud shorter than the drawn sprite) or the dash dodge doing what it was told. Widening the
+grace, the research's first suggestion, would have bought a cheat studs and fixed nothing. *(2026-11-22, handoff
+H40, `client/Tagging` close-pass log, `test/luau/chase_sim.luau`.)*

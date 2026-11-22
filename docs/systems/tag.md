@@ -24,6 +24,8 @@ The server is the only thing that writes "it" or the fuse (DESIGN §3 rule 6). T
 only ask.
 
 > **H38 (2026-11-18):** a dashing tagger sweeps and a dashing runner cannot be tagged: [dash-tag.md](dash-tag.md).
+> **H40 (2026-11-22):** `TAG_REACH` 1.25 across (0.5 up and down, `TAG_REACH_Y`), a dash away is taggable, "it" runs
+> x1.1 with the ramp from 2 s; the server check below is unchanged and was measured: [dash-tag.md](dash-tag.md) §6-7.
 
 ## 2. Decision (a): the remotes, and what the server trusts
 

@@ -381,7 +381,7 @@ end
 do -- H23, rule 51 (trust.md §8): the end phase lifts the RUN by END_PHASE_SPEED on top of the ramp or grant, never the
 	-- dash, so the speed check's x rate (the dash) still covers it and MoveCheck needs no end-phase input. Driven, not
 	-- argued: the fastest chain, a held run and the pad chain, each 10 s at the end phase's top multiplier.
-	local top = (1 + math.max(Config.RAMP_MAX, Config.GRANT_BOOST)) * Config.END_PHASE_SPEED
+	local top = __require("Tag").topSpeedMult() -- H40: "it" at the top of its ramp (IT_SPEED x ramp) x the end phase
 	local function boosted(choose)
 		return function(i, st)
 			local inp = choose(i, st)
@@ -396,11 +396,11 @@ do -- H23, rule 51 (trust.md §8): the end phase lifts the RUN by END_PHASE_SPEE
 	print(("    end-phase fastest chain, 10 s: burst used %.2f of %.0f studs, fastest %.2f"):format(deepest, BURST_X, fastest))
 	-- MEASUREMENT (→ S11), H23 2026-10-31: 1.38 studs of the 24, exactly the plain chain's: only the run is scaled
 	assert(deepest > 1.38 - 0.2 and deepest < 1.38 + 0.2, ("end-phase chain burst (measurement): %.2f"):format(deepest))
-	-- a held end-phase run at the top multiplier: 45 x 1.15 x 1.1 = 56.925 studs/s, pinned, clean
+	-- a held end-phase run at the top multiplier: 45 x 1.1 x 1.15 x 1.1 = 62.6175 studs/s (H40; was 56.925), pinned, clean
 	local r = standing(ARENA, -300)
 	local rb, _, runTop = watched(ARENA, r, 600, boosted(function(_, st) return input({ moveX = if st.x < 380 then 1 else 0 }) end))
 	assert(#rb == 0, "an end-phase run is never flagged: " .. (rb[1] or ""))
-	assert(near(runTop, Config.RUN_SPEED * top, 1e-6) and near(runTop, 56.925, 1e-6),
+	assert(near(runTop, Config.RUN_SPEED * top, 1e-6) and near(runTop, 62.6175, 1e-6),
 		("the end phase's top run speed (measurement): %.3f"):format(runTop))
 	assert(runTop < MoveCheck.RATE_X, "under the x rate with room to spare")
 	-- the pad chain with the end-phase multiplier: a launch, a double jump and a dash on every landing

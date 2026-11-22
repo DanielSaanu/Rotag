@@ -118,6 +118,12 @@ do -- rule 6: the server confirms from its own position history, with grace and 
 	assert(Tag.overlaps(0, 0, touch, 0, 0), "boxes in reach")
 	assert(not Tag.overlaps(0, 0, touch + 0.01, 0, 0), "just out of reach")
 	assert(Tag.overlaps(0, 0, touch + Config.TAG_GRACE, 0, Config.TAG_GRACE), "the server's grace")
+	-- H40: the hand reaches ACROSS as far as the drawn run poses (1.4-2 studs past the centre: dash-tag.md §6), so two
+	-- sprites touching on screen 3.25 studs apart is a claim; up and down it stays the box's height + TAG_REACH_Y
+	assert(Tag.overlaps(0, 0, 3.25, 0, 0), "sprites touching on screen, 3.25 studs apart: in reach")
+	local up = Config.RUNNER_HEIGHT + Config.TAG_REACH_Y
+	assert(Tag.overlaps(0, 0, 0, up, 0) and not Tag.overlaps(0, 0, 0, up + 0.01, 0), "vertical reach is TAG_REACH_Y")
+	assert(Config.TAG_REACH_Y < Config.TAG_REACH, "a jump clear over the tagger's head is no touch")
 	local function hist(xs) local h = {} for i, x in xs do h[i] = { t = i * 0.1, x = x, y = 0 } end return h end
 	local far = touch + Config.TAG_GRACE + 1
 	local a = hist({ 0, 0, 0, 0, 0 })
@@ -192,7 +198,11 @@ do -- a chase in step: the tagger trails the dummy at a touch on its screen; on 
 	local from, deadline, lag = Tag.claimWindow(1, Config.TAG_VIEW_DELAY)
 	assert(not Tag.touchedBetween(a, b, from, deadline, 0), "no same-frame touch anywhere in the window")
 	assert(Tag.touchedBetween(a, b, from, deadline, lag), "the target's older sample confirms it")
-	assert(not Tag.touchedBetween(a, b, from, deadline, 0.1), "an allowance shorter than the lag does not")
+	-- the reach and grace cover (TAG_REACH + TAG_GRACE) / 30 s of the lag at this speed; an allowance short of the rest
+	-- does not confirm (H40: was a flat 0.1 s, which the wider hand now covers; the boundary is what is pinned)
+	local need = LAG - (Config.TAG_REACH + Config.TAG_GRACE) / 30
+	assert(not Tag.touchedBetween(a, b, from, deadline, need - 0.02), "an allowance shorter than the lag does not")
+	assert(Tag.touchedBetween(a, b, from, deadline, need + 0.02), "... and one just past what the reach leaves does")
 end
 
 do -- what the allowance never pairs: a target NEWER than the claimant, or older than the allowance or the window
@@ -206,12 +216,14 @@ do -- what the allowance never pairs: a target NEWER than the claimant, or older
 end
 
 do -- rule 4: the chaser ramp starts after RAMP_DELAY, reaches RAMP_MAX after RAMP_TIME, and Movement uses it
-	assert(Tag.chaserBoost(0) == 1 and Tag.chaserBoost(Config.RAMP_DELAY) == 1, "no boost early")
-	assert(near(Tag.chaserBoost(Config.RAMP_DELAY + Config.RAMP_TIME / 2), 1 + Config.RAMP_MAX / 2), "halfway")
-	assert(near(Tag.chaserBoost(1e6), 1 + Config.RAMP_MAX), "capped")
+	-- H40: "it" runs IT_SPEED from the first step; the ramp multiplies it
+	local I = Config.IT_SPEED
+	assert(I > 1 and Tag.chaserBoost(0) == I and Tag.chaserBoost(Config.RAMP_DELAY) == I, "the edge at once, no ramp early")
+	assert(near(Tag.chaserBoost(Config.RAMP_DELAY + Config.RAMP_TIME / 2), I * (1 + Config.RAMP_MAX / 2)), "halfway")
+	assert(near(Tag.chaserBoost(1e6), I * (1 + Config.RAMP_MAX)), "capped")
 	local s = Movement.new(0, 0)
 	local floor = { ground = 0 }
-	local boost = 1 + Config.RAMP_MAX
+	local boost = Tag.chaserBoost(1e6)
 	for _ = 1, 120 do
 		Movement.step(s, { moveX = 1, jumpPressed = false, jumpHeld = false, dashPressed = false, speedMult = boost },
 			floor, 1 / 60)
@@ -252,10 +264,11 @@ do -- rule 46 (H22): boost = max(ramp, grant); the grant never stacks on the ram
 	assert(Tag.speedMult(false, 1e6, false) == 1, "a runner: no ramp, however long the chase")
 	assert(near(Tag.speedMult(false, 0, true), 1 + Config.GRANT_BOOST), "a granted runner: +15%")
 	assert(near(Tag.speedMult(true, half, false), Tag.chaserBoost(half)), "the holder alone: the ramp")
-	assert(near(Tag.speedMult(true, 0, true), 1 + Config.GRANT_BOOST), "a granted holder at the start: the grant")
-	assert(near(Tag.speedMult(true, full, true), 1 + Config.RAMP_MAX), "at the ramp top a grant adds nothing: never above")
+	assert(near(Tag.speedMult(true, 0, true), math.max(Config.IT_SPEED, 1 + Config.GRANT_BOOST)), "a granted holder at the start: the larger")
+	assert(near(Tag.speedMult(true, full, true), Tag.chaserBoost(full)), "at the ramp top a grant adds nothing: never above")
 	assert(Config.GRANT_BOOST == Config.RAMP_MAX, "the grant is the ramp's top (proposal §3: same size both ways)")
-	assert(near(Tag.speedMult(true, half, true), 1 + Config.GRANT_BOOST), "half ramp + grant = the grant, not the sum")
+	assert(near(Tag.speedMult(true, half, true), math.max(Tag.chaserBoost(half), 1 + Config.GRANT_BOOST)),
+		"half ramp + grant = the larger, not the sum")
 end
 
 do -- rule 51 (H23, endgame.md): the end phase, by count (the final two of a round that began with 3+) and by time
@@ -292,11 +305,12 @@ do -- rule 51 (H23): every living runner x END_PHASE_SPEED, the ramp and the gra
 	assert(near(Tag.speedMult(false, 0, false, true), E), "a runner in the end phase")
 	assert(near(Tag.speedMult(true, half, false, true), Tag.chaserBoost(half) * E), "the holder: ramp x end phase")
 	assert(near(Tag.speedMult(false, 0, true, true), (1 + Config.GRANT_BOOST) * E), "granted: grant x end phase")
-	assert(near(Tag.speedMult(true, full, true, true), (1 + Config.RAMP_MAX) * E), "the top: max(ramp, grant) x E")
-	assert(near(Tag.speedMult(true, half, true, true), (1 + Config.GRANT_BOOST) * E), "half ramp + grant: still max, x E")
+	assert(near(Tag.speedMult(true, full, true, true), Tag.topSpeedMult()), "the top: max(ramp, grant) x E")
+	assert(near(Tag.speedMult(true, half, true, true), math.max(Tag.chaserBoost(half), 1 + Config.GRANT_BOOST) * E),
+		"half ramp + grant: still max, x E")
 	-- and Movement holds it: the end-phase top speed is reached and held, the dash unscaled
 	local s = Movement.new(0, 0)
-	local top = (1 + Config.RAMP_MAX) * E
+	local top = Tag.topSpeedMult()
 	for _ = 1, 120 do
 		Movement.step(s, { moveX = 1, jumpPressed = false, jumpHeld = false, dashPressed = false, speedMult = top },
 			{ ground = 0 }, 1 / 60)
@@ -364,6 +378,21 @@ do -- H38 (rule 45 as rewritten): a dashing tagger sweeps; a dashing runner cann
 		"half a second apart: a rebuilt body, not a dash")
 	assert(not Tag.touchedBetween({ { t = 0.98, x = -far, y = 0, untrusted = true }, { t = 1.0, x = far, y = 0, iframe = true } }, target, 0.9, 1, 0),
 		"a step from an untrusted sample is no sweep")
+	-- H40: the dodge is Danzo's words, no wider: a runner dashing AWAY from the tagger that touches it is tagged; one
+	-- dashing AT (through) the tagger is not; both dashing is not. The dash's direction is from the spot it left (the
+	-- window starts at 0.97 so only the dashing samples can pair).
+	local away = { { t = 0.96, x = 2, y = 0 }, { t = 0.98, x = 4, y = 0, iframe = true }, { t = 1.0, x = 6, y = 0, iframe = true } }
+	local stand = { { t = 0.96, x = 0, y = 0 }, { t = 0.98, x = 0, y = 0 }, { t = 1.0, x = 0, y = 0 } }
+	assert(not Tag.dodges(away, 2, stand[2]) and Tag.touchedBetween(stand, away, 0.97, 1.0, 0.05),
+		"a runner dashing away from a touching tagger: tagged")
+	local at = { { t = 0.96, x = 6, y = 0 }, { t = 0.98, x = 3, y = 0, iframe = true }, { t = 1.0, x = 0.5, y = 0, iframe = true } }
+	assert(Tag.dodges(at, 3, stand[3]) and not Tag.touchedBetween(stand, at, 0.97, 1.0, 0.05), "dashing at the tagger: dodged")
+	local through = { { t = 0.96, x = 6, y = 0 }, { t = 0.98, x = 1, y = 0, iframe = true }, { t = 1.0, x = -2, y = 0, iframe = true } }
+	assert(not Tag.touchedBetween(stand, through, 0.97, 1.0, 0.05), "already past the tagger, same dash: still dodged")
+	local tdash = { { t = 0.96, x = 0, y = 0, iframe = true }, { t = 0.98, x = 0, y = 0, iframe = true }, { t = 1.0, x = 0, y = 0, iframe = true } }
+	assert(Tag.dodges(away, 3, tdash[3]) and not Tag.touchedBetween(tdash, away, 0.97, 1.0, 0.05),
+		"both dashing: dodged, whichever way")
+	assert(not Tag.dodges(stand, 3, stand[3]), "no i-frames, no dodge")
 	-- the dodge has a price: a dash's i-frames are a quarter of its cooldown at most
 	assert(Config.DASH_IFRAMES <= Config.DASH_COOLDOWN / 3, "a runner is untaggable for under a third of the time, mashing")
 end

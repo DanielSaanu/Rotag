@@ -6,7 +6,7 @@
 -- follows the living (H26, endgame.md §7.7): their mean, leaned toward the holder, plus a slow wander that never
 -- repeats, inside the map's window bounds. Everything it follows is the server's trusted record or its own clock, so
 -- no client can steer it beyond moving its own runner. The walls are not solid:
--- a living runner past one has WALL_GRACE seconds to get back in (reset once its whole body is back), and is eliminated
+-- a living runner past one has WALL_GRACE seconds outside IN ALL (H40: it refills at WALL_REFILL once its whole body is back), and is eliminated
 -- like a burn-out at 0. Pure Luau over plain tables, every clock passed in. The SERVER is the only caller of `open`
 -- and `step`, on its own position record; clients draw what MatchState carries. Tests: test/luau/walls.test.luau.
 local Config = require(script.Parent.Config)
@@ -24,6 +24,7 @@ export type State = {
 	seed: number, -- picks the wander's phases: a new round, a new path (the server's own clock; a test pins it)
 	left: { [number]: number }, -- living runners outside the walls: seconds of grace left (absent = inside)
 	paused: { [number]: boolean }, -- ... and whether that grace stood still on the last step (a hold or the tag freeze)
+	pool: { [number]: number }, -- H40: living runners back inside with grace still refilling: seconds held (absent = full)
 }
 
 -- `pos(id)` -> the runner's newest x on the server's record and whether that sample is trusted (MoveCheck, trust.md).
@@ -66,7 +67,7 @@ function Walls.open(r: Tag.Round, now: number, pos: Pos, bounds: Bounds?, seed: 
 		if x then far = math.max(far, math.abs(x - c)) end
 	end
 	local w: State = { round = r, started = now, x = c, hw0 = math.max(Config.WALL_START_MIN, far + Config.WALL_START_PAD),
-		vx = 0, lo = bounds and bounds.lo, hi = bounds and bounds.hi, seed = seed or now, left = {}, paused = {} }
+		vx = 0, lo = bounds and bounds.lo, hi = bounds and bounds.hi, seed = seed or now, left = {}, paused = {}, pool = {} }
 	w.x = Walls.within(w, c, w.hw0)
 	return w
 end
@@ -128,7 +129,8 @@ end
 -- runner is judged on its newest TRUSTED sample (an untrusted or missing sample changes nothing: a teleport back
 -- inside never resets a grace). Outside: the grace starts at WALL_GRACE and runs down, except while the runner is
 -- held (the holder's tag freeze, or `held(id)`: an item hold), so no hold plus a wall can kill a runner who could not
--- move; back inside (Walls.outside's hysteresis): it is cleared. Graces that reach 0 are eliminated in order: the one that ran out first, then the
+-- move; back inside (Walls.outside's hysteresis): what is left is kept and refills at WALL_REFILL per second up to
+-- WALL_GRACE (H40: before, it reset to full at once, so dipping out and back in for a few seconds never ran out). Graces that reach 0 are eliminated in order: the one that ran out first, then the
 -- holder, then join order; the round may end part-way, and nobody after that dies (Tag.eliminate refuses once over). Returns the ids eliminated, and
 -- whether anyone went out or came back in this frame (the server sends MatchState at once on either).
 function Walls.step(w: State, r: Tag.Round, now: number, dt: number, pos: Pos, held: ((number) -> boolean)?)
@@ -145,7 +147,10 @@ function Walls.step(w: State, r: Tag.Round, now: number, dt: number, pos: Pos, h
 	end
 	local changed = false
 	for id in w.left do
-		if not r.alive[id] then w.left[id] = nil end -- a leave, or eliminated some other way
+		if not r.alive[id] then w.left[id] = nil end
+	end
+	for id in w.pool do
+		if not r.alive[id] then w.pool[id] = nil end -- a leave, or eliminated some other way
 	end
 	for _, id in r.order do
 		if r.alive[id] then
@@ -153,15 +158,20 @@ function Walls.step(w: State, r: Tag.Round, now: number, dt: number, pos: Pos, h
 			if x and trusted ~= false then
 				local out = Walls.outside(w, now, x, w.left[id] ~= nil)
 				if out and w.left[id] == nil then
-					w.left[id], changed = Config.WALL_GRACE, true
+					w.left[id], w.pool[id], changed = w.pool[id] or Config.WALL_GRACE, nil, true
 				elseif not out and w.left[id] ~= nil then
-					w.left[id], changed = nil, true
+					w.pool[id], w.left[id], changed = math.max(0, w.left[id] :: number), nil, true
 				end
 			end
 			local frozen = r.it == id and Tag.frozen(r, now)
 			local still = frozen or (held ~= nil and held(id))
 			w.paused[id] = if w.left[id] ~= nil and still then true else nil -- told to clients: no sawtooth (QA round 1)
 			if w.left[id] ~= nil and not still then w.left[id] = (w.left[id] :: number) - dt end
+			local p = w.pool[id]
+			if p ~= nil then
+				p += Config.WALL_REFILL * dt
+				w.pool[id] = if p >= Config.WALL_GRACE then nil else p
+			end
 		end
 	end
 	local due = {}
