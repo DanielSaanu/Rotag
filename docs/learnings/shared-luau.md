@@ -137,3 +137,12 @@ A "used since the floor" flag on the new choice closed the loop and left every o
 rule spends something at a contact, drive the mashed-button case through the real step(), and compare the
 neighbours' numbers (bots, routes) per case, not one summary line: a shared random sequence moves them all.
 *(2026-11-22, handoff H42, `test/luau/wall_double.test.luau`, docs/systems/movement.md §3.)*
+
+**S25 — Every step function must survive dt == 0: Heartbeat really sends it.** Roblox's Heartbeat handed the server
+`dt == 0` 9 times in 30 s of Studio Play. Any `x / dt` (a velocity from a chord) is then 0 / 0 = NaN, and a NaN in
+carried state (a rope's `w`) never leaves. Roblox hides it: a part given a NaN CFrame sits at (0, -1e6, 0), so the
+body looks finite while the state is not; the error surfaces frames later somewhere innocent (a table index). Guard
+the division at its source (`if dt <= 0 then return end`), test every step at dt 0, and have the server check a
+simulated body's state is finite after each step (log once, reset) and isolate per-entity steps with `pcall`, so one
+bad entity cannot stop the frame for everyone.
+*(2026-11-22, handoff H43, `test/luau/zero_dt.test.luau`, docs/systems/bots.md §8.)*

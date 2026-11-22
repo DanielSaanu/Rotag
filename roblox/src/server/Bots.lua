@@ -40,6 +40,25 @@ local BOT_SEEN_MAX = 0.4
 local FELL_OUT = -60
 local DID_EVERY = 20 -- Studio only: seconds between one line per bot about what it did
 local studio = game:GetService("RunService"):IsStudio()
+-- H43: a non-finite number must never reach the planner or a Part (Roblox stores a NaN CFrame as (0, -1e6, 0), so the
+-- body LOOKS finite while the state is not). Each case is logged once per bot per kind, then the bot is reset.
+local function finite(v: number): boolean return v == v and v > -math.huge and v < math.huge end
+local warned: { [string]: boolean } = {}
+local function warnOnce(key: string, msg: string)
+	if warned[key] then return end
+	warned[key] = true
+	warn("[Rotag] bots: " .. msg)
+end
+local function dumpOf(t: any): string
+	local out = {}
+	for k, v in t do
+		if type(v) == "number" or type(v) == "boolean" or type(v) == "string" then
+			table.insert(out, ("%s=%s"):format(tostring(k), if type(v) == "number" then ("%.4g"):format(v) else tostring(v)))
+		end
+	end
+	table.sort(out)
+	return table.concat(out, " ")
+end
 
 local list: { [number]: any } = {}
 local count = 0
@@ -140,6 +159,12 @@ local goal: BotBrain.Goal = { mode = "seek", field = {}, x = 0, y = 0 }
 
 local function think(b: any, r: Tag.Round?, now: number, history: { [number]: { Tag.Sample } }, o: OrbRules.State?)
 	local mode, gx, gy, safe = BotMind.goal(b.mind, b.id, b.s, r, now, history, o)
+	if mode and gx and gy and not (finite(gx) and finite(gy)) then -- H43: never a NaN into the flood fill
+		warnOnce(("goal %d %s"):format(b.id, tostring(mode)), ("%d's %s goal is not finite: (%s, %s); at (%s, %s), backIn %s; idles"):format(
+			b.id, tostring(mode), tostring(gx), tostring(gy), tostring(b.s.x), tostring(b.s.y), tostring(Walls.backIn(b.id))))
+		b.mind.last = nil -- never replayed (BotMind.goal's react window)
+		mode = nil
+	end
 	if mode and gx and gy then
 		goal.mode, goal.x, goal.y, goal.safe = mode, gx, gy, safe
 		goal.field = BoxWorld.field(grid, gx, gy, b.field, b.queue)
@@ -208,8 +233,30 @@ local function stepBot(b: any, r: Tag.Round?, dt: number, now: number, history: 
 			end
 		end
 	end
+	if studio then -- H43: the frame before, to say what went non-finite (reused tables: no allocation)
+		b.prev = b.prev or {}
+		table.clear(b.prev)
+		for k, v in s do b.prev[k] = v end
+		b.prevRope = if s.rope then table.clone(s.rope) else nil
+		b.prevIn = b.prevIn or {}
+		table.clear(b.prevIn)
+		for k, v in input do b.prevIn[k] = v end
+	end
 	local ev = Movement.step(s, input, b.c, dt)
 	BoxWorld.move(world, s, dt)
+	if not (finite(s.x) and finite(s.y) and finite(s.vx) and finite(s.vy)) then
+		local mode = if r == nil or r.over then "lobby" elseif r.alive[id] then (if r.it == id then "it" else "runner")
+			else "ghost"
+		warnOnce("state " .. id, ("%d (%s) went non-finite, dt %.4f, plan %s; reset to the spawn"):format(id, mode, dt,
+			dumpOf(b.plan)))
+		if studio and b.prev then
+			print("[Rotag] bots: H43 before " .. dumpOf(b.prev) .. (if b.prevRope then " | rope " .. dumpOf(b.prevRope) else ""))
+			print("[Rotag] bots: H43 input " .. dumpOf(b.prevIn) .. " | contacts " .. dumpOf(b.c))
+			print("[Rotag] bots: H43 after " .. dumpOf(s) .. (if s.rope then " | rope " .. dumpOf(s.rope) else ""))
+		end
+		reset(b, Arena.SPAWN.X, Arena.SPAWN.Y)
+		return
+	end
 	if s.y < FELL_OUT then reset(b, Arena.SPAWN.X, Arena.SPAWN.Y) end
 	b.planT += dt
 	local e = b.pending
@@ -245,11 +292,18 @@ function Bots.move(r: Tag.Round?, dt: number, now: number, history: { [number]: 
 	dt = math.min(dt, MAX_DT)
 	for _, b in list do
 		b.aim = nil
+		-- H43: one bot's error must never stop the match (Match.step runs the judge, the fuse and the walls after this)
+		local ok, err
 		if dt > 1 / 45 then -- a slow frame: two half steps, so a fall never skips a deck
-			stepBot(b, r, dt / 2, now - dt / 2, history, o)
-			stepBot(b, r, dt / 2, now, history, o)
+			ok, err = pcall(stepBot, b, r, dt / 2, now - dt / 2, history, o)
+			if ok then ok, err = pcall(stepBot, b, r, dt / 2, now, history, o) end
 		else
-			stepBot(b, r, dt, now, history, o)
+			ok, err = pcall(stepBot, b, r, dt, now, history, o)
+		end
+		if not ok then
+			warnOnce("error " .. b.id .. tostring(err), ("%d errored: %s; it idles and is reset"):format(b.id, tostring(err)))
+			reset(b, Arena.SPAWN.X, Arena.SPAWN.Y)
+			b.nextThink = now + 1
 		end
 	end
 end

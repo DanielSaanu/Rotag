@@ -340,7 +340,7 @@ function Movement.step(s: State, input: Input, c: Contacts, dt: number): Events
 		s.vx = (if (input.holdDir or 0) ~= 0 then sign(input.holdDir :: number) else s.facing)
 			* Config.RUN_SPEED * Config.STUMBLE_SPEED
 	elseif hold == "freeze" then
-		s.vx = approach(vx0, 0, math.abs(vx0) * dt / math.max(input.holdLeft or dt, dt))
+		s.vx = approach(vx0, 0, math.abs(vx0) * dt / math.max(input.holdLeft or dt, dt, 1e-6)) -- H43: never 0 / 0
 	end
 
 	-- 6. Surfaces stop what pushes into them, so a stored speed never drives the part into a wall or a roof.

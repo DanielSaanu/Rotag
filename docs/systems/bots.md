@@ -121,6 +121,40 @@ kinds (the Studio line now counts ground jumps apart from double and wall jumps)
 took orbs, set traps, froze each other and tagged each other and the idle player. Seen on screen later the same
 day (named, tagged, swinging, haunting as ghosts); whether they are fun to play is Danzo's verdict.
 
+## 8. A frame of no time (H43, 2026-11-22)
+
+**What froze the match.** Roblox's `Heartbeat` can hand the server a frame with `dt == 0` (measured in Studio Play:
+9 of 6994 server frames in 30 s, plus 21 under 1 ms). A bot on a TAUT rope that got one went NaN:
+`Grapple.swing` sets the body's velocity to (the chord to the new rope point) / dt = 0 / 0, `Grapple.stopped` carried
+it into the rope's `w`, and from then on the bot's whole state was NaN for good. Roblox stores a part given a NaN (or
+infinite) CFrame at **(0, -1e6, 0)**, so the body, and the history `Match.sample` reads from it, LOOKED finite: that is
+QA round 2's "stashed ghost at y -1000000" and its "the bot bodies' positions were finite". Once the end phase's walls
+counted that x = 0 as outside, `BotMind.want`'s way back in (`"seek", Walls.backIn(id), s.y`) handed the NaN `s.y` to
+`BoxWorld.field`, which threw on `out[NaN] = 0` every frame; `Bots.move` runs first in `Match.step`, so the judge, the
+fuse, the walls and MatchState all stopped. (Before the walls, the same bot's think throws in `BotBrain.rate`'s
+`BoxWorld.far` instead.) Caught in Studio by the new guard's log on the first Play, Ninja King on anchor 7:
+`before ... vx=47.87 vy=1.923 x=104.8 y=36.63 | rope ... len=15.39 w=3.121`, `dt 0.0000`, `after ... x=-nan(ind)`.
+Walls, BotMind, the samples and `m.last` were all innocent.
+
+**The fix.** `Grapple.swing` returns at once when `dt <= 0` (a step of no time moves nothing; every caller: bots,
+the tutorial's target, the BotBrain rollouts and a player's own client). The ice freeze's slide in `Movement.step`
+divided by `max(holdLeft, dt)`, also 0 / 0 at dt 0 with the hold over: now `max(holdLeft, dt, 1e-6)`.
+`test/luau/zero_dt.test.luau` replays the exact caught frame (it failed before the fix: "y non-finite") and steps the
+run, the air, a dash, a pad glide, every hold and a slack rope at dt 0 and 1e-9.
+
+**The guards (server/Bots), so one bad bot can never freeze a match again:**
+- after each step, a non-finite x, y, vx or vy: `warn` once per bot (id, role, dt, plan), in Studio also the state
+  and input of the frame before and after, then the bot is reset to the spawn;
+- a non-finite goal in `think`: `warn` once (id, mode, goal, s.x/s.y, `Walls.backIn`), the plan is `IDLE` and the
+  goal is not replayed;
+- each bot's step runs in `pcall`: an error is warned once per message, the bot is reset and waits 1 s to think.
+The Studio-only "frame before" copy is ~40 scalar writes per bot per frame, nothing outside Studio.
+
+**Seen after the fix (Studio, 2026-11-22, one player idle, three bots):** lobby -> `match 1 round 1 of 3` ...
+`round 3 over: -1002 > -1001 > -1000 > 8061215879`, `match 1 over: winner -1002`, then the Session remote said
+`lobby` and the player stood in the lobby at x 576. Every round reached the end phase with the walls closing, ghosts
+placed fixtures and pads, bots swung; the server log had no error and no guard line in 388 lines.
+
 ## Expansion: deficits at scale
 
 - **No aimed dodge** (a bot never dashes through an ice beam on purpose) and no chat.

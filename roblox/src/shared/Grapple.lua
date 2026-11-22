@@ -111,6 +111,9 @@ end
 -- It goes slack again when the rope would have to push (len w^2 + g cos a < 0: too slow above the anchor's side).
 -- The rope reels in at GRAPPLE_REEL while longer than its target. The swing never passes GRAPPLE_MAX_SPEED.
 function Grapple.swing(s: any, moveX: number, dt: number)
+	-- H43: Heartbeat can hand a frame dt == 0 (Studio: 9 in 30 s). The taut step below sets the velocity to chord / dt,
+	-- 0 / 0 = NaN, and the NaN then lives in the rope's w for good. A step of no time moves nothing: keep it all.
+	if dt <= 0 then return end
 	local r: Rope = s.rope
 	if r.give == nil and r.len > r.target then r.len = math.max(r.target, r.len - Config.GRAPPLE_REEL * dt) end
 	local g, cap = Config.GRAVITY, Config.GRAPPLE_MAX_SPEED
