@@ -265,8 +265,8 @@ local function sample(now: number)
 				x, y = p.X, p.Y
 			end
 			local s: Tag.Sample = { t = now, x = x, y = y, iframe = Snapshots.iframed(id, now) or nil } -- H19: rule 45
-			MoveGuard.observe(id, root, s) -- the speed check (H12, trust.md): may mark s untrusted for a claim
-			table.insert(h, s)
+			-- The speed check (H12, trust.md): may mark s untrusted for a claim; H44: a NaN or off-world s is never stored
+			if MoveGuard.observe(id, root, s) then table.insert(h, s) end
 			if #h > HISTORY then table.remove(h, 1) end
 		end
 	end
@@ -346,6 +346,7 @@ function Match.start(tagName: string)
 			history[id] = {}
 			local p = root.Position
 			Snapshots.bodyBuilt(id, p.X, p.Y, os.clock()) -- in-flight snapshots about the old body are dropped
+			MoveGuard.bodyBuilt(id, root, p.X, p.Y, os.clock()) -- H44: the speed check starts where the SERVER put it
 		end
 	end)
 	Session.start(remote("Session"), remote("Menu"), { present = present, drop = drop, spawn = Arena.SPAWN,

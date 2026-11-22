@@ -63,6 +63,8 @@ to (`roblox/default.project.json`).
   maths, release, the speed cap instead of a trust allowance, what was seen. Before any grapple or anchor change.
 - [`docs/systems/trust.md`](docs/systems/trust.md): movement trust: why there is no movement remote, the server's speed
   check on each runner, what a violation does, what it cannot catch. Before any remote, anti-cheat or movement-speed change.
+- [`docs/systems/trust-bounds.md`](docs/systems/trust-bounds.md): H44, a client parking its body at NaN, -1e6 or far away:
+  what Studio showed, the bounds, why each check starts where the server built the body. Before any MoveGuard or sample change.
 - [`docs/systems/netcode.md`](docs/systems/netcode.md): research (H13): the one-PC test rig throttle, why physics replication
   stutters a CFrame-driven body, the snapshot-interpolation recipe, lag compensation and the early tag. Before any netcode change.
 - [`docs/systems/art-pipeline.md`](docs/systems/art-pipeline.md): the node pipeline (draw, compose, pack, upload).

@@ -91,6 +91,20 @@ function MoveCheck.new(x: number, y: number, t: number): State
 	}
 end
 
+-- H44 (trust.md §12): may a sample be believed at all? Finite and inside the world's bounds. A client owns its body,
+-- so it can park it anywhere: Roblox turns a NaN CFrame into (0, -1e6, 0), a finite far value is kept as it is. A
+-- sample that fails this never reaches the check, the tag history or a snap-back spot (MoveGuard drops it).
+function MoveCheck.inBounds(x: number, y: number): boolean
+	return x == x and y == y and math.abs(x) <= Config.MOVE_BOUND_X
+		and y >= Config.MOVE_BOUND_LOW and y <= Config.MOVE_BOUND_HIGH
+end
+
+-- An out-of-bounds sample at `t` (not fed to step: the check keeps the last believable position). It counts as a
+-- violation: suspect until MOVE_CLEAR_TIME passes clean, and the snap-back spot stays where it was.
+function MoveCheck.reject(s: State, t: number)
+	s.suspect, s.clearAt = true, math.max(s.clearAt, t + Config.MOVE_CLEAR_TIME)
+end
+
 -- One server sample. Returns ok, and on a violation the axis ("x", "up", "down") and how many studs over budget it
 -- went (the worst axis). After a violation the spent budget is set to 0, not left negative, so one teleport does not
 -- poison every later step; the runner stays suspect until MOVE_CLEAR_TIME passes with no further violation.

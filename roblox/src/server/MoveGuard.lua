@@ -51,43 +51,75 @@ local function checkOwner(player: Player, root: BasePart, g, sample): boolean
 	return set
 end
 
--- One sample Match just recorded for runner `id` from `root`. Marks `sample.untrusted` while that runner is suspect.
-function MoveGuard.observe(id: number, root: BasePart, sample: { t: number, x: number, y: number, untrusted: boolean? })
+local function fresh(root: BasePart, x: number, y: number, t: number, g)
+	return { root = root, check = MoveCheck.new(x, y, t),
+		snapped = if g then g.snapped else -math.huge, warned = if g then g.warned else -math.huge,
+		ownerWarned = if g then g.ownerWarned else -math.huge, handbacks = if g then g.handbacks else 0,
+		logged = if g then g.logged else -math.huge }
+end
+
+-- Rebuild the body at the check's last trusted spot, at most once per MOVE_SNAP_GAP. True when it will.
+local function snapBack(player: Player, g, now: number): boolean
+	if not (Config.MOVE_SNAP_BACK and now - g.snapped >= Config.MOVE_SNAP_GAP) then return false end
+	g.snapped = now
+	-- Deferred: Match is walking its runner table when it calls this; the new body arrives through its tag signal.
+	task.defer(Runners.spawn, player, Vector3.new(g.check.trustX, g.check.trustY, 0))
+	return true
+end
+
+-- H44: the server just built runner `id` the body `root` at (x, y) (Match's tag signal, before the client owns it).
+-- The fresh check starts HERE, not at the first sample: seen in Studio, a cheat that parks every new body the moment
+-- it arrives made that first sample (0, -1e6), the check trusted it, and the next snap-back rebuilt the body there,
+-- under the destroy height: the body went, and the round ended as "everybody left".
+function MoveGuard.bodyBuilt(id: number, root: BasePart, x: number, y: number, t: number)
+	if not Players:GetPlayerByUserId(id) or not MoveCheck.inBounds(x, y) then return end
+	guards[id] = fresh(root, x, y, t, guards[id])
+end
+
+-- One sample Match is about to record for runner `id` from `root`. Marks `sample.untrusted` while that runner is
+-- suspect. Returns false when the sample must NOT be stored (H44: not finite, or outside the world's bounds).
+function MoveGuard.observe(id: number, root: BasePart, sample: { t: number, x: number, y: number, untrusted: boolean? }): boolean
 	local player = Players:GetPlayerByUserId(id)
-	if not player then return end -- the server's own runners (the Studio dummy, a stand-in) are not checked
+	if not player then return MoveCheck.inBounds(sample.x, sample.y) end -- the server's own runners: not checked
 	local g = guards[id]
+	if not MoveCheck.inBounds(sample.x, sample.y) then
+		sample.untrusted = true
+		if g and g.root == root then
+			MoveCheck.reject(g.check, sample.t)
+			local snap = snapBack(player, g, sample.t)
+			if sample.t - g.warned >= WARN_GAP then
+				g.warned = sample.t
+				warn(("[Rotag] move: %s (%d) out of bounds at (%s, %s), sample dropped; %s"):format(player.Name, id,
+					tostring(sample.x), tostring(sample.y), if snap then ("snapped back to (%.1f, %.1f)"):format(
+						g.check.trustX, g.check.trustY) else "untrusted for tags"))
+			end
+		end
+		return false
+	end
 	if not g or g.root ~= root then
-		-- A body the server just built (join, round start, respawn, snap-back): where the server put it is trusted.
-		guards[id] = { root = root, check = MoveCheck.new(sample.x, sample.y, sample.t),
-			snapped = if g then g.snapped else -math.huge, warned = if g then g.warned else -math.huge,
-			ownerWarned = if g then g.ownerWarned else -math.huge, handbacks = if g then g.handbacks else 0,
-			logged = if g then g.logged else -math.huge }
-		return
+		-- A body with no bodyBuilt (a fallback): its first believable sample starts a fresh, trusted check.
+		guards[id] = fresh(root, sample.x, sample.y, sample.t, g)
+		return true
 	end
 	if checkOwner(player, root, g, sample) then
 		-- The server's copy will now jump from where the wrong owner held it to where the player really is. That jump
 		-- is the server's own repair, not the client's doing: restart the check here instead of punishing it.
 		g.check = MoveCheck.new(sample.x, sample.y, sample.t)
-		return
+		return true
 	end
 	local c = g.check
 	local ok, axis, over = MoveCheck.step(c, sample.x, sample.y, sample.t)
 	if c.suspect then sample.untrusted = true end
-	if ok then return end
+	if ok then return true end
 	local now = sample.t
-	local snap = Config.MOVE_SNAP_BACK and now - g.snapped >= Config.MOVE_SNAP_GAP
+	local snap = snapBack(player, g, now)
 	if now - g.warned >= WARN_GAP then
 		g.warned = now
 		warn(("[Rotag] move: %s (%d) over the %s speed limit by %.1f studs at (%.1f, %.1f); %s"):format(player.Name, id,
 			tostring(axis), over or 0, sample.x, sample.y, if snap then ("snapped back to (%.1f, %.1f)"):format(
 				c.trustX, c.trustY) else "untrusted for tags"))
 	end
-	if snap then
-		g.snapped = now
-		local at = Vector3.new(c.trustX, c.trustY, 0)
-		-- Deferred: Match is walking its runner table when it calls this; the new body arrives through its tag signal.
-		task.defer(Runners.spawn, player, at)
-	end
+	return true
 end
 
 function MoveGuard.forget(id: number)

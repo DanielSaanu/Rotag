@@ -27,25 +27,12 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-### H44 — Can a client's NaN or parked position freeze a match the way H43's bot did? — 2026-11-22 19:30 — OPEN
-- **Trigger:** 3 (what the server trusts from a client; a cheating client)
-- **Doc:** `docs/systems/trust.md`; `server/MoveGuard.lua`, `shared/MoveCheck.lua`; H43 in `docs/systems/bots.md` §8
-- **Observed:** H43 found that Roblox parks a part given a NaN/inf CFrame at (0, -1e6, 0), and that a NaN reaching
-  the walls or BoxWorld froze `Match.step` for everyone. The cloud session read MoveGuard and MoveCheck at d118997 and
-  found no explicit non-finite check on client-owned positions. A client owns its body (network ownership), so a
-  cheater can set its root CFrame to NaN, or to any finite far value.
-- **Evidence:** H43's report (bots.md §8); `server/Bots.lua` finite guards cover bots only; the Snapshot integer
-  decode already bounds what the snapshot remote carries.
-- **Routine session's read (guess):** the speed check sees a huge finite jump and snaps the body back, so it's covered;
-  but anything that reads the body's position before the check (samples, walls, Tag history) may still take a NaN or
-  a -1e6 for one frame.
-- **Decision needed:** test it in Studio on one client (set the local root CFrame to NaN, then to (0, -1e6, 0), from
-  the Client datamodel; watch the server's Output, MatchState and whether the round keeps running); if anything breaks
-  or stalls, guard it server-side (a non-finite or out-of-bounds sample is untrusted, never stored) with a test;
-  record the result in trust.md either way.
-- **Blocked routine work:** none. Danzo is gaming: one Play session, execute_luau only, Rotag's Studio only.
-
 ## Resolved
+
+### H44 — Can a client's NaN or parked position freeze a match the way H43's bot did? — 2026-11-22 19:30 — RESOLVED
+- **Resolved 2026-11-22 (heavy, Opus; trigger 3):** no freeze (no NaN reaches the server: Roblox parks it at
+  (0, -1e6) on the client), but a client parking every new body there ended the match; now an out-of-bounds sample is dropped and each check starts
+  where the server built the body → recorded in `docs/systems/trust-bounds.md` (trust.md §12), learnings N20.
 
 ### H43 — A NaN goal in the bot planner freezes a live match before the podium — 2026-11-22 18:00 — RESOLVED
 - **Resolved 2026-11-22 (heavy, Opus; triggers 2, 4, 6):** root cause found in Studio: a Heartbeat `dt == 0` on a bot's

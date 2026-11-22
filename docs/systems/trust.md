@@ -298,3 +298,10 @@ the cap above 120 raises the x rate for everyone. The reasoning and the measurem
 QA round 1 (2026-11-01): the snapshot's anchor byte is cosmetic and unvalidated; a modified client can draw a
 fake rope (a ghost too). Harmless: nothing reads it but the other screens' drawing. If it ever matters, the server can
 check the byte against the map's anchor list and the sender's living state before relaying.
+
+## 12. A parked or NaN position (H44, 2026-11-22): out of bounds is never stored
+
+No NaN reaches the server (Roblox parks a NaN body at (0, -1e6) on the client), but a cheat parking every new body
+there made the fresh check trust it and the snap-back rebuild the body under the destroy height: the match ended. Now
+a non-finite or out-of-bounds sample is dropped (`MoveCheck.inBounds`) and each check starts where the server built
+the body (`MoveGuard.bodyBuilt`). The Studio runs and the reasoning: [trust-bounds.md](trust-bounds.md).

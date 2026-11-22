@@ -175,6 +175,9 @@ Config.MOVE_BURST_TIME = 0.2      -- slack per axis, in seconds of that axis's t
 Config.MOVE_CLEAR_TIME = 1        -- clean seconds after a violation before that runner's samples count for a tag again
 Config.MOVE_SNAP_BACK = true      -- a violation rebuilds the body at its last trusted spot (false: untrusted only)
 Config.MOVE_SNAP_GAP = 0.5        -- seconds between two snap-backs of one runner (a cheat looping cannot spin the server)
+Config.MOVE_BOUND_X = 2047        -- H44: a sample past |x| this, or not finite, is never stored (the snapshot's own range;
+Config.MOVE_BOUND_LOW = -400      -- the world is x -1022..1520); nor below this y (Roblox destroys a part under -500 and
+Config.MOVE_BOUND_HIGH = 2047     -- parks a NaN one at -1e6) or above this one. trust.md §12
 
 Config.COYOTE_TIME = 0.1          -- rule 14
 Config.JUMP_BUFFER = 0.08

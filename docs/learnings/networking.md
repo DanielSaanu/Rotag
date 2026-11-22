@@ -140,3 +140,13 @@ with its rewind, refused 0 of 9 claims at 4G and 3G latency and 0 in a two-clien
 never sent (the hand was a stud shorter than the drawn sprite) or the dash dodge doing what it was told. Widening the
 grace, the research's first suggestion, would have bought a cheat studs and fixed nothing. *(2026-11-22, handoff
 H40, `client/Tagging` close-pass log, `test/luau/chase_sim.luau`.)*
+
+
+**N20 — A client-owned position is checked from where the SERVER put the body, and an impossible one is never
+stored.** "The first sample of a new body is where the server built it" is a race the client can win: it can write
+its body the moment it arrives, before the server's first read. Start each check at the server's own build spot,
+and drop (never store, never step, never adopt as a snap-back spot) any sample that is not finite or is outside the
+world's bounds; the bounds sit above Roblox's destroy height, so a snap-back can always build a body. In H44 a client
+parking every body at (0, -1e6) made the check trust it, the snap-back rebuilt the body under the destroy height and
+the match ended "everybody left"; NaN itself never arrived (Roblox parks it on the client first). *(2026-11-22,
+handoff H44, `server/MoveGuard` `bodyBuilt`, `MoveCheck.inBounds`, `test/luau/move_bounds.test.luau`.)*

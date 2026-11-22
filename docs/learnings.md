@@ -1,6 +1,6 @@
 # Learnings
 
-**Created:** 2026-10-09 · **Last updated:** 2026-11-22 (H40: N19, A9, T19; H41: S23; H42: S24; H43: S25). 2026-11-16 (H31: S21, S22, N17, T17, A8). 2026-11-11 (H29: S19; H30: S20). 2026-11-07 (H27: S17, T16; H28: S18). 2026-11-02 (grapple QA: T14; H26: S15, T15, S16). 2026-11-01 (H25: S14, N16; H24: S13, T13)
+**Created:** 2026-10-09 · **Last updated:** 2026-11-22 (H40: N19, A9, T19; H41: S23; H42: S24; H43: S25; H44: N20). 2026-11-16 (H31: S21, S22, N17, T17, A8). 2026-11-11 (H29: S19; H30: S20). 2026-11-07 (H27: S17, T16; H28: S18). 2026-11-02 (grapple QA: T14; H26: S15, T15, S16). 2026-11-01 (H25: S14, N16; H24: S13, T13)
 
 Rules that **generalise** — things a session got wrong once and should never get wrong again. One-off typos and
 trivia stay in the QA goals file or the commit message; they do not earn a line here.
@@ -30,7 +30,7 @@ format, its world sim) were left behind.
 
 - [`A — Art`](learnings/art.md): **A** — A1, …, A9
 - [`S — Shared Luau`](learnings/shared-luau.md): **S** — S1, …, S25
-- [`N — Networking and fairness`](learnings/networking.md): **N** — N1, …, N19
+- [`N — Networking and fairness`](learnings/networking.md): **N** — N1, …, N20
 - [`T — Tooling`](learnings/tooling.md): **T** — T1, …, T19
 - [`G — Git and generated files`](learnings/git.md): **G** — G1, …, G4
 - [`Q — QA loop and review`](learnings/qa.md): **Q** — Q1, …, Q5
