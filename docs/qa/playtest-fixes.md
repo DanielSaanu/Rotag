@@ -22,7 +22,7 @@ target:
 - "perhaps add a settings to use arrows instead of the joystick"
 
 The question: **does a new player on a phone or a keyboard tag people when they touch them, feel IT can catch a good
-runner, understand the final phase and the ghosts, and learn every move in under two minutes without reading?**
+runner, understand the final phase and the ghosts, and learn every move in under two minutes without reading, and want to come back?**
 
 ## Goals and rubric (each scored 0-10; pass = average >= 8.0, nothing below 7, no blocker)
 
@@ -35,7 +35,11 @@ runner, understand the final phase and the ghosts, and learn every move in under
 | 5 | **The grapple explains itself.** | Anchors look hookable. The GRAPPLE button says why it's dimmed (no anchor in reach) or the anchor in range lights up. Every map has anchors where a player would look for one. | A first-time player presses GRAPPLE, nothing happens, and they can't tell why. |
 | 6 | **A tutorial that teaches by doing.** | A short, skippable, guided run (practice room or first join): run, jump, double jump onto a ledge, wall jump, dash, grapple, then "you are IT: tag the bot". One verb at a time, under ~2 minutes, never a wall of text. Phone and keyboard prompts. | It's text cards only, can't be skipped, or leaves out IT or the double jump onto a platform. |
 | 7 | **Arrow buttons option.** | A setting swaps the touch stick for left/right arrow buttons. It's remembered and works in a match. | Missing, or it breaks the stick for others. |
-| 8 | **Nothing broke.** | `npm test` and `npm run lint:luau` are green, the Rojo tree only grew, the line ceiling holds, and a full match runs lobby -> podium -> lobby. | Any regression in a full match. |
+| 8 | **Fun, and you come back.** Danzo: "general playability and enjoyment and engagement and returning players" (retention / replayability). | A match is fun start to finish with no dead time. The player always has a goal (catch, escape, survive the walls, a coin or locker unlock in reach). After the podium they want to queue again, and there's a reason to return tomorrow (coins, the wheel, the locker, something new to unlock). The reviewer names what pulled them back. | Dead stretches, a match that feels the same every time, or nothing to want after the podium. |
+| 9 | **Nothing broke.** | `npm test` and `npm run lint:luau` are green, the Rojo tree only grew, the line ceiling holds, and a full match runs lobby -> podium -> lobby. | Any regression in a full match. |
+
+**Order (Danzo, 2026-11-22):** the normal `/qa-loop` on this file. The four-persona round is parked (he's gaming
+on the PC, which was low on memory): `playtest-fixes-personas.md`.
 
 ## Evidence the builder supplies each round
 
