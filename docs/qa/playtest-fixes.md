@@ -38,8 +38,8 @@ runner, understand the final phase and the ghosts, and learn every move in under
 | 8 | **Fun, and you come back.** Danzo: "general playability and enjoyment and engagement and returning players" (retention / replayability). | A match is fun start to finish with no dead time. The player always has a goal (catch, escape, survive the walls, a coin or locker unlock in reach). After the podium they want to queue again, and there's a reason to return tomorrow (coins, the wheel, the locker, something new to unlock). The reviewer names what pulled them back. | Dead stretches, a match that feels the same every time, or nothing to want after the podium. |
 | 9 | **Nothing broke.** | `npm test` and `npm run lint:luau` are green, the Rojo tree only grew, the line ceiling holds, and a full match runs lobby -> podium -> lobby. | Any regression in a full match. |
 
-**Order (Danzo, 2026-11-22):** one experimental four-persona round first (`playtest-fixes-personas.md`), then the
-normal `/qa-loop` on this file.
+**Order (Danzo, 2026-11-22):** the normal `/qa-loop` on this file. The four-persona round is parked (he's gaming
+on the PC, which was low on memory): `playtest-fixes-personas.md`.
 
 ## Evidence the builder supplies each round
 

@@ -1,5 +1,9 @@
 # Experimental round: four persona reviewers in one match (playtest fixes)
 
+**PARKED, not run (Danzo, 2026-11-22 14:55): "skip it, I'm playing Apex while you work, just do it like you normally
+would".** The Roblox Player had crashed from low memory on the shared PC (local session, Player log), and four
+clients plus a server would squeeze it more. Kept for a time the PC is free.
+
 **Danzo (2026-11-22):** "have some qa reviewers play and each one should act like a player who was most frustrated
 by one of those points there should be 4 reviewers they should all play together in one match by spinning up
 multiple sessions in roblox and after the match they should then write a review this is an experimental method try
