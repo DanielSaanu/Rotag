@@ -53,20 +53,21 @@ local function rebuild()
 			-- Only the map's own blocks count (QA r3: a runner or a ghost piece under the anchor must not become its floor).
 			local map = workspace:FindFirstChild("Map")
 			local hit = nil
-			if map then
+			local none = part:GetAttribute("NoFloor") == true -- H41: the tutorial's anchor (server/Course): no map under it
+			if map and not none then
 				local p = RaycastParams.new()
 				p.FilterType = Enum.RaycastFilterType.Include
 				p.FilterDescendantsInstances = { map }
 				hit = workspace:Raycast(part.Position, Vector3.new(0, -FLOOR_RAY, 0), p)
 			end
-			local a = { x = part.Position.X, y = part.Position.Y, id = id, floor = if hit then hit.Position.Y else nil }
+			local a = { x = part.Position.X, y = part.Position.Y, id = id, floor = if hit then hit.Position.Y else nil, none = none }
 			table.insert(anchors, a)
 			byId[id] = a
 		end
 	end
 	pick = nil
 	local missing = false
-	for _, a in anchors do if a.floor == nil then missing = true end end
+	for _, a in anchors do if a.floor == nil and not (a :: any).none then missing = true end end
 	if missing and floorTries < FLOOR_TRIES and not floorRetryPending then
 		floorTries += 1
 		floorRetryPending = true

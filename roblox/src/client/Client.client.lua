@@ -29,6 +29,7 @@ local Grapple = require(script.Parent:WaitForChild("Grapple")) -- H25: anchors, 
 local Present = require(script.Parent:WaitForChild("Present")) -- H31: the menu, the cards, sound and punch (ui.md)
 local Fx = require(script.Parent:WaitForChild("Fx")) -- H31: the camera's shake
 local Lobby = require(script.Parent:WaitForChild("Lobby")) -- H37: the walk-in lobby's still camera (lobby.md)
+local Tutorial = require(script.Parent:WaitForChild("Tutorial")) -- H41: the course's lessons (tutorial.md)
 
 local player = Players.LocalPlayer
 local MAX_DT = 1 / 20 -- a hitch must not turn into one giant step through a wall
@@ -139,11 +140,12 @@ RunService.PreSimulation:Connect(function(dt: number)
 		input = { moveX = 0, jumpPressed = false, jumpHeld = false, dashPressed = false, touch = input.touch }
 		s.vx, s.dashTime = 0, 0 -- a dash in progress ends too
 	end
-	input.speedMult = Tagging.speedMult(Place.grantLeft(player.UserId) > 0)
+	input.speedMult = Tutorial.speedMult(s.x, Tagging.speedMult(Place.grantLeft(player.UserId) > 0)) -- H41: IT's edge
 	Place.frame(input, s, player.UserId) -- the rotate press, and a pad's launch on entering one
 	-- H25: the aim assist's anchor; a ghost's grapple input was its rotate (above) and never hooks (rule 37)
 	Grapple.frame(input, s, c.character, c.root, Tagging.ghost(player.UserId) == nil, SideCamera.view())
 	local ev = Movement.step(s, input, contacts, dt)
+	Tutorial.moved(s, ev) -- H41: the lesson rules and the touch on the target
 	-- Physics can run more than once between two draws: keep every event until the sprite has reacted to it.
 	for _, p in { c.pending, c.toSend } do
 		if ev.landed then p.landed = math.max(p.landed or 0, ev.landed) end

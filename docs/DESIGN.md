@@ -160,6 +160,9 @@ Moves should hand speed off to each other:
 *Built (H31, 2026-11-16, trials; [session.md](systems/session.md), [bots.md](systems/bots.md)): 31 bots fill a round; 32 a free-run lobby; 33 three
 rounds scored 4 / 2 / 1 / 0; 34 a podium; 36 coins buy cosmetics only. Not built: 35. **Rule 36 as Danzo read it
 2026-11-16 (H35):** the kit and today's items stay free for all; ability rolls may add SPECIAL items, built and off ([session.md §9](systems/session.md)).*
+*H41 (2026-11-22, rules 18 and 32): a tutorial course that teaches by doing, one move per room, then "tag the runner";
+a TUTORIAL door, and a first join (saved profile, no match finished) starts there with SKIP up. No rule changed
+([tutorial.md](systems/tutorial.md)).*
 
 ### Ghosts, pickups and abilities, adopted 2026-10-19 (H16, replacing H15's rules 37-41)
 

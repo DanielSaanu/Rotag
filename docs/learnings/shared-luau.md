@@ -120,3 +120,11 @@ solid tile (distance: "unreachable"); minding the walls only at the plan's end l
 times. Each was found by printing every plan's score at one bad decision, not by staring at the formula. Score the
 thing the game counts (a touch, soonest), and trace one decision before trusting a tuning.
 *(2026-11-16, handoff H31, `BotBrain.rate`, `BoxWorld.far`.)*
+
+**S23 — Before a room is built to NEED a move, measure what every other move already reaches.** In this kit one jump
+peaks at 14.25 studs and carries 31 across, two carry 55, two and a dash 76, a swing about 40: no pit can need the
+grapple, and none can need the dash outright. And Movement resolves a second jump press beside a wall as a wall
+kick, so a tall solid ledge throws a beginner off it unless they take off far enough back. Drive the room through
+the real Movement with a sweep of beginner timings (jump spot x second press), count the ways through without the
+move, and when geometry cannot force a move, check the move itself (a hook and a let-go), not a crossing.
+*(2026-11-22, handoff H41, `test/luau/tutorial.test.luau`, docs/systems/tutorial.md §3.)*

@@ -19,6 +19,7 @@ A player lands **in the lobby with a body**, not on a title screen. Every choice
 | **PRACTICE** | upstairs, left deck | ice blue | a match with bots only, 3-2-1 and go; pays nothing |
 | **HOST A ROOM** | upstairs, right deck | pink | a private room with a 4-digit code; you are its host |
 | **ENTER A CODE** | upstairs, right deck | pink | a number pad; the code of a friend's room takes you there |
+| **TUTORIAL** (H41) | downstairs, right of QUICK MATCH | white | the tutorial course, one move per room, then "tag the runner" ([tutorial.md](tutorial.md)); a first join starts there |
 
 Upstairs is two jumps, at either END of the lobby: a solid step against the wall under an UP sign (jump onto it
 from beside it), then the deck, which has 8 studs of plain landing before its first door (never beside

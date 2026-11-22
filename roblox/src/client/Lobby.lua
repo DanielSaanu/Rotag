@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
 local Rules = require(Shared:WaitForChild("Lobby"))
+local Course = require(Shared:WaitForChild("Tutorial")) -- H41: the course is off the round's screen too
 local Ui = require(script.Parent:WaitForChild("Ui"))
 local Flow = require(script.Parent:WaitForChild("Flow"))
 local Menu = require(script.Parent:WaitForChild("Menu"))
@@ -20,6 +21,7 @@ local C = Ui.C
 local PINK, WHITE = Color3.fromRGB(255, 111, 181), Color3.fromRGB(238, 241, 255)
 local me = 0
 local area: string? = nil
+local onCourse = false
 local dwell = Rules.newDwell()
 local last = os.clock()
 local lastBump: string? = nil
@@ -34,8 +36,8 @@ local function rgb(c: { number }): Color3 return Color3.fromRGB(c[1], c[2], c[3]
 local function has(list: any, id: number): boolean return type(list) == "table" and table.find(list, id) ~= nil end
 local function upper(id: number?): string return string.upper(Flow.nameOf(id)) end
 
--- Is the local runner in the lobby or a room (not the arena)?
-function Lobby.here(): boolean return area ~= nil end
+-- Is the local runner in the lobby, a room or the tutorial course (not the arena)?
+function Lobby.here(): boolean return area ~= nil or onCourse end
 
 -- The still camera for a runner at (x, y): the point to centre on and the studs of world to show top to bottom, or
 -- nil in the arena.
@@ -245,6 +247,7 @@ function Lobby.frame(pos: Vector3?)
 	last = now
 	Callout.update()
 	area = if pos then Rules.areaAt(pos.X) else nil
+	onCourse = pos ~= nil and Course.inCourse(pos.X)
 	if mine and now - mineAt > 20 then mine = nil end
 	local a = area
 	if not (a and pos) then -- the arena: the round's own HUD speaks
@@ -252,7 +255,7 @@ function Lobby.frame(pos: Vector3?)
 		if wasHere and pos then Menu.close() end -- taken into a match with the locker open: the round, not the shop
 		wasHere = false
 		Callout.dock(false)
-		Callout.pill(nil)
+		if not onCourse then Callout.pill(nil) end -- the course's pill is client/Tutorial's (H41)
 		Callout.caption(nil)
 		Callout.fill(nil)
 		Callout.count(nil)

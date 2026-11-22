@@ -26,6 +26,7 @@ local Room = require(script.Parent:WaitForChild("Room")) -- H37: the private roo
 local LobbyMap = require(script.Parent:WaitForChild("LobbyMap"))
 local Orbs = require(script.Parent:WaitForChild("Orbs"))
 local Doors = require(script.Parent:WaitForChild("Doors")) -- H37: the door requests
+local Course = require(script.Parent:WaitForChild("Course")) -- H41: the tutorial course
 
 local Session = {}
 
@@ -342,6 +343,7 @@ function Session.start(session: RemoteEvent?, menu: RemoteEvent?, context: Conte
 	ctx, remote = context, session
 	Room.changed = function() dirty = true end
 	Room.start()
+	Course.start(api, Runners.TAG) -- H41: the course's parts, the first-join start, the target (tutorial.md)
 	if session then session.OnServerEvent:Connect(function() end) end -- server -> client only (→ N3)
 	if menu then menu.OnServerEvent:Connect(function(player, op) Doors.ask(api, player, op) end) end
 	local function onPlayer(player: Player)

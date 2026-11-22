@@ -246,6 +246,19 @@ function Controls.pryHint(): string
 	return if schemeB then "mash Z / click" else "mash Space / click"
 end
 
+-- H41: the words for a verb on the device last used (the tutorial's prompts): "run" | "jump" | "dash" | "grapple".
+function Controls.say(verb: string): string
+	local arrows = TouchPad.on()
+	local words = {
+		touch = { run = if arrows then "hold the > button" else "push the stick right", jump = "tap JUMP", dash = "tap DASH",
+			grapple = "HOLD the GRAPPLE button" },
+		pad = { run = "push the left stick right", jump = "press A", dash = "press X", grapple = "HOLD RT" },
+		keys = { run = "hold D or the right arrow", jump = if schemeB then "press Z" else "press SPACE",
+			dash = if schemeB then "press X" else "press SHIFT", grapple = if schemeB then "HOLD C" else "HOLD W (or right-click)" },
+	}
+	return words[device][verb] or verb
+end
+
 -- The stick's x, -1..1. Falls back to the Humanoid's move direction (world x is screen right with our camera).
 local function moveX(humanoid: Humanoid?): number
 	local arrows = TouchPad.x()

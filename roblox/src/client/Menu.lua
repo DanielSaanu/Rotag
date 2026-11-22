@@ -41,6 +41,9 @@ local function back()
 	show("none") -- H37: the game is always behind the menu now (the lobby): closing a screen goes back to it
 end
 
+-- H41: the tutorial was finished: QUICK MATCH skips the how-to cards (it taught the same by doing).
+function Menu.learned() taught = true end
+
 -- H37: the LOCKER door, and "every screen out of the way" when a match is found.
 function Menu.locker() show("locker") end
 function Menu.close()

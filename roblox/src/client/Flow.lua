@@ -76,6 +76,7 @@ end
 -- A runner's name: a person's display name, a bot's given one.
 function Flow.nameOf(id: number?): string
 	if id == nil then return "nobody" end
+	if id == -900 then return "TARGET" end -- H41: the tutorial's runner (shared/Tutorial.BOT_ID)
 	if SessionRules.isBot(id) then return SessionRules.botName(id, if session then tonumber(session.seed) else nil) end
 	local p = game:GetService("Players"):GetPlayerByUserId(id)
 	return if p then p.DisplayName else "runner"

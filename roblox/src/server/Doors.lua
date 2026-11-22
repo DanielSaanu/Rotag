@@ -1,5 +1,6 @@
 -- The door requests (H37, docs/systems/lobby.md §4): what Remotes.Menu carries and how each is judged. ONE string
--- from a client: "play", "sit", "practice", "host", "code:<4 digits>", "start", "leave", "set:<rounds|items|bots>".
+-- from a client: "play", "sit", "practice", "host", "code:<4 digits>", "start", "leave", "set:<rounds|items|bots>";
+-- H41: "tutorial", "tut:skip", "tut:tag" (server/Course judges those).
 -- Trust (→ N4): the sender is the Player; a rate gap per player (longer for the two requests that may reserve a
 -- server, and for code tries: 4 digits is 10 000 guesses); the SERVER's own position of the player decides whether
 -- it is where the request is made (the lobby, the room, near that door); only the room's host starts or changes it.
@@ -12,6 +13,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local Lobby = require(Shared:WaitForChild("Lobby"))
 local Hub = require(script.Parent:WaitForChild("Hub"))
 local Room = require(script.Parent:WaitForChild("Room"))
+local Course = require(script.Parent:WaitForChild("Course")) -- H41: "tutorial" and "tut:*" (docs/systems/tutorial.md)
 
 local Doors = {}
 
@@ -56,6 +58,10 @@ function Doors.ask(api: Api, player: Player, op: any)
 	if type(op) ~= "string" or #op > 16 or now - (lastMenu[id] or -math.huge) < MENU_GAP then return end
 	lastMenu[id] = now
 	if api.launching[id] then return end
+	if op == "tutorial" or string.sub(op, 1, 4) == "tut:" then
+		if Course.ask(api, player, op) then api.changed() end
+		return
+	end
 	local x, y = api.where(id)
 	local area = if x then Lobby.areaAt(x) else nil
 	local function at(door: string): boolean

@@ -78,7 +78,8 @@ function Arrows.update(me: number, state: any, ignition: ((number) -> number)?)
 	for _, model in CollectionService:GetTagged(RUNNER_TAG) do
 		local id = model:GetAttribute("RunnerId")
 		local root = model:FindFirstChild("HumanoidRootPart")
-		if model:IsA("Model") and type(id) == "number" and id ~= me and root and root:IsA("BasePart") then
+		if model:IsA("Model") and type(id) == "number" and id ~= me and root and root:IsA("BasePart")
+			and model:GetAttribute("Coach") ~= true then -- H41: the tutorial's target is no player to point at
 			local p = root.Position
 			local arrow = SideCam.edgeArrow(cam.X, cam.Y, view.X / view.Y, p.X, p.Y, MARGIN, INSET)
 			if arrow then

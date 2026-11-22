@@ -95,6 +95,9 @@ function TouchPad.build(gui: ScreenGui)
 	apply()
 end
 
+-- H41: is ARROWS on (the tutorial says "the > button" then, not "the stick")?
+function TouchPad.on(): boolean return on end
+
 -- -1..1 while ARROWS is on and one is held; nil means "use the stick" (Controls falls back to it, and so to the keys
 -- of a keyboard on a tablet: the hidden stick reads 0).
 function TouchPad.x(): number?

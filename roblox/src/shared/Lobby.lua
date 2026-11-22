@@ -78,10 +78,15 @@ local AREAS: { [string]: Area } = {
 		-- a one-door "group" says nothing its sign does not).
 		zones = { { "PLAY NOW", -4, 12, LIME, 0 }, { "PLAY WITH FRIENDS", 16, 36, PINK, 17 } },
 		doors = {
-			{ id = "locker", x0 = -42, y0 = 0, x1 = -32, y1 = 9, name = "LOCKER", inside = "SKINS", color = GOLD,
+			{ id = "locker", x0 = -41, y0 = 0, x1 = -33, y1 = 9, name = "LOCKER", inside = "SKINS", color = GOLD,
 				line = "Dress your runner. Spin the wheel." },
 			{ id = "quick", x0 = -4, y0 = 0, x1 = 12, y1 = 12.5, name = "QUICK MATCH", inside = "PLAY", color = LIME, big = true,
 				line = "Play now with other runners." },
+			-- H41 (docs/systems/tutorial.md): downstairs, right of QUICK MATCH, its sign under the PLAY WITH FRIENDS
+			-- plate; white is the one lobby colour no other door uses. (The LOCKER gave up 2 studs for it: 80 of the
+			-- floor's 112 stay outside every door.)
+			{ id = "tutorial", x0 = 35, y0 = 0, x1 = 43, y1 = 8, name = "TUTORIAL", inside = "LEARN", color = WHITE,
+				line = "Learn every move in a minute." },
 			{ id = "practice", x0 = -30, y0 = 18, x1 = -18, y1 = 27, name = "PRACTICE", inside = "SOLO", color = CYAN,
 				line = "Just you and bots. Nothing counts." },
 			{ id = "host", x0 = 16, y0 = 18, x1 = 25, y1 = 27, name = "HOST A ROOM", inside = "+ ROOM", color = PINK,
