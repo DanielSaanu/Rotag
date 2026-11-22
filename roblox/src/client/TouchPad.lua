@@ -87,6 +87,17 @@ function TouchPad.build(gui: ScreenGui)
 	-- above the pad and the stick's zone, below the top bar's buttons and the callouts (rule 23: not the lower middle)
 	s.Position = UDim2.new(0, 24, 1, -(ARROW + 40))
 	s.Parent = gui
+	-- QA r2 (goal 7): the choice is not saved (trigger 9), so the switch says so instead of seeming to forget it
+	local note = Instance.new("TextLabel")
+	note.Name = "ThisVisit"
+	note.BackgroundTransparency = 1
+	note.Text = "this visit"
+	note.Font = Enum.Font.Gotham
+	note.TextSize = 11
+	note.TextColor3 = Color3.fromRGB(190, 190, 205)
+	note.Size = UDim2.new(1, 0, 0, 12)
+	note.Position = UDim2.new(0, 0, 1, 2)
+	note.Parent = s
 	s.Activated:Connect(function()
 		on = not on
 		apply()

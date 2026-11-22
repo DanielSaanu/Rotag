@@ -27,7 +27,30 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-_None._
+### H43 — A NaN goal in the bot planner freezes a live match before the podium — 2026-11-22 18:00 — OPEN
+- **Trigger:** 4 (an Output error the routine session could not explain after one attempt), 6 (every server frame)
+- **Doc:** `docs/systems/bots.md`; QA round 2 of `docs/qa/playtest-fixes.md` (`docs/qa/playtest-fixes-round2.md`)
+- **Observed:** QA round 2 drove a real match (Client datamodel: `Remotes.Menu:FireServer("play")`, three bots).
+  Late in round 1 the Server Output repeats every frame:
+  `ReplicatedStorage.Shared.BoxWorld:170: table index is NaN` ... `Bots:145 think <- Bots:176 stepBot <- Bots:252/249
+  move <- Match:279 step`. `Bots.move` runs before sample / judgePending / the fuse / `Walls.step`
+  (`Match.lua:275-285`), so tags, the fuse, the walls and MatchState all stop: client log "longest gap 13128 ms"
+  before `burn-out: -1002`, then MatchState stopped for good at round 1 (endPhase true, it -1000, 2 ghosts, -1001
+  outside the walls). The round never reached the podium. The bot bodies' positions were finite.
+- **Evidence:** the goal (gx, gy) from `BotMind.goal` is NaN when it reaches `BoxWorld.field` (`BoxWorld.lua:170`
+  `out[start] = 0`). Candidates (unconfirmed): `Walls.backIn` returning a NaN `w.x` for the bot outside; a history
+  sample of a stashed ghost (y -1000000); the replayed `m.last`. The routine session read shared/Walls (centroid,
+  within, target, drift, halfWidth) and BotMind.want and saw no division that can give NaN from finite inputs, so a
+  non-finite input (a pos/sample) is the likeliest source. H40 changed Walls (the pool) and Tag; H42 changed Movement.
+- **Routine session's read (guess):** a NaN position somewhere upstream (a sample or a Movement state after a hold,
+  a grapple or the new wall rule) poisons `w.x` or a goal; once `w.x` is NaN it stays NaN forever.
+- **Decision needed:** (1) find and fix the root cause, with a Luau test that reproduces it (a bot outside the walls
+  plus a ghost bot, through BotMind/Walls); (2) make one bad bot unable to freeze the match: reject non-finite goals
+  in `Bots.think` (fall back to `BotBrain.IDLE`, log once with id, mode, goal, s.x/s.y, `Walls.backIn`), and isolate
+  `Bots.move` in `Match.step` (pcall per bot, or after the judge and fuse); (3) re-run lobby -> podium -> lobby in
+  Studio with the `Menu:FireServer("play")` trick and say what the Output shows.
+- **Blocked routine work:** QA round 3 waits for this. Danzo is gaming: one Play session, execute_luau only, Rotag's
+  Studio (placeId 81535510598835) only.
 
 ## Resolved
 
