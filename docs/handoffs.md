@@ -27,7 +27,27 @@ Resolution (added by the heavy agent under the same entry):
 
 ## Open
 
-*(none)*
+### H40 — The chase: tags that don't count, "it" too easy to escape, the wall in-and-out — 2026-11-22 14:00 — OPEN
+- **Trigger:** 1 (DESIGN §3 rules 6, 45, 51), 2 (`shared/Tag`, `shared/Config`), 3 (how a tag is confirmed)
+- **Doc:** `docs/systems/dash-tag.md`, `docs/systems/netcode.md`, DESIGN §3 rule 6; triage `docs/qa/playtest-2026-11-20.md`
+  (on `origin/claude/stoic-euler-231upu`) items 1-3
+- **Observed:** QA Central playtest #10775, 19-20 Nov, published build = 292cfc5 (H38 live). Two testers, repeatedly
+  as IT: "touched the other ppl ... but it didnt go through", "got close and touched or hit others but they doesn't
+  seem to be the next IT", "hitboxes need optimising". XTRA: "make the IT ~20% faster ... i can just spam jumping side
+  to side and dashing to avoid IT". "The walls: you could just run into them for a few seconds and run back out and
+  repeat." Danzo (2026-11-18): "it takes a decent amount of skill to actually tag anyone".
+- **Evidence:** `Config.TAG_REACH` 0.5, `TAG_GRACE` 1.5, `TAG_DASH_REACH` 1, `RUN_SPEED` 45 for "it" too,
+  `WALL_GRACE` 6 s fully reset once back in. Two devices never measured (netcode.md). H38 makes a dashing runner
+  untaggable, which makes dash spam stronger.
+- **Routine session's read (guess):** most misses are the server refusing the client's claim (latency + interpolation
+  delay `OTHERS_DRAW_DELAY` puts the drawn runner behind the real one), not reach alone. Measure first.
+- **Decision needed:** (1) run a two-client test in Studio with network latency simulated (rbx-network-simulator),
+  log every claim the server refuses: distance, ping, reason; (2) fix the confirm so a fair touch on screen counts
+  (lag-compensated check or a wider server tolerance), without letting a cheat claim from far away; (3) give "it" a
+  chase edge (Danzo/tester: ~20% faster; tune it) and re-weigh the H38 dash dodge; (4) make the wall grace refill
+  slowly instead of resetting. Record the decisions in DESIGN §3 and the system docs, with tests for the shared maths.
+- **Blocked routine work:** none. Standing go-ahead from Danzo (2026-11-22): work autonomously, commit and push, no
+  deleting files. No Fable this week: Opus only.
 
 ## Resolved
 

@@ -222,7 +222,9 @@ function Hud.update(state: any, me: number, fuseLeft: number, frozenLeft: number
 	phaseOn = phase
 	if phaseLabel then
 		phaseLabel.Text = if not phase then "" else ("%s: the walls close in  |  +%d%% speed"):format( -- H24
-			if #state.alive <= 2 then "FINAL TWO" else "OVERTIME", math.floor((Config.END_PHASE_SPEED - 1) * 100 + 0.5))
+			-- playtest 2026-11-20: count RUNNERS, so the ghosts still running about don't contradict it
+			if #state.alive <= 2 then "LAST 2 RUNNERS" else ("OVERTIME: %d RUNNERS"):format(#state.alive),
+			math.floor((Config.END_PHASE_SPEED - 1) * 100 + 0.5))
 		phaseLabel.TextTransparency = if now - phaseAt < PHASE_FLASH then 0.6 * (0.5 + 0.5 * math.sin(now * 6 * math.pi))
 			else 0
 	end

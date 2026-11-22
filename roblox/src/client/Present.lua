@@ -173,12 +173,13 @@ function Present.frame(look: any, match: any, fuse: number, ghostMode: (number) 
 	-- frame behind this call (it did: Look.glow, 2026-11-16). The first error of each kind is printed once.
 	guard("names and cosmetics", function()
 		if look then
-			look:name("YOU", if ghostOf(me) then Ui.C.ghost else seat(me))
+			-- Playtest 2026-11-20 ("2 players left ... but i saw a bunch of players running around"): a ghost's tag says so
+			look:name(if ghostOf(me) then "YOU (GHOST)" else "YOU", if ghostOf(me) then Ui.C.ghost else seat(me))
 			Fx.wear(look, me, ghostOf(me) == nil)
 		end
 		Others.each(function(id, other)
 			local ghost = ghostOf(id) ~= nil
-			other:name(Flow.nameOf(id), if ghost then Ui.C.ghost else seat(id))
+			other:name(if ghost then "GHOST " .. Flow.nameOf(id) else Flow.nameOf(id), if ghost then Ui.C.ghost else seat(id))
 			Fx.wear(other, id, not ghost)
 		end)
 	end)

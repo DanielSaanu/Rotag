@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Sprites = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Sprites"))
 
+local TouchPad = require(script.Parent:WaitForChild("TouchPad")) -- playtest 2026-11-20: arrows instead of the stick
 local Controls = {}
 
 -- The table (controls.md §2). One row per verb; a remap (later, trigger 9 when saved) edits these lists only.
@@ -156,6 +157,7 @@ local function buildTouchButtons(playerGui: PlayerGui)
 	touchButton(gui, "Grapple", "GRAPPLE", UDim2.new(1, -34, 1, -136), 76, onGrapple).Visible = false
 	local item = touchButton(gui, "Item", "ITEM", UDim2.new(1, -128, 1, -164), 76, onUse)
 	item.Visible = false
+	TouchPad.build(gui)
 	local image = Instance.new("ImageLabel")
 	image.Name = "Icon"
 	image.BackgroundTransparency = 1
@@ -199,7 +201,7 @@ function Controls.buttons(item: string?, hook: string?)
 		local b = buttons.Grapple
 		if b then
 			b.Visible = hook ~= nil
-			b.Text = if hook == "rotate" then "ROTATE" else "GRAPPLE"
+			b.Text = if hook == "rotate" then "ROTATE" elseif hook == "grapple_dim" then "GRAPPLE\nno anchor" else "GRAPPLE"
 			b.BackgroundTransparency = if hook == "grapple_dim" then 0.65 else 0.25
 			b.TextTransparency = if hook == "grapple_dim" then 0.5 else 0
 		end
@@ -246,6 +248,8 @@ end
 
 -- The stick's x, -1..1. Falls back to the Humanoid's move direction (world x is screen right with our camera).
 local function moveX(humanoid: Humanoid?): number
+	local arrows = TouchPad.x()
+	if arrows then return arrows end
 	if playerControls then
 		local ok, v = pcall(function() return playerControls:GetMoveVector() end)
 		if ok and typeof(v) == "Vector3" then return v.X end

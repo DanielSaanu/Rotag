@@ -199,7 +199,8 @@ end
 -- H15 (DESIGN §3 rules 37, 41): a ghost is the same sprite, pale and see-through; brighter when it holds a hex (H18),
 -- so the holder can see which ghosts are armed. `mode` nil = alive (normal), "ready", or "cooling".
 local GHOST_TINT = Color3.fromRGB(170, 215, 255)
-local GHOST_SEE = { ready = 0.1, cooling = 0.35 } -- ImageTransparency (0.3 / 0.65 before the dark stage of H31: there
+local GHOST_SEE = { ready = 0.3, cooling = 0.5 } -- ImageTransparency. Playtest 2026-11-20: 0.1 / 0.35 read as alive
+-- at a glance, so halfway back (0.3 / 0.65 before the dark stage of H31: there
 -- a cooling ghost was a shadow, and its own player could not find it: seen in Studio 2026-11-16)
 function Look:ghost(mode: string?)
 	local image = self.image

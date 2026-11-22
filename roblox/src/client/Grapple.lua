@@ -7,6 +7,7 @@ local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Rules = require(Shared:WaitForChild("Grapple"))
+local Callout = require(script.Parent:WaitForChild("Callout"))
 
 local Grapple = {}
 
@@ -28,6 +29,10 @@ local ropes: { [number]: BasePart } = {}
 local seen: { [number]: number } = {}
 local frame = 0
 local params = RaycastParams.new()
+-- Playtest 2026-11-20 ("the grapple button doesn't seem to work?"): a press with nothing in reach says why, at most
+-- once every HINT_EVERY seconds and HINT_MAX times a server visit, so a player who knows stops being told.
+local HINT_EVERY, HINT_MAX = 6, 4
+local hintAt, hints = -math.huge, 0
 params.FilterType = Enum.RaycastFilterType.Exclude
 params.IgnoreWater = true
 local fromX, fromY = 0, 0
@@ -118,6 +123,11 @@ function Grapple.frame(input: any, s: any, character: Model, root: BasePart, liv
 		pick = Rules.pick(s.x, s.y, s.facing, anchors, view, if pick then pick.id else nil, clear, s.vx)
 	end
 	input.anchor = pick
+	if input.grapplePressed and not pick and not s.rope and hints < HINT_MAX and os.clock() - hintAt > HINT_EVERY then
+		hintAt, hints = os.clock(), hints + 1
+		Callout.big("NO ANCHOR IN REACH", "grapple hooks a GOLD BALL above you: get close, then hold GRAPPLE",
+			ROPE_COLOR, 2.6)
+	end
 end
 
 -- For Controls.buttons: the GRAPPLE touch button for the living, lit while an anchor is picked or you hang.
