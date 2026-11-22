@@ -69,6 +69,17 @@ function Tagging.graceLeft(id: number): number?
 	return nil
 end
 
+-- QA r1: the grace runner `id` would step out with: its refilling pool as the server last said (refilled since), or
+-- the full WALL_GRACE when the server lists none for it.
+function Tagging.poolLeft(id: number): number
+	if state and not state.over and state.refill then
+		for _, e in state.refill do
+			if e.id == id then return math.min(Config.WALL_GRACE, e.left + Config.WALL_REFILL * since()) end
+		end
+	end
+	return Config.WALL_GRACE
+end
+
 -- This runner's entry in MatchState.ghosts ({ id }, H18), or nil if it is not a ghost.
 function Tagging.ghost(id: number): any
 	if not state or state.over then return nil end

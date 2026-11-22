@@ -267,7 +267,7 @@ RunService:BindToRenderStep("RotagView", Enum.RenderPriority.Camera.Value + 1, f
 	Hud.update(if away then nil else st, Tagging.me(), Tagging.fuseLeft(), Tagging.frozenLeft())
 	Arrows.update(Tagging.me(), if away then nil else st, Tagging.ignition) -- H23: the holder's arrow beats as it ignites
 	Walls.update(if away then nil else st, if c and c.root.Parent and Tagging.isAlive(player.UserId) then c.state.x else nil,
-		Tagging.graceLeft(player.UserId)) -- H24: drawn from MatchState; a ghost is never warned
+		Tagging.graceLeft(player.UserId), Tagging.poolLeft(player.UserId)) -- H24: drawn from MatchState; a ghost is never warned
 	-- H31, last: the menu, the cards, sound and cosmetics. Nothing the round needs drawn comes after it.
 	Present.frame(if c and c.root.Parent then c.look else nil, st, Tagging.fuseLeft(), ghostMode)
 end)

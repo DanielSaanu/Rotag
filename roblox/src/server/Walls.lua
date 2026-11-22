@@ -71,10 +71,18 @@ function Walls.step(r: Tag.Round, now: number, history: { [number]: { Tag.Sample
 end
 
 -- For MatchState: the window and the runners outside it, or nil and an empty list when there are no walls.
-function Walls.rows(r: Tag.Round?, now: number): (any, { Rules.Row })
+-- QA r1 (playtest-fixes): also `refill`, { { id, left } } for every living runner back inside whose grace is still
+-- refilling (H40's pool), so its screen can say how much it has before it steps out again.
+function Walls.rows(r: Tag.Round?, now: number): (any, { Rules.Row }, { { id: number, left: number } })
 	local w = state
-	if not (r and w and w.round == r and not r.over) then return nil, {} end
-	return Rules.rows(w, now)
+	if not (r and w and w.round == r and not r.over) then return nil, {}, {} end
+	local window, outside = Rules.rows(w, now)
+	local refill = {}
+	for _, id in r.order do
+		local p = w.pool[id]
+		if p ~= nil and r.alive[id] then table.insert(refill, { id = id, left = p }) end
+	end
+	return window, outside, refill
 end
 
 -- For server/Bots: is living runner `id` outside the walls right now? Then where the window's centre is.

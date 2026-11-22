@@ -88,7 +88,8 @@ end
 
 -- Every render frame. `state` is the client's last MatchState (client/Tagging), `myX` our runner's x (nil if none),
 -- `grace` = Tagging.graceLeft(me): the server's count for us, or nil while it has us inside.
-function Walls.update(state: any, myX: number?, grace: number?)
+-- `pool` = Tagging.poolLeft(me): what we would step out with (QA r1: it showed a full 6.0 after an in-and-out).
+function Walls.update(state: any, myX: number?, grace: number?, pool: number?)
 	local w = state and not state.over and state.window
 	if not w then
 		hide()
@@ -135,10 +136,17 @@ function Walls.update(state: any, myX: number?, grace: number?)
 	local predicted = myX ~= nil and math.abs(myX - x) > hw + Config.RUNNER_WIDTH / 2 - (if predictedWas then Config.WALL_BACK_IN else 0)
 	predictedWas = predicted
 	if grace == nil and not predicted then
-		label.Text = ""
+		-- back inside with grace still refilling: a quiet line, so the next step out is not a surprise
+		local p = pool or Config.WALL_GRACE
+		if p < Config.WALL_GRACE - 0.05 then
+			label.Text = ("wall time %.1f / %d"):format(p, Config.WALL_GRACE)
+			label.TextColor3, label.TextSize = RED, 26
+		else
+			label.Text = ""
+		end
 		return
 	end
-	local left = grace or Config.WALL_GRACE
+	local left = grace or pool or Config.WALL_GRACE
 	local home = if myX and myX > x then "<<<" else ">>>"
 	label.Text = if home == "<<<" then ("<<<  GET BACK IN  %.1f"):format(left) else ("GET BACK IN  %.1f  >>>"):format(left)
 	local urgency = 1 - math.clamp(left / Config.WALL_GRACE, 0, 1)

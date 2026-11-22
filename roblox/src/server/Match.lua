@@ -82,7 +82,7 @@ local function snapshot(now: number)
 		if rootOf(id) and not (r and table.find(r.order, id)) then table.insert(spectating, id) end
 	end
 	local ghosts, ward = Ghosts.state(r, ghostState, now, present)
-	local window, outside = Walls.rows(r, now)
+	local window, outside, refill = Walls.rows(r, now)
 	return {
 		round = roundNo,
 		it = r and r.it,
@@ -98,6 +98,7 @@ local function snapshot(now: number)
 		ward = ward, -- seconds before any ghost may hex again
 		endPhase = r ~= nil and Tag.endPhase(r, now), -- H23, rule 51: the server's call, on its own clock (endgame.md)
 		window = window, outside = outside, -- H24: { x, hw, vx, vhw } or nil; { { id, left } } (endgame.md §7)
+		refill = refill, -- QA r1: { { id, left } } back inside, grace refilling at WALL_REFILL a second (H40)
 	}
 end
 
