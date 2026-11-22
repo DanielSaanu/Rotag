@@ -1,7 +1,7 @@
 # QA summary: the playtest fixes (QA Central #10775) — 7 -> 5 -> 7 (target 8 not met)
 
 Goals: [`playtest-fixes.md`](playtest-fixes.md). Triage: [`playtest-2026-11-20.md`](playtest-2026-11-20.md). Rounds
-are archived in `[archive/](archive/) (playtest-fixes-round1-3)`. Built 2026-11-22 by the local session (two-session team with
+are archived in [`archive/`](archive/) (`playtest-fixes-round1.md` to `round3.md`). Built 2026-11-22 by the local session (two-session team with
 the cloud session, which wrote the triage, the goals, the research and read each round adversarially). Every round ran
 **blind**: Danzo was gaming on the PC, so Studio drew no 3D and nobody sent keys or mouse. Goals 4-7 were capped at 8,
 and goal 1 below 7 until two real people play.
